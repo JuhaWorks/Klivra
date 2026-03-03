@@ -1,12 +1,43 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
+// Resolve the API base URL once.
+// We explicitly keep localhost active for local development via Vite proxy, 
+// and fallback to Render for production if no env var is provided.
+let BASE_URL;
+if (import.meta.env.VITE_API_URL) {
+    BASE_URL = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`;
+} else if (import.meta.env.DEV) {
+    // Keep local host proxy for local development
+    BASE_URL = '/api';
+} else {
+    // Production fallback for Vercel
+    BASE_URL = 'https://syncforge-io.onrender.com/api';
+}
+
 // Create a configured Axios instance
-// withCredentials: true ensures your browser automatically attaches the HttpOnly cookie to every request.
+// withCredentials: true ensures the browser attaches the HttpOnly cookie to every request.
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api` : (import.meta.env.PROD ? 'https://syncforge-io.onrender.com/api' : 'http://localhost:5000/api'),
+    baseURL: BASE_URL,
     withCredentials: true,
+    timeout: 15000, // 15s hard timeout — prevents hanging requests
 });
+
+// Auto-retry once on network timeout (e.g. transient blip on Render cold-start)
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const config = error.config;
+        // Only retry once, and only on network errors / timeouts (no response)
+        if (!config._retried && (error.code === 'ECONNABORTED' || !error.response)) {
+            config._retried = true;
+            await new Promise((r) => setTimeout(r, 400)); // 400 ms back-off
+            return api(config);
+        }
+        return Promise.reject(error);
+    }
+);
+
 
 export const useAuthStore = create((set) => ({
     user: null,
@@ -81,5 +112,29 @@ export const useAuthStore = create((set) => ({
             console.error('Logout error:', error);
             set({ isLoading: false });
         }
-    }
+    },
+
+    // 5. Upload avatar image (multipart/form-data)
+    uploadAvatar: async (file) => {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const response = await api.post('/auth/profile/avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        set((state) => ({ user: { ...state.user, ...response.data.data } }));
+        return response.data;
+    },
+
+    // 6. Update profile info (name, status, customMessage)
+    updateProfile: async (updates) => {
+        const response = await api.put('/auth/profile', updates);
+        set((state) => ({ user: { ...state.user, ...response.data.data } }));
+        return response.data;
+    },
+
+    // 7. Change password (requires currentPassword + newPassword)
+    changePassword: async (currentPassword, newPassword) => {
+        const response = await api.put('/auth/profile/password', { currentPassword, newPassword });
+        return response.data;
+    },
 }));

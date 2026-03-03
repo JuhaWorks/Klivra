@@ -1,12 +1,15 @@
-require('dotenv').config();
+require('dotenv').config(); // v2 — user profile routes enabled
+
 const express = require('express');
 const http = require('http'); // Required for Socket.io
 const { Server } = require('socket.io'); // Import Socket.io
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const dns = require('dns');
+
 
 try {
   dns.setServers(["1.1.1.1", "8.8.8.8", "8.8.4.4"]);
@@ -73,6 +76,8 @@ io.on('connection', (socket) => {
 });
 
 app.use(helmet());
+// Gzip compress all responses — typically 60-80% smaller JSON payloads
+app.use(compression({ threshold: 1024 })); // Only compress responses > 1 kB
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true); // Allow requests with no origin
@@ -90,7 +95,6 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'success', message: 'API is running successfully.' });
 });
@@ -99,10 +103,12 @@ app.get('/', (req, res) => {
 const authRoutes = require('./routes/auth.routes');
 const projectRoutes = require('./routes/project.routes');
 const taskRoutes = require('./routes/task.routes');
+const userRoutes = require('./routes/user.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/users', userRoutes);
 
 // MongoDB Connection with better options
 const connectDB = async () => {

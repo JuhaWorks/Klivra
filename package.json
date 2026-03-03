@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "cloudinary": "^2.9.0",
     "mongodb": "^7.1.0"
   }
 }

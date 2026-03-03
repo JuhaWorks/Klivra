@@ -12,11 +12,15 @@ const generateToken = (id) => {
 const sendTokenResponse = (user, statusCode, res) => {
     const token = generateToken(user._id);
 
+    const isProd = process.env.NODE_ENV === 'production';
+    // sameSite: 'none' requires Secure=true in all modern browsers. Since local dev
+    // is HTTP (Secure=false), it would reject the cookie entirely.
+    // Thanks to your Vite proxy, dev requests are same-site anyway, so 'lax' works perfectly.
     const options = {
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         httpOnly: true, // Crucial: Cookie cannot be accessed via client-side scripts
-        secure: process.env.NODE_ENV === 'production', // Send only via HTTPS in prod
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        secure: isProd, // HTTPS only in production
+        sameSite: isProd ? 'none' : 'lax', // 'none' for cross-site prod, 'lax' for local proxy
     };
 
     res

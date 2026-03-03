@@ -37,6 +37,16 @@ const userSchema = new mongoose.Schema(
             enum: ['Admin', 'Manager', 'Developer', 'Guest'],
             default: 'Guest',
         },
+        status: {
+            type: String,
+            enum: ['Online', 'Away', 'Do Not Disturb', 'Offline'],
+            default: 'Online',
+        },
+        customMessage: {
+            type: String,
+            maxlength: [150, 'Custom message cannot exceed 150 characters'],
+            default: '',
+        },
     },
     {
         timestamps: true, // Automatically add createdAt and updatedAt fields

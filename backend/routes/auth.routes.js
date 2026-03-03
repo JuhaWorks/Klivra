@@ -1,20 +1,47 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, logoutUser } = require('../controllers/auth.controller');
+// bcrypt, multer and schema validation are no longer needed here; they live in user.controller
 const { protect } = require('../middlewares/auth.middleware');
+const { registerUser, loginUser, logoutUser } = require('../controllers/auth.controller');
+// reuse the helpers from user.controller to keep validation/upload logic in one place
+const { uploadAvatar, updateProfile, changePassword } = require('../controllers/user.controller');
 
-// Public Routes
+// the upload middleware, validation schemas and controller logic live in user.controller.js
+// so we don't duplicate functionality here.  auth.routes is responsible only for
+// authentication endpoints (login/register/logout) and providing a simple
+// profile-read endpoint used during the initial auth check.
+
+// Note: the same multer/cloudinary config is already handled indirectly by
+// full routes under /api/users, so we don't need to re-declare it here.
+
+
+// ── Public Auth Routes ─────────────────────────────────────────────────────────
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.get('/logout', logoutUser);
 
-// Protected Route: Get Logged In User Profile
+// ── GET /api/auth/profile — read current user ──────────────────────────────────
+// this route just returns `req.user` so the client can populate its store during
+// the initial auth check; the write operations are handled in /api/users to keep
+// the code single-responsibility.
 router.get('/profile', protect, (req, res) => {
-    // req.user is automatically populated by the protect middleware (excluding password)
-    res.status(200).json({
-        status: 'success',
-        data: req.user
+    res.status(200).json({ status: 'success', data: req.user });
+});
+
+// ── the mutable profile endpoints now live under /api/users; the frontend uses
+// the same paths (`/auth/...`) so we still need to forward those requests.  the
+// forwarding is intentionally thin – simply delegate to the controllers defined
+// in user.controller.js so we avoid maintaining the same logic twice.
+router.post('/profile/avatar', protect, /* multer middleware defined below */ (req, res, next) => {
+    // re-use uploadSingle from user.routes via require to avoid duplication
+    const { uploadSingle } = require('../middlewares/upload.middleware');
+    uploadSingle(req, res, (err) => {
+        if (err) return next(err);
+        uploadAvatar(req, res, next);
     });
 });
+
+router.put('/profile', protect, updateProfile);
+router.put('/profile/password', protect, changePassword);
 
 module.exports = router;

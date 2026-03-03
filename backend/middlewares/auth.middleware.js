@@ -26,7 +26,9 @@ const protect = async (req, res, next) => {
 
             if (!req.user) {
                 // Clear the stale cookie so the browser doesn't keep sending it
-                res.clearCookie('token', { httpOnly: true, sameSite: 'strict' });
+                // Use sameSite:'none' here as well so the clear operation works when
+                // the frontend is on a different origin/port.
+                res.clearCookie('token', { httpOnly: true, sameSite: 'none' });
                 res.status(401);
                 return next(new Error('Not authorized, user not found'));
             }
@@ -34,7 +36,7 @@ const protect = async (req, res, next) => {
             next();
         } catch (error) {
             // Clear the invalid/expired token cookie
-            res.clearCookie('token', { httpOnly: true, sameSite: 'strict' });
+            res.clearCookie('token', { httpOnly: true, sameSite: 'none' });
             res.status(401);
             next(new Error('Not authorized, token failed'));
         }

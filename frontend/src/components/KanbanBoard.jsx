@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuthStore, api } from '../store/useAuthStore';
 
-// Connect to our backend Socket.io server
+// URL resolved once at module level (no socket yet — that happens in useEffect)
 const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
-const socket = io(SOCKET_URL);
 
 const KanbanBoard = ({ projectId }) => {
     const [tasks, setTasks] = useState({
@@ -12,58 +11,55 @@ const KanbanBoard = ({ projectId }) => {
         'In Progress': [],
         Completed: []
     });
-    const { token } = useAuthStore();
+    const socketRef = useRef(null);
 
     useEffect(() => {
+        // Create the socket only when this component actually mounts
+        socketRef.current = io(SOCKET_URL, { transports: ['websocket'] });
+        const socket = socketRef.current;
+
         // 1. Fetch initial tasks from standard API
         const fetchTasks = async () => {
             try {
                 const res = await api.get(`/projects/${projectId}/tasks`);
-
-                // Group tasks by status
                 const grouped = { Pending: [], 'In Progress': [], Completed: [] };
                 res.data.data.forEach(task => {
-                    if (grouped[task.status]) {
-                        grouped[task.status].push(task);
-                    }
+                    if (grouped[task.status]) grouped[task.status].push(task);
                 });
                 setTasks(grouped);
             } catch (error) {
-                console.error("Failed to fetch tasks", error);
+                console.error('Failed to fetch tasks', error);
             }
         };
 
         if (projectId) fetchTasks();
 
-        // 2. Listen for Real-Time Socket Events from other users
+        // 2. Real-Time Socket: receive moves from other users
         socket.on('task:moved', (movedTask) => {
-            // Update our local state instantly when another user drops a task
             setTasks(prevTasks => {
                 const newTasks = { ...prevTasks };
-
-                // Remove from old column
                 for (let status in newTasks) {
                     newTasks[status] = newTasks[status].filter(t => t._id !== movedTask._id);
                 }
-
-                // Add to new column
                 if (newTasks[movedTask.newStatus]) {
-                    newTasks[movedTask.newStatus].push({
-                        ...movedTask, // we expect the event to pass enough data to render the card
-                        status: movedTask.newStatus
-                    });
+                    newTasks[movedTask.newStatus].push({ ...movedTask, status: movedTask.newStatus });
                 }
-
                 return newTasks;
             });
         });
 
+        // Cleanup: disconnect socket when component unmounts
+        return () => {
+            socket.off('task:moved');
+            socket.disconnect();
+        };
     }, [projectId]);
 
     // HTML5 Drag and Drop Handlers
     const handleDragStart = (e, taskId, currentStatus) => {
         e.dataTransfer.setData('taskId', taskId);
         e.dataTransfer.setData('currentStatus', currentStatus);
+
     };
 
     const handleDragOver = (e) => {
