@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 import { useAuthStore, api } from '../store/useAuthStore';
 
 // Connect to our backend Socket.io server
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
 const socket = io(SOCKET_URL);
 
 const KanbanBoard = ({ projectId }) => {
