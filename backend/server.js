@@ -45,7 +45,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
+// Express v5 makes req.query a getter, so we cannot reassign it. We mutate in place instead.
+app.use((req, res, next) => {
+  ['body', 'params', 'headers'].forEach((k) => {
+    if (req[k]) {
+      req[k] = mongoSanitize.sanitize(req[k]);
+    }
+  });
+  if (req.query) {
+    mongoSanitize.sanitize(req.query); // Mutates in place
+  }
+  next();
+});
 
 // HTTP Request Logging
 app.use(morganMiddleware);
