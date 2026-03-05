@@ -19,7 +19,7 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             // Connect to the backend
-            const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
+            const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://klivra-backend.onrender.com' : 'http://localhost:5000');
             const response = await axios.post(`${API_URL}/api/auth/login`, {
                 email,
                 password,
