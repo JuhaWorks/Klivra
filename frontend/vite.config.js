@@ -18,22 +18,25 @@ export default defineConfig({
         // App code changes don't bust the vendor cache.
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+            if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react-router')) {
               return 'react-vendor';
             }
-            if (id.includes('framer-motion')) {
+            if (id.includes('/node_modules/framer-motion/')) {
               return 'framer-motion';
             }
-            if (id.includes('@tanstack/react-query')) {
+            if (id.includes('/node_modules/@tanstack/') || id.includes('/node_modules/react-query/')) {
               return 'react-query';
             }
-            if (id.includes('socket.io-client') || id.includes('engine.io-client')) {
+            if (id.includes('/node_modules/socket.io-client/') || id.includes('/node_modules/engine.io-client/')) {
               return 'socket-vendor';
             }
-            if (id.includes('zustand')) {
+            if (id.includes('/node_modules/zustand/')) {
               return 'zustand-vendor';
             }
-            return 'vendor'; // Catch-all for other external dependencies
+            if (id.includes('/node_modules/@sentry/')) {
+              return 'sentry-vendor';
+            }
+            return 'vendor';
           }
         },
       },
