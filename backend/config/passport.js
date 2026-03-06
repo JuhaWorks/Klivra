@@ -52,6 +52,13 @@ const linkOrCreateUser = async (profile, provider, providerIdKey, done) => {
                 user.authProviders.push(provider);
             }
 
+            // OAuth providers verify emails — auto-verify the account
+            if (!user.isEmailVerified) {
+                user.isEmailVerified = true;
+                user.emailVerificationToken = undefined;
+                user.emailVerificationExpires = undefined;
+            }
+
             // Save without triggering password validation
             await user.save({ validateBeforeSave: false });
 

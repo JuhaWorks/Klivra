@@ -90,9 +90,19 @@ const registerUser = async (req, res, next) => {
                     </div>
                 `;
 
-                // Fire-and-forget: Send response immediately, email in background
-                // This prevents Vercel proxy timeouts on Render cold starts
-                res.status(200).json({
+                // Send email FIRST, then respond (await ensures Render doesn't kill the process)
+                try {
+                    await sendEmail({
+                        to: userExists.email,
+                        subject: 'Verify your Klivra account',
+                        html: message
+                    });
+                    console.log(`[RENDER-DEBUG] ✅ Resend verification email SENT to: ${userExists.email}`);
+                } catch (emailErr) {
+                    console.error(`[RENDER-DEBUG] ❌ Resend verification email FAILED for ${userExists.email}:`, emailErr.message, emailErr.stack);
+                }
+
+                return res.status(200).json({
                     status: 'success',
                     message: 'Verification email resent. Please check your inbox.',
                     data: {
@@ -104,19 +114,6 @@ const registerUser = async (req, res, next) => {
                         isEmailVerified: userExists.isEmailVerified
                     }
                 });
-
-                // Send email in background (don't await — response already sent)
-                sendEmail({
-                    to: userExists.email,
-                    subject: 'Verify your Klivra account',
-                    html: message
-                }).then(() => {
-                    console.log(`[DEBUG] Resend verification email sent to: ${userExists.email}`);
-                }).catch((err) => {
-                    console.error('[DEBUG] Resend verification email failed:', err.message);
-                });
-
-                return;
             }
         }
 
@@ -153,7 +150,21 @@ const registerUser = async (req, res, next) => {
                 </div>
             `;
 
-            // Send response IMMEDIATELY so the frontend doesn't time out
+            // Send email BEFORE responding (await ensures Render completes the send)
+            try {
+                console.log(`[RENDER-DEBUG] 📧 Attempting to send registration email to: ${user.email}`);
+                console.log(`[RENDER-DEBUG] EMAIL_USER=${process.env.EMAIL_USER}, EMAIL_HOST=${process.env.EMAIL_HOST}, EMAIL_PORT=${process.env.EMAIL_PORT}`);
+                await sendEmail({
+                    to: user.email,
+                    subject: 'Verify your Klivra account',
+                    html: message
+                });
+                console.log(`[RENDER-DEBUG] ✅ Registration email SENT to: ${user.email}`);
+            } catch (emailErr) {
+                console.error(`[RENDER-DEBUG] ❌ Registration email FAILED for ${user.email}:`, emailErr.message);
+                console.error(`[RENDER-DEBUG] Full error:`, JSON.stringify({ code: emailErr.code, command: emailErr.command, response: emailErr.response, responseCode: emailErr.responseCode }, null, 2));
+            }
+
             res.status(201).json({
                 status: 'success',
                 message: 'Registration successful. Please verify your email.',
@@ -165,18 +176,6 @@ const registerUser = async (req, res, next) => {
                     avatar: user.avatar,
                     isEmailVerified: user.isEmailVerified
                 }
-            });
-
-            // Fire-and-forget: email sent in background AFTER response
-            console.log(`[DEBUG] Dispatching registration email to: ${user.email}`);
-            sendEmail({
-                to: user.email,
-                subject: 'Verify your Klivra account',
-                html: message
-            }).then(() => {
-                console.log(`[DEBUG] Registration email sent successfully to: ${user.email}`);
-            }).catch((err) => {
-                console.error('[DEBUG] Registration email failed to send:', err.message);
             });
         } else {
             res.status(400);

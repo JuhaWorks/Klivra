@@ -96,6 +96,52 @@ io.on('connection', (socket) => {
 
 // 5. Routes
 app.get('/', (req, res) => res.status(200).json({ status: 'success', message: 'API is running successfully.' }));
+
+// 🔧 TEMPORARY: SMTP diagnostic endpoint — hit /api/test-smtp?email=you@gmail.com to test email delivery
+//    Remove this after confirming emails work on Render.
+app.get('/api/test-smtp', async (req, res) => {
+  const testTo = req.query.email || 'thefakegamer29@gmail.com';
+  const nodemailer = require('nodemailer');
+  const results = { env: {}, smtp: {}, send: {} };
+
+  // 1. Check env vars
+  results.env = {
+    EMAIL_USER: process.env.EMAIL_USER || 'NOT SET',
+    EMAIL_PASS: process.env.EMAIL_PASS ? `SET (${process.env.EMAIL_PASS.length} chars)` : 'NOT SET',
+    EMAIL_HOST: process.env.EMAIL_HOST || 'NOT SET (defaulting to smtp.gmail.com)',
+    EMAIL_PORT: process.env.EMAIL_PORT || 'NOT SET (defaulting to 587)',
+    NODE_ENV: process.env.NODE_ENV || 'NOT SET',
+  };
+
+  // 2. Test SMTP connection
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: Number(process.env.EMAIL_PORT) || 587,
+      secure: Number(process.env.EMAIL_PORT) === 465,
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
+
+    await transporter.verify();
+    results.smtp = { status: 'CONNECTED', message: 'SMTP server accepted credentials' };
+
+    // 3. Send test email
+    const info = await transporter.sendMail({
+      from: `"Klivra Diagnostics" <${process.env.EMAIL_USER}>`,
+      to: testTo,
+      subject: '[RENDER TEST] Email delivery works!',
+      html: '<h2>✅ Success!</h2><p>This email was sent from your Render deployment. Email delivery is working correctly.</p>',
+    });
+    results.send = { status: 'SENT', messageId: info.messageId, to: testTo };
+  } catch (err) {
+    results.smtp.error = { message: err.message, code: err.code, command: err.command, responseCode: err.responseCode };
+  }
+
+  res.json(results);
+});
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/projects', require('./routes/project.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
