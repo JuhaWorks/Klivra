@@ -113,8 +113,26 @@ mongoose.connect(process.env.MONGO_URI, {
   family: 4
 }).then(async () => {
   logger.info("✅ MongoDB Connected Successfully!");
-  await seedAdminUser(); // Bootstraps the dedicated admin account
-  startGarbageCollection(); // Boots the daily unverified users cleanup job
+  await seedAdminUser();
+  startGarbageCollection();
+
+  // Verify SMTP connectivity at startup (non-blocking — just logs the result)
+  const nodemailer = require('nodemailer');
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    const testTransporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: Number(process.env.EMAIL_PORT) || 587,
+      secure: Number(process.env.EMAIL_PORT) === 465,
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+    });
+    testTransporter.verify()
+      .then(() => logger.info('✅ SMTP Email Service: Connected and ready'))
+      .catch(err => logger.error(`❌ SMTP Email Service FAILED: ${err.message}. Emails will not be sent!`));
+  } else {
+    logger.error('❌ EMAIL_USER or EMAIL_PASS not set! Email service is disabled.');
+  }
 })
   .catch(err => {
     logger.error(`❌ MongoDB Connection Error: ${err.message}`);
