@@ -1,4 +1,5 @@
 const Audit = require('../models/audit.model');
+const ProjectActivity = require('../models/projectActivity.model');
 
 // @desc    Get paginated audit/activity logs
 // @route   GET /api/audit
@@ -8,19 +9,40 @@ const getLogs = async (req, res, next) => {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 50;
         const skip = (page - 1) * limit;
+        const entityId = req.query.entityId;
 
-        // Build query filter if specific entityId is provided
-        const filter = req.query.entityId ? { entityId: req.query.entityId } : {};
+        // Determine which model to use. If entityId is present, we check ProjectActivity first
+        // as the Project Engine uses it specifically.
+        let logs;
+        let total;
 
-        const total = await Audit.countDocuments(filter);
+        if (entityId) {
+            // Fetch from ProjectActivity model
+            total = await ProjectActivity.countDocuments({ projectId: entityId });
+            logs = await ProjectActivity.find({ projectId: entityId })
+                .populate('actorId', 'name email avatar')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean();
 
-        // Lean query for pure JS objects and fast reads
-        const logs = await Audit.find(filter)
-            .populate('user', 'name email avatar')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .lean();
+            // Map ProjectActivity to a consistent format for both Project View and Global Feed
+            logs = logs.map(log => ({
+                ...log,
+                user: log.actorId, // Compatibility for Global Feed
+                details: { title: log.metadata?.name || log.action.replace(/_/g, ' ') }, // Compatibility for Global Feed
+                isProjectActivity: true
+            }));
+        } else {
+            // General system audit logs
+            total = await Audit.countDocuments({});
+            logs = await Audit.find({})
+                .populate('user', 'name email avatar')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean();
+        }
 
         res.status(200).json({
             status: 'success',

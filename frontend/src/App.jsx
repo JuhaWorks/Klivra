@@ -15,6 +15,7 @@ const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage')
 const Profile = lazy(() => import('./pages/Profile'));
 const Whiteboard = lazy(() => import('./components/Whiteboard'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Projects = lazy(() => import('./pages/Projects'));
 const ProjectSettings = lazy(() => import('./pages/ProjectSettings'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
@@ -105,6 +106,7 @@ function App() {
           >
             {/* Suspense inside layout so the shell renders instantly */}
             <Route index element={<Home />} />
+            <Route path="projects" element={<Suspense fallback={<PageLoader />}><Projects /></Suspense>} />
             <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
             <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
             <Route path="projects/:id/settings" element={<Suspense fallback={<PageLoader />}><ProjectSettings /></Suspense>} />

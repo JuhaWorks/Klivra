@@ -7,8 +7,11 @@ import * as z from 'zod';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const API = import.meta.env.VITE_API_URL ||
-    (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
+// Local dev: vite proxy handles /api -> localhost:5000
+// Production: vercel rewrites /api -> Render backend
+const API_BASE = import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
+    : ''; // Relative paths work due to vercel.json rewrites
 
 const WORDS = ['extraordinary products.', 'the future, together.', 'what matters most.'];
 const FEATURES = [['⚡', 'Real-time Sync'], ['◫', 'Kanban Boards'], ['◻', 'Whiteboards'], ['⬡', 'E2E Encrypted']];
@@ -408,8 +411,8 @@ function FormPanel({ onSubmit, loading, error, clearError }) {
                                 <div className="flex-1 h-px" style={{ background: 'var(--b)' }} />
                             </div>
                             <div className="grid grid-cols-2 gap-2.5">
-                                <a href={`${API}/api/auth/google`} className="obtn og"><GoogleSVG />Google</a>
-                                <a href={`${API}/api/auth/github`} className="obtn gh"><GithubSVG />GitHub</a>
+                                <a href={`${API_BASE}/api/auth/google`} className="obtn og"><GoogleSVG />Google</a>
+                                <a href={`${API_BASE}/api/auth/github`} className="obtn gh"><GithubSVG />GitHub</a>
                             </div>
                         </div>
                     </div>
