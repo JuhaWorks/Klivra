@@ -5,6 +5,14 @@ import { Navigate, Link } from 'react-router-dom';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import toast from 'react-hot-toast';
 
+// Helper to format date for datetime-local input
+const formatForDateTimeLocal = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const z = (n) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+};
+
 const AdminDashboard = () => {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
@@ -70,7 +78,11 @@ const AdminDashboard = () => {
 
     // 4. System Maintenance Toggle
     const toggleMaintenanceMutation = useMutation({
-        mutationFn: async ({ enabled, endTime }) => (await api.put('/admin/system/maintenance', { enabled, endTime })).data,
+        mutationFn: async ({ enabled, endTime }) => {
+            // Ensure we send a proper UTC ISO string to the server
+            const utcEndTime = (enabled && endTime) ? new Date(endTime).toISOString() : null;
+            return (await api.put('/admin/system/maintenance', { enabled, endTime: utcEndTime })).data;
+        },
         onSuccess: (data) => {
             const isEnabled = data.data.value.enabled;
             toast.success(isEnabled ? `Maintenance Enabled until ${new Date(data.data.value.endTime).toLocaleString()}` : 'Maintenance Mode Disabled');
@@ -79,6 +91,13 @@ const AdminDashboard = () => {
     });
 
     const isMaintenanceMode = stats.system?.status === 'Maintenance';
+
+    // Sync input with existing maintenance end time if set
+    useState(() => {
+        if (stats.system?.endTime && !maintenanceEndTime) {
+            setMaintenanceEndTime(formatForDateTimeLocal(stats.system.endTime));
+        }
+    });
 
     // Sub-component: Maintenance Modal
     const MaintenanceModal = () => {
