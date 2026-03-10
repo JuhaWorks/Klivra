@@ -144,8 +144,8 @@ userSchema.statics.deleteAndCleanUp = async function (userId) {
 
         // Clean up references in other collections
         await Project.updateMany(
-            { 'teamMembers.user': userId },
-            { $pull: { teamMembers: { user: userId } } },
+            { 'members.userId': userId },
+            { $pull: { members: { userId: userId } } },
             { session }
         );
 

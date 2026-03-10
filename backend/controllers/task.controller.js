@@ -15,11 +15,11 @@ const getTasks = async (req, res, next) => {
         }
 
         // Verify user is in project
-        const isMember = project.teamMembers.some(
-            (member) => member.user.toString() === req.user._id.toString()
+        const isMember = project.members.some(
+            (member) => member.userId.toString() === req.user._id.toString()
         );
 
-        if (!isMember && req.user.role !== 'admin') {
+        if (!isMember && req.user.role !== 'Admin') {
             res.status(403);
             throw new Error('User not authorized to access tasks for this project');
         }
@@ -68,11 +68,11 @@ const createTask = async (req, res, next) => {
         }
 
         // Only managers or admins can create tasks in this logic standard, but can adjust if needed
-        const isMember = project.teamMembers.some(
-            (m) => m.user.toString() === req.user._id.toString()
+        const isMember = project.members.some(
+            (m) => m.userId.toString() === req.user._id.toString()
         );
 
-        if (!isMember && req.user.role !== 'admin') {
+        if (!isMember && req.user.role !== 'Admin') {
             res.status(401);
             throw new Error('User not authorized to create a task in this project');
         }
@@ -111,11 +111,11 @@ const updateTask = async (req, res, next) => {
 
         // Check if user is assigned to this task, or is a manager in the project
         const isAssignee = task.assignee && task.assignee.toString() === req.user._id.toString();
-        const isManager = project.teamMembers.some(
-            (m) => m.user.toString() === req.user._id.toString() && m.role === 'manager'
+        const isManager = project.members.some(
+            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager'
         );
 
-        if (!isAssignee && !isManager && req.user.role !== 'admin') {
+        if (!isAssignee && !isManager && req.user.role !== 'Admin') {
             res.status(401);
             throw new Error('User not authorized to update this task');
         }
@@ -147,11 +147,11 @@ const deleteTask = async (req, res, next) => {
         }
 
         const project = await Project.findById(task.project);
-        const isManager = project.teamMembers.some(
-            (m) => m.user.toString() === req.user._id.toString() && m.role === 'manager'
+        const isManager = project.members.some(
+            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager'
         );
 
-        if (!isManager && req.user.role !== 'admin') {
+        if (!isManager && req.user.role !== 'Admin') {
             res.status(401);
             throw new Error('User not authorized to delete this task');
         }

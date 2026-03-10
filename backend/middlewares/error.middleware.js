@@ -41,11 +41,15 @@ const globalErrorHandler = (err, req, res, next) => {
         error.statusCode = 400;
     }
 
-    const statusCode = error.statusCode || (res.statusCode !== 200 ? res.statusCode : 500);
+    // Corner Case 3: The 500-401 Flip
+    // Ensure that if the error is an Auth error, we respect its status code (401)
+    // rather than defaulting to 500.
+    const statusCode = (res.statusCode !== 200 ? res.statusCode : (error.statusCode || err.statusCode || 500));
+    const message = error.message || 'Internal Server Error';
 
     res.status(statusCode).json({
         status: 'error',
-        message: error.message || 'Server Error',
+        message: message,
         requiresReactivation: err.requiresReactivation || false,
         stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
     });

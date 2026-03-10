@@ -35,9 +35,11 @@ const securityMiddleware = async (req, res, next) => {
             // If req.user isn't set yet (early global middleware), try to peek at the JWT
             if (!isAdmin) {
                 const authHeader = req.headers.authorization;
-                if (authHeader && authHeader.startsWith('Bearer')) {
+                const cookieToken = req.cookies ? req.cookies.token : null;
+                const token = (authHeader && authHeader.startsWith('Bearer')) ? authHeader.split(' ')[1] : cookieToken;
+
+                if (token) {
                     try {
-                        const token = authHeader.split(' ')[1];
                         const decoded = jwt.verify(token, process.env.JWT_SECRET);
                         
                         const user = await User.findById(decoded.id).select('role').lean();
@@ -48,10 +50,19 @@ const securityMiddleware = async (req, res, next) => {
                            // console.log(`[MAINTENANCE BLOCK] User identified but is not Admin. Role: ${user?.role}`);
                         }
                     } catch (err) {
+                        if (err.name === 'TokenExpiredError') {
+                            // High Priority: If token is expired during maintenance, return 401
+                            // so the frontend can trigger a refresh and get back in.
+                            return res.status(401).json({
+                                status: 'fail',
+                                message: 'Session expired. Please refresh to continue admin access.',
+                                isMaintenance: true
+                            });
+                        }
                         console.log(`[MAINTENANCE BYPASS FAIL] Token verification error: ${err.message}`);
                     }
                 } else {
-                    // console.log(`[MAINTENANCE BLOCK] No Bearer token found in header: ${req.originalUrl}`);
+                    // console.log(`[MAINTENANCE BLOCK] No token found in header or cookie: ${req.originalUrl}`);
                 }
             }
 

@@ -16,7 +16,7 @@ exports.globalSearch = async (req, res, next) => {
         // Since $text doesn't easily support cross-collection JOIN filtering, 
         // we first get projects the user has access to, then filter tasks within those projects
         const userProjects = await Project.find({
-            "teamMembers.user": req.user._id
+            "members.userId": req.user._id
         }).select('_id').lean();
 
         const projectIds = userProjects.map(p => p._id);
@@ -32,14 +32,14 @@ exports.globalSearch = async (req, res, next) => {
 
         // 2. Search Projects
         let projectsPromise;
-        if (req.user.role === 'admin') {
+        if (req.user.role === 'Admin') {
             projectsPromise = Project.find(
                 { $text: { $search: query } },
                 { score: { $meta: "textScore" } }
             ).sort({ score: { $meta: "textScore" } }).limit(5).lean();
         } else {
             projectsPromise = Project.find(
-                { $text: { $search: query }, "teamMembers.user": req.user._id },
+                { $text: { $search: query }, "members.userId": req.user._id },
                 { score: { $meta: "textScore" } }
             ).sort({ score: { $meta: "textScore" } }).limit(5).lean();
         }
