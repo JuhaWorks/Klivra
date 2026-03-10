@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io } from 'socket.io-client';
+import { toast } from 'react-hot-toast';
 import { useAuthStore } from './useAuthStore';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://syncforge-io.onrender.com';
@@ -45,19 +46,17 @@ export const useSocketStore = create((set, get) => ({
         });
 
         socket.on('projectActivity', ({ userName, action }) => {
-            import('react-hot-toast').then(({ toast }) => {
-                toast(`${userName} ${action}`, {
-                    icon: '🚀',
-                    style: {
-                        borderRadius: '16px',
-                        background: '#09090b',
-                        color: '#fff',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        fontSize: '13px',
-                        fontWeight: '500'
-                    },
-                    position: 'bottom-right'
-                });
+            toast(`${userName} ${action}`, {
+                icon: '🚀',
+                style: {
+                    borderRadius: '16px',
+                    background: '#09090b',
+                    color: '#fff',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    fontSize: '13px',
+                    fontWeight: '500'
+                },
+                position: 'bottom-right'
             });
         });
 
