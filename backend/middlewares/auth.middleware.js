@@ -12,7 +12,7 @@ const protect = async (req, res, next) => {
         token = req.headers.authorization.split(' ')[1];
     }
 
-    console.log(`[AUTH DIAG NOSTIC] ${req.method} ${req.originalUrl} - HasToken: ${!!token}`);
+    console.log(`[AUTH] ${req.method} ${req.originalUrl} - Token Present: ${!!token}`);
 
     if (!token) {
         console.log(`[AUTH DEBUG] No token found in header for ${req.originalUrl}. Header: ${req.headers.authorization}`);

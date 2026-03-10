@@ -8,9 +8,13 @@ const globalErrorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
+    // Determine final status code first for accurate logging & response
+    const statusCode = (res.statusCode !== 200 ? res.statusCode : (error.statusCode || err.statusCode || 500));
+    const message = error.message || 'Internal Server Error';
+
     // Log error for developers
-    if (err.status !== 404) {
-        logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+    if (statusCode !== 404) {
+        logger.error(`${statusCode} - ${message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
     }
 
     // Mongoose bad ObjectId (CastError)
@@ -34,7 +38,7 @@ const globalErrorHandler = (err, req, res, next) => {
         error.statusCode = 400;
     }
 
-    // Zod validation error (if using Zod middleware)
+    // Zod validation error
     if (err.name === 'ZodError') {
         const message = err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
         error = new Error(message);
@@ -42,14 +46,12 @@ const globalErrorHandler = (err, req, res, next) => {
     }
 
     // Corner Case 3: The 500-401 Flip
-    // Ensure that if the error is an Auth error, we respect its status code (401)
-    // rather than defaulting to 500.
-    const statusCode = (res.statusCode !== 200 ? res.statusCode : (error.statusCode || err.statusCode || 500));
-    const message = error.message || 'Internal Server Error';
+    // Final check for status code consistency
+    const finalStatusCode = (res.statusCode !== 200 ? res.statusCode : (error.statusCode || err.statusCode || 500));
 
-    res.status(statusCode).json({
+    res.status(finalStatusCode).json({
         status: 'error',
-        message: message,
+        message: error.message || 'Server Error',
         requiresReactivation: err.requiresReactivation || false,
         stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
     });

@@ -105,16 +105,18 @@ app.use((req, res, next) => {
 // Global Security & Maintenance Check
 app.use(securityMiddleware);
 
-// Diagnostic Middleware for Auth
+// Diagnostic Middleware for Auth (Commented out for production cleanliness)
+/*
 app.use((req, res, next) => {
   if (req.originalUrl.includes('/api/auth')) {
     const authHeader = req.headers.authorization;
     const hasToken = !!authHeader;
     const isBearer = authHeader?.startsWith('Bearer');
-    console.log(`[AUTH DIAGNOSTIC] ${req.method} ${req.originalUrl} - HasToken: ${hasToken}, IsBearer: ${isBearer}`);
+    console.log(`[AUTH] ${req.method} ${req.originalUrl} - Header Token: ${hasToken}, IsBearer: ${isBearer}`);
   }
   next();
 });
+*/
 
 // 5. Routes
 app.get('/', (req, res) => res.status(200).json({ status: 'success', message: 'API is running successfully.' }));
