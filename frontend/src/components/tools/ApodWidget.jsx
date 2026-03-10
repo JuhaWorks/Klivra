@@ -41,7 +41,7 @@ const ApodWidget = () => {
             <div className="relative flex-1 min-h-[200px]">
                 {apodLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
                     </div>
                 ) : (
                     <>

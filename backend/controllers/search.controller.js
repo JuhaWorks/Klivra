@@ -1,4 +1,4 @@
-const Task = require('../models/task.model');
+const Task = require('../models/Task.model');
 const Project = require('../models/project.model');
 
 // @desc    Global Search across Projects and Tasks using $text and textScore

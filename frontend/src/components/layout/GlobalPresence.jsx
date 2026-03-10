@@ -54,7 +54,7 @@ const GlobalPresence = () => {
                         <div className="p-6 pb-4 border-b border-white/5 flex items-center justify-between">
                             <div>
                                 <h3 className="text-white font-black text-lg tracking-tight flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-violet-500" />
+                                    <Users className="w-5 h-5 text-emerald-500" />
                                     {presenceUsers?.length > 0 ? 'Team Status' : 'Live Presence'}
                                 </h3>
                                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mt-0.5">
@@ -91,7 +91,7 @@ const GlobalPresence = () => {
                                         `} />
                                     </div>
                                     <div className="flex flex-col flex-1 min-w-0">
-                                        <span className="text-sm font-bold text-white truncate group-hover:text-violet-400 transition-colors uppercase tracking-tight">{user.name}</span>
+                                        <span className="text-sm font-bold text-white truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{user.name}</span>
                                         <div className="flex items-center gap-1.5 mt-0.5">
                                             <span className={`text-[10px] font-black uppercase tracking-widest
                                                 ${user.status === 'Online' ? 'text-emerald-500/80' :

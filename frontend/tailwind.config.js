@@ -24,6 +24,13 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        
+        // Semantic Display Mode Variables
+        base: "var(--bg-base)",
+        surface: "var(--bg-surface)",
+        main: "var(--text-main)",
+        "text-muted": "var(--text-muted)",
+        subtle: "var(--border-subtle)",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -65,6 +72,13 @@ export default {
           800: '#3730a3',
           900: '#312e81',
           950: '#1e1b4b',
+        },
+        // Hijack the hardcoded green theme to make it dynamic
+        emerald: {
+          400: 'rgb(var(--theme-400) / <alpha-value>)',
+          500: 'rgb(var(--theme-500) / <alpha-value>)',
+          600: 'rgb(var(--theme-600) / <alpha-value>)',
+          900: 'rgb(var(--theme-900) / <alpha-value>)',
         }
       },
       borderRadius: {

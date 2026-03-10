@@ -22,7 +22,7 @@ const ActivityTab = ({ projectId }) => {
                     <div className="space-y-10 relative">
                         {isLoading ? (
                             <div className="flex justify-center py-20">
-                                <div className="w-8 h-8 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+                                <div className="w-8 h-8 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
                             </div>
                         ) : activities?.length === 0 ? (
                             <div className="text-center py-20 space-y-4">
@@ -35,7 +35,7 @@ const ActivityTab = ({ projectId }) => {
                             activities.map((log, i) => (
                                 <div key={log._id} className="flex gap-6 group">
                                     <div className="relative z-10">
-                                        <div className="w-8 h-8 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl group-hover:border-violet-500/50 transition-all">
+                                        <div className="w-8 h-8 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl group-hover:border-emerald-500/50 transition-all">
                                             {log.actorId?.avatar ? (
                                                 <img src={log.actorId.avatar} alt="" className="w-full h-full object-cover" />
                                             ) : (

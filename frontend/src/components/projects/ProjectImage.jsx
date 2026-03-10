@@ -30,7 +30,7 @@ const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative group"
+                        className="w-full h-full bg-gradient-to-br from-emerald-500 to-purple-600 flex items-center justify-center relative group"
                     >
                         {/* Elegant background texture */}
                         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_white_1px,_transparent_1px)] bg-[length:20px_20px]" />

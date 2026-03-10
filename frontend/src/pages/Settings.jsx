@@ -30,7 +30,7 @@ export default function Settings() {
                                 : 'text-gray-400 hover:bg-white/[0.02] hover:text-gray-200'
                                 }`}
                         >
-                            <User className={`w-4 h-4 ${activeTab === 'general' ? 'text-violet-400' : ''}`} />
+                            <User className={`w-4 h-4 ${activeTab === 'general' ? 'text-emerald-400' : ''}`} />
                             General Profile
                         </button>
                         <button
@@ -40,7 +40,7 @@ export default function Settings() {
                                 : 'text-gray-400 hover:bg-white/[0.02] hover:text-gray-200'
                                 }`}
                         >
-                            <ShieldCheck className={`w-4 h-4 ${activeTab === 'security' ? 'text-violet-400' : ''}`} />
+                            <ShieldCheck className={`w-4 h-4 ${activeTab === 'security' ? 'text-emerald-400' : ''}`} />
                             Security
                         </button>
                         <div className="hidden md:block h-px bg-white/[0.06] my-2 mx-4"></div>

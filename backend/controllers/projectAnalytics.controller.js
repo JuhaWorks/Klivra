@@ -1,4 +1,5 @@
 const Project = require('../models/project.model');
+const Task = require('../models/Task.model');
 const mongoose = require('mongoose');
 
 // @desc    Get project insights and analytics
@@ -73,6 +74,64 @@ const getProjectInsights = async (req, res, next) => {
     }
 };
 
+// @desc    Get overall workspace statistics
+// @route   GET /api/projects/workspace/stats
+const getWorkspaceStats = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+
+        // 1. Get all active projects for the user
+        const projects = await Project.find({
+            'members.userId': userId,
+            deletedAt: null
+        });
+
+        const projectIds = projects.map(p => p._id);
+        const activeProjectsCount = projects.filter(p => p.status === 'Active').length;
+
+        // 2. Aggregate task statistics across these projects
+        const taskStats = await Task.aggregate([
+            { $match: { project: { $in: projectIds } } },
+            {
+                $group: {
+                    _id: null,
+                    totalTasks: { $sum: 1 },
+                    completedTasks: { $sum: { $cond: [{ $eq: ['$status', 'Completed'] }, 1, 0] } },
+                    inProgressTasks: { $sum: { $cond: [{ $eq: ['$status', 'In Progress'] }, 1, 0] } },
+                    pendingTasks: { $sum: { $cond: [{ $eq: ['$status', 'Pending'] }, 1, 0] } }
+                }
+            }
+        ]);
+
+        const stats = taskStats[0] || {
+            totalTasks: 0,
+            completedTasks: 0,
+            inProgressTasks: 0,
+            pendingTasks: 0
+        };
+
+        const completionPct = stats.totalTasks > 0
+            ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
+            : 0;
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                activeProjects: activeProjectsCount,
+                totalProjects: projects.length,
+                totalTasks: stats.totalTasks,
+                completedTasks: stats.completedTasks,
+                inProgressTasks: stats.inProgressTasks,
+                pendingTasks: stats.pendingTasks,
+                completionPct
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
-    getProjectInsights
+    getProjectInsights,
+    getWorkspaceStats
 };

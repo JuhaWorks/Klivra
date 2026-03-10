@@ -27,7 +27,7 @@ if (import.meta.env.VITE_API_URL) {
 export const api = axios.create({
     baseURL: BASE_URL,
     withCredentials: true,
-    timeout: 30000, // 30s — Render cold starts can take 15-20s
+    timeout: 10000, // 10s maximum to prevent infinite hangs on load
 });
 
 // Add Request Interceptor to inject the access token
@@ -88,7 +88,10 @@ api.interceptors.response.use(
                 const newAccessToken = response.data.accessToken;
 
                 console.log(`[AUTH] Refresh successful. New token obtained.`);
-                useAuthStore.getState().setAccessToken(newAccessToken);
+
+                // Update store state with new token
+                useAuthStore.setState({ accessToken: newAccessToken });
+
                 processQueue(null, newAccessToken);
 
                 // Retry the original failed request
@@ -105,14 +108,10 @@ api.interceptors.response.use(
             }
         }
 
-        // 2. Auto-retry for transient network blips (Optional, but kept for reliability)
-        if (!originalRequest._retried && (error.code === 'ECONNABORTED' || !error.response)) {
-            originalRequest._retried = true;
-            console.log(`[AUTH] Transient error on ${originalRequest.url}. Retrying...`);
-            await new Promise((r) => setTimeout(r, 400));
-            return api(originalRequest);
-        }
-
+        // Removed the aggressive auto-retry logic for transient errors.
+        // It was causing 30s timeouts to double into 1-2 minute hangs 
+        // when the backend was unreachable or cold-starting.
+        
         return Promise.reject(error);
     }
 );
@@ -123,7 +122,7 @@ export const useAuthStore = create((set, get) => ({
     accessToken: null,
     isAuthenticated: false,
     isLoading: false,
-    isCheckingAuth: true, // Defaults true — App.jsx gatekeeper blocks rendering until resolved
+    isCheckingAuth: false, // Default to false to avoid hang, set to true inside checkAuth
     error: null,
     setAccessToken: (token) => set({ accessToken: token }),
     clearError: () => set({ error: null }),
@@ -133,12 +132,13 @@ export const useAuthStore = create((set, get) => ({
     // Flow: GET /me → 401 (no token) → interceptor calls /refresh with cookie → gets token → retries /me → success
     checkAuth: async () => {
         // Prevent concurrent or redundant checks
-        if (get().isCheckingAuth && get().isAuthenticated) return;
+        if (get().isCheckingAuth || get().isAuthenticated) return;
 
         set({ isCheckingAuth: true, error: null });
         try {
             console.log('[AUTH] Checking session...');
-            const response = await api.get('/auth/me');
+            // Force a fast fail on the initial load check—don't let the global 10s timeout hang the UI
+            const response = await api.get('/auth/me', { timeout: 3000 });
             set({
                 user: response.data.data,
                 // The refresh interceptor might have updated our state.accessToken automatically

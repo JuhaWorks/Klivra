@@ -1,0 +1,1 @@
+const mongoose = require('mongoose'); require('dotenv').config(); mongoose.connect(process.env.MONGO_URI).then(async () => { const Audit = require('./models/audit.model'); const logs = await Audit.find({}).sort({createdAt:-1}).limit(20).lean(); console.log(JSON.stringify(logs, null, 2)); process.exit(0); }).catch(console.error);

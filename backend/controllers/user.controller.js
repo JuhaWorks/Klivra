@@ -2,7 +2,7 @@ const User = require('../models/user.model');
 const { z } = require('zod');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const sendEmail = require('../utils/sendEmail');
+const { getFrontendUrl, formatUserResponse, sendStandardEmail } = require('../utils/helpers');
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 
@@ -45,15 +45,7 @@ const uploadAvatar = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            data: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role,
-                status: user.status,
-                customMessage: user.customMessage,
-            },
+            data: formatUserResponse(user),
         });
     } catch (error) {
         next(error);
@@ -94,15 +86,7 @@ const updateProfile = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            data: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role,
-                status: user.status,
-                customMessage: user.customMessage,
-            },
+            data: formatUserResponse(user),
         });
     } catch (error) {
         next(error);
@@ -128,15 +112,7 @@ const removeAvatar = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            data: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role,
-                status: user.status,
-                customMessage: user.customMessage,
-            },
+            data: formatUserResponse(user),
         });
     } catch (error) {
         next(error);
@@ -198,20 +174,13 @@ const requestEmailChangeOTP = async (req, res, next) => {
         user.emailChangeOTPExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
         await user.save();
 
-        const message = `
-            <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
-                <h2 style="color: #060612;">Email Change Request</h2>
-                <p style="color: #44445a; line-height: 1.6;">You requested to change your email address. Here is your 6-digit verification code:</p>
-                <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #7B52FF; margin: 20px 0;">${otp}</div>
-                <p style="color: #44445a;">This code will expire in 10 minutes.</p>
-                <p style="color: #8888aa; font-size: 13px; margin-top: 25px;">If you did not request this, please ignore this email and your email will remain unchanged.</p>
-            </div>
-        `;
-
-        await sendEmail({
+        await sendStandardEmail({
             to: user.email,
             subject: 'Your Klivra Verification Code',
-            html: message
+            title: 'Email Change Request',
+            body: 'You requested to change your email address. Here is your 6-digit verification code:',
+            customHtml: `<div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #7B52FF; margin: 20px 0;">${otp}</div>`,
+            footer: 'This code will expire in 10 minutes. If you did not request this, please ignore this email and your email will remain unchanged.'
         });
 
         res.status(200).json({ status: 'success', message: 'OTP sent to current email' });
@@ -260,26 +229,16 @@ const verifyEmailChangeOTP = async (req, res, next) => {
         user.emailChangeOTPExpires = undefined;
         await user.save();
 
-        const isProd = process.env.NODE_ENV === 'production';
-        const frontendUrl = isProd
-            ? 'https://klivra.vercel.app'
-            : (process.env.FRONTEND_URL || 'http://localhost:5173');
+        const confirmUrl = `${getFrontendUrl()}/verify-email-change/${token}`;
 
-        const confirmUrl = `${frontendUrl}/verify-email-change/${token}`;
-
-        const message = `
-            <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
-                <h2 style="color: #060612;">Confirm New Email</h2>
-                <p style="color: #44445a; line-height: 1.6;">You requested to change your Klivra email to this address. Please click below to confirm:</p>
-                <a href="${confirmUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Confirm Email</a>
-                <p style="color: #8888aa; font-size: 13px; margin-top: 25px;">If you did not initiate this change, please ignore this email.</p>
-            </div>
-        `;
-
-        await sendEmail({
+        await sendStandardEmail({
             to: newEmail,
             subject: 'Confirm your new Klivra email',
-            html: message
+            title: 'Confirm New Email',
+            body: 'You requested to change your Klivra email to this address. Please click below to confirm:',
+            ctaText: 'Confirm Email',
+            ctaUrl: confirmUrl,
+            footer: 'If you did not initiate this change, please ignore this email.'
         });
 
         res.status(200).json({ status: 'success', message: 'Confirmation link sent to new email' });

@@ -35,8 +35,11 @@ const getLogs = async (req, res, next) => {
             }));
         } else {
             // General system audit logs
-            total = await Audit.countDocuments({});
-            logs = await Audit.find({})
+            const typeFilter = req.query.type;
+            const query = typeFilter ? { entityType: typeFilter } : {};
+
+            total = await Audit.countDocuments(query);
+            logs = await Audit.find(query)
                 .populate('user', 'name email avatar')
                 .sort({ createdAt: -1 })
                 .skip(skip)

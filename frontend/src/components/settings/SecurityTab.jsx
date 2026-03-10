@@ -120,7 +120,7 @@ export default function SecurityTab() {
                         <button
                             type="button"
                             onClick={() => setIsEmailModalOpen(true)}
-                            className="text-[12px] font-medium text-violet-400 hover:text-violet-300 transition-colors px-3 py-1 bg-violet-500/10 hover:bg-violet-500/20 rounded-lg"
+                            className="text-[12px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg"
                         >
                             Update Email
                         </button>
@@ -161,7 +161,7 @@ export default function SecurityTab() {
                                 type="password"
                                 placeholder="••••••••"
                                 {...register('currentPassword')}
-                                className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
+                                className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
                             />
                         </div>
                         {errors.currentPassword && <p className="text-xs text-red-400 mt-1.5">{errors.currentPassword.message}</p>}
@@ -181,7 +181,7 @@ export default function SecurityTab() {
                                     type="password"
                                     placeholder="••••••••"
                                     {...register('newPassword')}
-                                    className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
+                                    className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
                                 />
                             </div>
                             {errors.newPassword && <p className="text-xs text-red-400 mt-1.5">{errors.newPassword.message}</p>}
@@ -200,7 +200,7 @@ export default function SecurityTab() {
                                     type="password"
                                     placeholder="••••••••"
                                     {...register('confirmNewPassword')}
-                                    className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
+                                    className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
                                 />
                             </div>
                             {errors.confirmNewPassword && <p className="text-xs text-red-400 mt-1.5">{errors.confirmNewPassword.message}</p>}
@@ -212,7 +212,7 @@ export default function SecurityTab() {
                     <button
                         type="submit"
                         disabled={securityMutation.isPending}
-                        className="inline-flex items-center justify-center px-4 py-2.5 text-[13px] font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-all shadow-lg shadow-violet-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center justify-center px-4 py-2.5 text-[13px] font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {securityMutation.isPending ? 'Saving...' : 'Update Security'}
                     </button>

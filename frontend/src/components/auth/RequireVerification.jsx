@@ -10,7 +10,7 @@ const RequireVerification = ({ children }) => {
 
     if (!user) return children;
 
-    if (user && !user.isEmailVerified) {
+    if (user && !user.isEmailVerified && user.role !== 'Admin') {
         const handleResend = async () => {
             setIsResending(true);
             try {

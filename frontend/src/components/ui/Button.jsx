@@ -41,7 +41,7 @@ export default function Button({
 
     // 3. Style variants (Linear / Apple aesthetic)
     const variantClasses = {
-        primary: "bg-indigo-600 text-white shadow-sm-soft hover:bg-indigo-700 hover:-translate-y-0.5 focus:ring-indigo-500/50",
+        primary: "bg-emerald-600 text-white shadow-sm-soft hover:bg-emerald-700 hover:-translate-y-0.5 focus:ring-emerald-500/50",
         secondary: "bg-white text-zinc-900 border border-zinc-200/80 shadow-sm-soft hover:bg-zinc-50 hover:border-zinc-300 hover:-translate-y-0.5 focus:ring-zinc-400/50",
         destructive: "bg-red-600 text-white shadow-sm-soft hover:bg-red-700 hover:-translate-y-0.5 focus:ring-red-500/50",
         ghost: "bg-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 focus:ring-zinc-400/50",

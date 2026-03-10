@@ -138,7 +138,7 @@ const ProjectSettings = () => {
 
     if (projectLoading) return (
         <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
         </div>
     );
 
@@ -164,7 +164,7 @@ const ProjectSettings = () => {
                 </button>
                 <div>
                     <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-                        <Settings className="w-6 h-6 text-violet-500" />
+                        <Settings className="w-6 h-6 text-emerald-500" />
                         Project Settings
                     </h1>
                     <p className="text-zinc-500 text-sm mt-1">Manage {project.name}’s configuration and audit trail.</p>
@@ -179,7 +179,7 @@ const ProjectSettings = () => {
                     <section className="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
                         <div className="p-6 border-b border-white/5 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <Layout className="w-5 h-5 text-violet-400" />
+                                <Layout className="w-5 h-5 text-emerald-400" />
                                 <h2 className="font-bold text-white">General Information</h2>
                             </div>
                             {!isAuthorizedToEdit && (
@@ -194,7 +194,7 @@ const ProjectSettings = () => {
                                         <input
                                             {...register('name')}
                                             disabled={!isAuthorizedToEdit || updateMutation.isPending}
-                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white placeholder:text-zinc-700 focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all font-medium"
+                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white placeholder:text-zinc-700 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50 transition-all font-medium"
                                         />
                                         {errors.name && <p className="text-xs text-red-400 ml-1">{errors.name.message}</p>}
                                     </div>
@@ -205,7 +205,7 @@ const ProjectSettings = () => {
                                             {...register('description')}
                                             rows={3}
                                             disabled={!isAuthorizedToEdit || updateMutation.isPending}
-                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white placeholder:text-zinc-700 focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all resize-none font-medium text-sm leading-relaxed"
+                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white placeholder:text-zinc-700 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50 transition-all resize-none font-medium text-sm leading-relaxed"
                                         />
                                         {errors.description && <p className="text-xs text-red-400 ml-1">{errors.description.message}</p>}
                                     </div>
@@ -216,7 +216,7 @@ const ProjectSettings = () => {
                                             <select
                                                 {...register('category')}
                                                 disabled={!isAuthorizedToEdit || updateMutation.isPending}
-                                                className="w-full bg-[#0c0c16] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all appearance-none cursor-pointer"
+                                                className="w-full bg-[#0c0c16] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 disabled:opacity-50 transition-all appearance-none cursor-pointer"
                                             >
                                                 {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map(cat => (
                                                     <option key={cat} value={cat}>{cat}</option>
@@ -233,7 +233,7 @@ const ProjectSettings = () => {
                                                 type="date"
                                                 {...register('startDate')}
                                                 disabled={!isAuthorizedToEdit || updateMutation.isPending}
-                                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all [color-scheme:dark]"
+                                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 disabled:opacity-50 transition-all [color-scheme:dark]"
                                             />
                                             {errors.startDate && <p className="text-xs text-red-400 ml-1">{errors.startDate.message}</p>}
                                         </div>
@@ -243,7 +243,7 @@ const ProjectSettings = () => {
                                                 type="date"
                                                 {...register('endDate')}
                                                 disabled={!isAuthorizedToEdit || updateMutation.isPending}
-                                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all [color-scheme:dark]"
+                                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 disabled:opacity-50 transition-all [color-scheme:dark]"
                                             />
                                             {errors.endDate && <p className="text-xs text-red-400 ml-1">{errors.endDate.message}</p>}
                                         </div>
@@ -269,7 +269,7 @@ const ProjectSettings = () => {
                     {/* Activity Timeline */}
                     <section className="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
                         <div className="p-6 border-b border-white/5 flex items-center gap-2">
-                            <History className="w-5 h-5 text-blue-400" />
+                            <History className="w-5 h-5 text-emerald-400" />
                             <h2 className="font-bold text-white">Activity Timeline</h2>
                         </div>
                         <div className="p-6 relative">

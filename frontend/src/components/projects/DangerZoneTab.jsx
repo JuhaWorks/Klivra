@@ -13,7 +13,8 @@ const DangerZoneTab = ({ project }) => {
     const archiveMutation = useMutation({
         mutationFn: () => projectService.deleteProject(project._id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['projects', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['projects', 'archived'] });
             toast.success('Project archived successfully');
             navigate('/projects');
         }

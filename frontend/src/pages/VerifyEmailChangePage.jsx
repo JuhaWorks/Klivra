@@ -54,23 +54,23 @@ const VerifyEmailChangePage = () => {
         <div className="min-h-screen bg-[#060612] flex items-center justify-center p-6 font-sans antialiased text-[#eeeeff]">
             {/* Background Orbs */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-600/10 blur-[120px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/10 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600/10 blur-[120px] rounded-full" />
             </div>
 
             <main className="relative z-10 w-full max-w-md">
                 <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/[0.06] rounded-3xl p-10 shadow-2xl overflow-hidden">
                     {/* Inner Glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
 
                     <div className="relative text-center space-y-8">
                         {/* Dynamic Icon */}
                         <div className="flex justify-center">
                             {status === 'loading' && (
                                 <div className="relative">
-                                    <div className="absolute inset-0 bg-violet-500/20 blur-2xl rounded-full animate-pulse" />
+                                    <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse" />
                                     <div className="relative w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.1] flex items-center justify-center">
-                                        <Loader2 className="w-10 h-10 text-violet-500 animate-spin" />
+                                        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
                                     </div>
                                 </div>
                             )}
@@ -126,7 +126,7 @@ const VerifyEmailChangePage = () => {
                             {status === 'loading' && (
                                 <div className="flex gap-1 justify-center">
                                     {[0, 1, 2].map(i => (
-                                        <div key={i} className="w-1.5 h-1.5 bg-violet-500/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
+                                        <div key={i} className="w-1.5 h-1.5 bg-emerald-500/30 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
                                     ))}
                                 </div>
                             )}

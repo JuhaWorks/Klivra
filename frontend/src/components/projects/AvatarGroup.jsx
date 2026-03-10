@@ -27,7 +27,7 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                         title={viewer.name}
                     >
                         <div className={`
-                            w-10 h-10 rounded-full border-2 border-zinc-950 bg-zinc-800 shadow-xl overflow-hidden transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:z-50 ring-4 ring-transparent group-hover:ring-violet-500/20
+                            w-10 h-10 rounded-full border-2 border-zinc-950 bg-zinc-800 shadow-xl overflow-hidden transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:z-50 ring-4 ring-transparent group-hover:ring-emerald-500/20
                             ${(viewer.status === 'Away' || viewer.status === 'away') ? 'opacity-50 grayscale' : 'opacity-100'}
                         `}>
                             {viewer.avatar ? (
@@ -37,7 +37,7 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-500 to-indigo-600 text-[10px] font-black text-white uppercase">
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 text-[10px] font-black text-white uppercase">
                                     {viewer.name?.charAt(0) || '?'}
                                 </div>
                             )}

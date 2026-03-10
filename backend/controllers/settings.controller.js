@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../models/user.model');
 const Project = require('../models/project.model');
-const Task = require('../models/task.model');
+const Task = require('../models/Task.model');
 
 // @desc    Update user profile details (Name, About/Bio)
 // @route   PUT /api/settings/profile

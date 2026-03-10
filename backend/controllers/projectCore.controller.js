@@ -1,15 +1,25 @@
 const Project = require('../models/project.model');
-const { logActivity } = require('../utils/activityLogger'); // Assume this exists or I'll create it
+const { logActivity } = require('../utils/activityLogger');
+const { cloudinary } = require('../config/cloudinary');
 const logger = require('../utils/logger');
 
 // @desc    Get all projects (filtered by soft-delete)
 // @route   GET /api/projects
 const getProjects = async (req, res, next) => {
     try {
-        const projects = await Project.find({
+        const showArchived = req.query.archived === 'true';
+
+        const query = {
             'members.userId': req.user._id,
-            deletedAt: null
-        }).sort('-createdAt');
+        };
+
+        if (showArchived) {
+            query.deletedAt = { $ne: null };
+        } else {
+            query.deletedAt = null;
+        }
+
+        const projects = await Project.find(query).sort('-createdAt');
 
         res.status(200).json({ status: 'success', results: projects.length, data: projects });
     } catch (error) {
@@ -48,6 +58,10 @@ const getProject = async (req, res, next) => {
 // @route   POST /api/projects
 const createProject = async (req, res, next) => {
     try {
+        if (req.user.role === 'Admin') {
+            res.status(403);
+            throw new Error('Administrators are restricted from creating projects. Please use a Manager or Developer account.');
+        }
         const { name, description, category, startDate, endDate } = req.body;
 
         const project = await Project.create({
@@ -150,7 +164,10 @@ const deleteProject = async (req, res, next) => {
         project.status = 'Archived';
         await project.save();
 
-        await logActivity(project._id, req.user._id, 'PROJECT_DELETED');
+        await logActivity(project._id, req.user._id, 'PROJECT_DELETED', {
+            name: project.name,
+            ipAddress: req.ip
+        }, 'Security');
 
         res.status(200).json({ status: 'success', message: 'Project moved to trash' });
     } catch (error) {
@@ -180,9 +197,7 @@ const restoreProject = async (req, res, next) => {
     }
 };
 
-const { cloudinary } = require('../config/cloudinary');
-
-// ... existing code ...
+// Image uploads and assets
 
 // @desc    Upload project cover image
 // @route   POST /api/projects/:id/image

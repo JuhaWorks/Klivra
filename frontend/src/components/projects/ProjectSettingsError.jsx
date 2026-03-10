@@ -9,11 +9,11 @@ const ProjectSettingsError = ({ title, description, icon: Icon = Lock }) => {
         <div className="flex flex-col items-center justify-center min-h-[70vh] p-6">
             <div className="p-12 text-center bg-zinc-950/50 border border-white/5 rounded-[40px] max-w-2xl mx-auto backdrop-blur-xl shadow-2xl relative overflow-hidden group">
                 {/* Decorative background glow */}
-                <div className="absolute -top-24 -left-24 w-48 h-48 bg-violet-600/10 blur-[100px] group-hover:bg-violet-600/20 transition-all duration-700" />
+                <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-600/10 blur-[100px] group-hover:bg-emerald-600/20 transition-all duration-700" />
 
                 <div className="relative space-y-6">
                     <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
-                        <Icon className="w-10 h-10 text-violet-400" />
+                        <Icon className="w-10 h-10 text-emerald-400" />
                     </div>
 
                     <div className="space-y-2">

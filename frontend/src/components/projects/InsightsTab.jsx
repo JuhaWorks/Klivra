@@ -80,7 +80,7 @@ const InsightsTab = ({ projectId }) => {
                 >
                     <p className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4">Deadline Status</p>
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-2xl text-violet-400">
+                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400">
                             <Clock className="w-6 h-6" />
                         </div>
                         <div>
@@ -101,7 +101,7 @@ const InsightsTab = ({ projectId }) => {
                 >
                     <p className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4">Activity Velocity</p>
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-blue-400">
+                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400">
                             <Activity className="w-6 h-6" />
                         </div>
                         <div>

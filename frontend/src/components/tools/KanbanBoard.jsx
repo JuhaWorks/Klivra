@@ -18,7 +18,7 @@ const TaskCard = React.memo(({ task, onDragStart }) => {
             <h3 className="font-semibold text-white">{task.title}</h3>
             {task.priority && (
                 <span className={`text-xs mt-2 inline-block px-2 py-1 rounded 
-                ${task.priority === 'High' || task.priority === 'Urgent' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                ${task.priority === 'High' || task.priority === 'Urgent' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                     {task.priority}
                 </span>
             )}
@@ -122,7 +122,7 @@ const KanbanBoard = ({ projectId }) => {
     if (isLoading) {
         return (
             <div className="flex h-[500px] items-center justify-center bg-gray-900 border border-gray-800 rounded-xl">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
             </div>
         );
     }

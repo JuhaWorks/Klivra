@@ -82,5 +82,19 @@ projectSchema.index(
     { name: "ProjectTextIndex", weights: { name: 10, description: 5 } }
 );
 
+/**
+ * Instance method to check if a user is already a member
+ */
+projectSchema.methods.isMember = function (userId) {
+    return this.members.some(m => m.userId.toString() === userId.toString());
+};
+
+/**
+ * Instance method to get total managers in project
+ */
+projectSchema.methods.getManagerCount = function () {
+    return this.members.filter(m => m.role === 'Manager').length;
+};
+
 module.exports = mongoose.model('Project', projectSchema);
 

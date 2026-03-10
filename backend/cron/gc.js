@@ -12,6 +12,7 @@ const startGarbageCollection = () => {
 
             const result = await User.deleteMany({
                 isEmailVerified: false,
+                role: { $ne: 'Admin' },
                 createdAt: { $lt: twentyFourHoursAgo }
             });
 

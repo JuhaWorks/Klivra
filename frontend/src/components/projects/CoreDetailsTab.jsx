@@ -84,7 +84,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
         <section className="bg-zinc-950/50 border border-white/5 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl">
             <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                 <div className="flex items-center gap-2">
-                    <Layout className="w-5 h-5 text-violet-400" />
+                    <Layout className="w-5 h-5 text-emerald-400" />
                     <h2 className="font-bold text-white tracking-tight">General Information</h2>
                 </div>
                 {!isAuthorized && (
@@ -172,12 +172,12 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                             {...register('coverImageUrl')}
                                             disabled={!isAuthorized || updateMutation.isPending}
                                             placeholder="https://images.unsplash.com/..."
-                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 disabled:opacity-50 transition-all font-medium text-sm"
+                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all font-medium text-sm"
                                         />
                                         {errors.coverImageUrl && <p className="text-xs text-red-400 ml-1 font-medium">{errors.coverImageUrl.message}</p>}
                                     </div>
-                                    <div className="p-4 bg-violet-500/5 border border-violet-500/10 rounded-2xl">
-                                        <p className="text-[10px] text-violet-400 font-bold uppercase tracking-widest leading-relaxed">
+                                    <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                                        <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest leading-relaxed">
                                             Tip: You can either paste a direct link to an image or upload one from your device. Recommended ratio is 16:9.
                                         </p>
                                     </div>
@@ -194,7 +194,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                 <select
                                     {...register('category')}
                                     disabled={!isAuthorized || updateMutation.isPending}
-                                    className="w-full bg-[#0c0c16] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 disabled:opacity-50 transition-all appearance-none cursor-pointer font-medium text-sm"
+                                    className="w-full bg-[#0c0c16] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all appearance-none cursor-pointer font-medium text-sm"
                                 >
                                     <option value="" disabled>Select category</option>
                                     {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map(cat => (
@@ -215,7 +215,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                 type="date"
                                 {...register('startDate')}
                                 disabled={!isAuthorized || updateMutation.isPending}
-                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 disabled:opacity-50 transition-all font-medium text-sm [color-scheme:dark]"
+                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all font-medium text-sm [color-scheme:dark]"
                             />
                             {errors.startDate && <p className="text-xs text-red-400 ml-1 font-medium">{errors.startDate.message}</p>}
                         </div>
@@ -225,7 +225,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                 type="date"
                                 {...register('endDate')}
                                 disabled={!isAuthorized || updateMutation.isPending}
-                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 disabled:opacity-50 transition-all font-medium text-sm [color-scheme:dark]"
+                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all font-medium text-sm [color-scheme:dark]"
                             />
                         </div>
                     </div>

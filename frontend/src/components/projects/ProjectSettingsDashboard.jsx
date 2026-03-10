@@ -116,10 +116,10 @@ const ProjectSettingsDashboard = () => {
                         <div>
                             <div className="flex items-center gap-3">
                                 <h1 className="text-4xl font-black text-white tracking-tighter truncate max-w-md">{project.name}</h1>
-                                <span className="px-3 py-1 rounded-full bg-violet-600/10 border border-violet-500/20 text-violet-400 text-[10px] font-black uppercase tracking-widest">{project.status}</span>
+                                <span className="px-3 py-1 rounded-full bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">{project.status}</span>
                             </div>
                             <p className="text-zinc-500 font-bold text-sm mt-1 flex items-center gap-2">
-                                <Settings className="w-4 h-4 text-violet-500/50" />
+                                <Settings className="w-4 h-4 text-emerald-500/50" />
                                 Workspace Management Ecosystem
                             </p>
                         </div>
@@ -159,7 +159,7 @@ const ProjectSettingsDashboard = () => {
                                     ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}
                                 `}
                         >
-                            <Icon className={`w-4 h-4 ${isActive ? (tab.color || 'text-violet-400') : ''}`} />
+                            <Icon className={`w-4 h-4 ${isActive ? (tab.color || 'text-emerald-400') : ''}`} />
                             {tab.label}
                             {isActive && (
                                 <motion.div

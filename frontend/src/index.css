@@ -1,91 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    /* bg-white */
-    --foreground: 240 10% 3.9%;
-    /* text-zinc-950 */
-    --card: 0 0% 100%;
-    /* bg-white */
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 243 75% 59%;
-    /* indigo-600 */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    /* zinc-100 */
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    /* zinc-200 */
-    --input: 240 5.9% 90%;
-    --ring: 243 75% 59%;
-    /* indigo-600 */
+    /* ── Semantic Colors: Light Mode (Muted Warm Sage) ── */
+    --bg-base: #d8d5cf;       /* Deep warm taupe — noticeably dim and calm */
+    --bg-surface: #e2ded8;    /* Slightly lighter for cards */
+    --bg-elevated: #ccc9c3;   /* Deeper for hover states */
+    --text-main: #1a1a1e;     /* Rich near-black — crisp contrast */
+    --text-muted: #6b6860;    /* Warm mid-tone for labels */
+    --border-subtle: rgba(50, 40, 30, 0.12);
+    --shadow-color: rgba(50, 40, 30, 0.08);
+
+    --background: 35 10% 84%;
+    --foreground: 240 5% 12%;
+
+    --primary: 152 76% 51%;
+    /* emerald-400 */
+    --primary-foreground: 0 0% 0%;
+
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 90%;
+
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 152 76% 51%;
+
+    /* Klivra Premium Tokens */
+    --k-accent: #34d399;
+    /* Green */
+    --k-accent-soft: rgba(52, 211, 153, 0.1);
+    --k-surface: #0a0a0c;
+    --k-border: rgba(255, 255, 255, 0.08);
+    /* Silver outline */
+    --k-text-dim: #9ca3af;
+    /* Silver text */
+
+    /* Dynamic Theme Overrides (Default: Sage Emerald) */
+    --theme-400: 78 205 163;  /* Softer sage-teal #4ecda3 */
+    --theme-500: 45 179 138;  /* Muted emerald #2db38a */
+    --theme-600: 22 149 110;  /* Deeper forest #16956e */
+    --theme-900: 10 78 59;    /* Very dark green #0a4e3b */
   }
 
+  /* --- Alternate Themes --- */
+
+  /* Soft Lavender */
+  .theme-neon-purple {
+    --theme-400: 188 170 255; /* Muted lavender #bcaaff */
+    --theme-500: 155 135 245; /* #9b87f5 */
+    --theme-600: 120 95 220;  /* #785fdc */
+    --theme-900: 72 42 149;   /* #482a95 */
+  }
+
+  /* Warm Amber */
+  .theme-cyber-yellow {
+    --theme-400: 255 213 128; /* Warm honey #ffd580 */
+    --theme-500: 245 190 80;  /* Muted amber #f5be50 */
+    --theme-600: 210 145 40;  /* Burnished gold #d29128 */
+    --theme-900: 120 75 15;   /* #784b0f */
+  }
+
+  /* Dusty Rose */
+  .theme-crimson-red {
+    --theme-400: 255 152 162; /* Soft coral rose #ff98a2 */
+    --theme-500: 240 100 115; /* Muted rose #f06473 */
+    --theme-600: 200 60 80;   /* Deeper rose #c83c50 */
+    --theme-900: 120 25 40;   /* #781928 */
+  }
+
+  /* --- Display Modes --- */
   .dark {
-    --background: 240 10% 3.9%;
-    /* zinc-950 */
-    --foreground: 0 0% 98%;
-    /* white */
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 243 75% 59%;
-    /* indigo-600 */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
-    /* zinc-800 */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    /* zinc-400 */
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    /* zinc-800 */
-    --input: 240 3.7% 15.9%;
-    --ring: 243 75% 59%;
+    /* ── Semantic Colors: Dark Mode (Deep Charcoal) ── */
+    --bg-base: #0e0f14;         /* Deep charcoal, slight blue tint */
+    --bg-surface: #13151c;      /* Card surface, a step lighter */
+    --bg-elevated: #1a1d27;     /* Elevated modals/dropdowns */
+    --text-main: #dde1e8;       /* Soft warm-white text */
+    --text-muted: #7a828f;      /* Matching muted slate */
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --shadow-color: rgba(0, 0, 0, 0.4);
+
+    --background: 223 16% 7%;
+    --foreground: 0 0% 87%;
+  }
+
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-main);
+    min-height: 100vh;
+    font-family: 'Osiris', 'Orbitron', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
-/* ── Base Reset ─────────────────────────────────────────── */
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer components {
+  .serif {
+    font-family: 'Osiris', 'Orbitron', serif;
+  }
 
-html {
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  .k-card {
+    @apply bg-[var(--bg-surface)] border border-[var(--border-subtle)] backdrop-blur-md rounded-2xl transition-all duration-300;
+  }
 
-body {
-  min-height: 100vh;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  .k-card-hover {
+    @apply hover:border-[rgba(var(--theme-500),0.2)] hover:shadow-lg hover:-translate-y-0.5 shadow-sm;
+  }
+
+  .k-input {
+    @apply w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-[rgba(var(--theme-500),0.4)] focus:ring-4 focus:ring-[rgba(var(--theme-500),0.1)] placeholder:text-[var(--text-muted)];
+  }
+
+  .k-button-primary {
+    @apply bg-gradient-to-br from-emerald-500 to-emerald-600 text-black font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 -tracking-wide active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .k-glass {
+    @apply bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-subtle)];
+  }
 }
 
 /* ── Smooth Scrollbar ───────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -93,10 +148,79 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-subtle);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--theme-500), 0.4);
+}
+
+/* ══════════════════════════════════════════════════
+   🌞 Global Light Mode Overrides
+   These remap hardcoded dark-mode Tailwind classes to
+   cream-friendly equivalents when .dark is NOT active.
+   ══════════════════════════════════════════════════ */
+html:not(.dark) {
+  /* Text overrides: white & light grays → readable charcoal */
+  --tw-white-override: #1c1c20;
+
+  /* Card / panel backgrounds */
+  .bg-black\/50,
+  .bg-black\/40,
+  .bg-black\/60,
+  [class*="bg-zinc-950"],
+  [class*="bg-zinc-900"],
+  [class*="bg-\[#0a0a12\]"],
+  [class*="bg-\[#0a0a0c\]"],
+  [class*="bg-\[#12121e\]"],
+  [class*="bg-\[#13151c\]"],
+  [class*="bg-\[#0e0f14\]"] {
+    background-color: var(--bg-surface) !important;
+  }
+
+  /* Force white text → dark charcoal */
+  .text-white {
+    color: #1c1c20 !important;
+  }
+
+  /* Light grays (invisible on cream bg) → visible charcoal */
+  .text-gray-100,
+  .text-gray-200 {
+    color: #2d2d33 !important;
+  }
+
+  .text-gray-300 {
+    color: #3c3c45 !important;
+  }
+
+  .text-gray-400 {
+    color: #555560 !important;
+  }
+
+  /* Zinc variants (used in Projects page) */
+  .text-zinc-300 {
+    color: #3c3c45 !important;
+  }
+  .text-zinc-400 {
+    color: #555560 !important;
+  }
+  .text-zinc-500 {
+    color: #6e6e7a !important;
+  }
+
+  /* Borders: white-based → warm subtle border */
+  [class*="border-white\/"] {
+    border-color: rgba(60, 50, 40, 0.1) !important;
+  }
+
+  /* Gradient title text (e.g. from-gray-400 to-emerald-400) */
+  .from-gray-400 {
+    --tw-gradient-from: #aaa8a4 !important;
+  }
+
+  /* Active indicator ring on dark backgrounds */
+  .ring-\[#0a0a12\] {
+    --tw-ring-color: var(--bg-surface) !important;
+  }
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io } from 'socket.io-client';
+import { useAuthStore } from './useAuthStore';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 

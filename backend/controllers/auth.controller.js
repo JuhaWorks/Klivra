@@ -1,7 +1,8 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const sendEmail = require('../utils/sendEmail');
+const { logSecurityEvent } = require('../utils/activityLogger');
+const { getFrontendUrl, formatUserResponse, sendStandardEmail, getCookieOptions } = require('../utils/helpers');
 
 // Generate JWT Access Token (Short-lived)
 const generateAccessToken = (id) => {
@@ -10,7 +11,6 @@ const generateAccessToken = (id) => {
 
 // Generate JWT Refresh Token (Long-lived)
 const generateRefreshToken = (id) => {
-    // In a production app, use a separate JWT_REFRESH_SECRET. We stick to JWT_SECRET as fallback
     const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
     return jwt.sign({ id }, secret, { expiresIn: '7d' });
 };
@@ -20,38 +20,15 @@ const sendTokenResponse = (user, statusCode, res, rememberMe = false) => {
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
-    const isProd = process.env.NODE_ENV === 'production';
-    // sameSite: 'none' requires Secure=true in all modern browsers. Since local dev
-    // is HTTP (Secure=false), it would reject the cookie entirely.
-    // Thanks to your Vite proxy, dev requests are same-site anyway, so 'lax' works perfectly.
-    const options = {
-        httpOnly: true, // Crucial: Cookie cannot be accessed via client-side scripts
-        secure: isProd, // HTTPS only in production
-        sameSite: isProd ? 'none' : 'lax', // 'none' for cross-site prod, 'lax' for local proxy
-    };
-
-    // If rememberMe is true, cookie lasts 30 days. Otherwise, it's a session cookie defaults to browser session length.
-    if (rememberMe) {
-        options.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    }
-
     res
         .status(statusCode)
-        .cookie('refreshToken', refreshToken, options)
+        .cookie('refreshToken', refreshToken, getCookieOptions(rememberMe))
         .json({
             status: 'success',
             accessToken,
-            data: {
-                _id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                avatar: user.avatar,
-                isEmailVerified: user.isEmailVerified
-            }
+            data: formatUserResponse(user)
         });
 };
-
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -75,24 +52,16 @@ const registerUser = async (req, res, next) => {
                 userExists.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
                 await userExists.save();
 
-                const isProd = process.env.NODE_ENV === 'production';
-                const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
-
-                const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-
-                const message = `
-                    <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
-                        <h2 style="color: #060612;">Welcome back to Klivra!</h2>
-                        <p style="color: #44445a; line-height: 1.6;">It looks like you previously signed up but didn't verify your account. Please verify your email address to access your workspace.</p>
-                        <a href="${verifyUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Verify Account</a>
-                    </div>
-                `;
+                const verifyUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`;
 
                 try {
-                    await sendEmail({
+                    await sendStandardEmail({
                         to: userExists.email,
                         subject: 'Verify your Klivra account',
-                        html: message
+                        title: 'Welcome back to Klivra!',
+                        body: 'It looks like you previously signed up but didn\'t verify your account. Please verify your email address to access your workspace.',
+                        ctaText: 'Verify Account',
+                        ctaUrl: verifyUrl
                     });
                 } catch (emailErr) {
                     console.error(`Email resend failed for ${userExists.email}:`, emailErr.message);
@@ -101,14 +70,7 @@ const registerUser = async (req, res, next) => {
                 return res.status(200).json({
                     status: 'success',
                     message: 'Verification email resent. Please check your inbox.',
-                    data: {
-                        _id: userExists.id,
-                        name: userExists.name,
-                        email: userExists.email,
-                        role: userExists.role,
-                        avatar: userExists.avatar,
-                        isEmailVerified: userExists.isEmailVerified
-                    }
+                    data: formatUserResponse(userExists)
                 });
             }
         }
@@ -130,25 +92,17 @@ const registerUser = async (req, res, next) => {
             user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
             await user.save();
 
-            const isProd = process.env.NODE_ENV === 'production';
-            const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
-
-            const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-
-            const message = `
-                <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
-                    <h2 style="color: #060612;">Welcome to Klivra!</h2>
-                    <p style="color: #44445a; line-height: 1.6;">Thanks for signing up. Please verify your email address to access your workspace.</p>
-                    <a href="${verifyUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Verify Account</a>
-                    <p style="color: #8888aa; font-size: 13px; margin-top: 25px;">If you did not request this, please ignore this email.</p>
-                </div>
-            `;
+            const verifyUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`;
 
             try {
-                await sendEmail({
+                await sendStandardEmail({
                     to: user.email,
                     subject: 'Verify your Klivra account',
-                    html: message
+                    title: 'Welcome to Klivra!',
+                    body: 'Thanks for signing up. Please verify your email address to access your workspace.',
+                    ctaText: 'Verify Account',
+                    ctaUrl: verifyUrl,
+                    footer: 'If you did not request this, please ignore this email.'
                 });
             } catch (emailErr) {
                 console.error(`Registration email failed for ${user.email}:`, emailErr.message);
@@ -157,14 +111,7 @@ const registerUser = async (req, res, next) => {
             res.status(201).json({
                 status: 'success',
                 message: 'Registration successful. Please verify your email.',
-                data: {
-                    _id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    avatar: user.avatar,
-                    isEmailVerified: user.isEmailVerified
-                }
+                data: formatUserResponse(user)
             });
         } else {
             res.status(400);
@@ -209,6 +156,11 @@ const loginUser = async (req, res, next) => {
         if (user && (await user.matchPassword(password))) {
 
             if (user.isBanned) {
+                await logSecurityEvent(user._id, 'FAILED_LOGIN', {
+                    email,
+                    reason: 'Account Banned',
+                    ipAddress: req.ip
+                });
                 res.status(403);
                 return next(new Error('Your account has been suspended for violating terms of service.'));
             }
@@ -237,6 +189,11 @@ const loginUser = async (req, res, next) => {
 
             sendTokenResponse(user, 200, res, rememberMe);
         } else {
+            await logSecurityEvent(null, 'FAILED_LOGIN', {
+                email,
+                reason: 'Invalid Credentials',
+                ipAddress: req.ip
+            });
             res.status(401);
             throw new Error('Invalid email or password');
         }
@@ -250,13 +207,9 @@ const loginUser = async (req, res, next) => {
 // @access  Public
 const logoutUser = async (req, res, next) => {
     try {
-        const isProd = process.env.NODE_ENV === 'production';
-        res.cookie('refreshToken', 'none', {
-            expires: new Date(Date.now() + 10 * 1000), // Expires in 10 seconds
-            httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? 'none' : 'lax'
-        });
+        const options = getCookieOptions();
+        options.expires = new Date(Date.now() + 10 * 1000); // Expires in 10 seconds
+        res.cookie('refreshToken', 'none', options);
 
         // Set status to Offline on logout
         if (req.user) {
@@ -293,8 +246,7 @@ const refreshTokenUser = async (req, res, next) => {
         // Ensure user actually exists and is active
         const user = await User.findById(decoded.id).select('-password');
         if (!user || user.isActive === false) {
-            const isProd = process.env.NODE_ENV === 'production';
-            res.clearCookie('refreshToken', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
+            res.clearCookie('refreshToken', getCookieOptions());
             res.status(401);
             return next(new Error('Not authorized, user not found or deactivated'));
         }
@@ -307,8 +259,7 @@ const refreshTokenUser = async (req, res, next) => {
             accessToken
         });
     } catch (error) {
-        const isProd = process.env.NODE_ENV === 'production';
-        res.clearCookie('refreshToken', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
+        res.clearCookie('refreshToken', getCookieOptions());
         res.status(401);
         next(new Error('Not authorized, refresh token failed/expired'));
     }
@@ -332,19 +283,11 @@ const oauthCallback = async (req, res) => {
     user.status = 'Online';
     await user.save();
 
-    const isProd = process.env.NODE_ENV === 'production';
-    const options = {
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? 'none' : 'lax',
-    };
-
+    const options = getCookieOptions(true);
+    options.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     res.cookie('refreshToken', refreshToken, options);
 
-    const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
-
-    res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
+    res.redirect(`${getFrontendUrl()}/oauth/callback?token=${accessToken}`);
 };
 
 // @desc    Verify email address
@@ -451,24 +394,16 @@ const resendVerification = async (req, res, next) => {
         user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
         await user.save();
 
-        const isProd = process.env.NODE_ENV === 'production';
-        const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
-
-        const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-
-        const message = `
-            <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
-                <h2 style="color: #060612;">Verify it's you</h2>
-                <p style="color: #44445a; line-height: 1.6;">You requested a new verification link. Please click below to verify your email address.</p>
-                <a href="${verifyUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Verify Account</a>
-            </div>
-        `;
+        const verifyUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`;
 
         console.log(`[DEBUG] Attempting to resend verification email to: ${user.email}`);
-        await sendEmail({
+        await sendStandardEmail({
             to: user.email,
             subject: 'Verify your Klivra account',
-            html: message
+            title: 'Verify it\'s you',
+            body: 'You requested a new verification link. Please click below to verify your email address.',
+            ctaText: 'Verify Account',
+            ctaUrl: verifyUrl
         });
         console.log(`[DEBUG] Verification email resent successfully to: ${user.email}`);
 

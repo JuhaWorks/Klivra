@@ -119,7 +119,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                             leaveFrom="opacity-100 scale-100 translate-y-0"
                             leaveTo="opacity-0 scale-95 translate-y-4"
                         >
-                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[#08081e] border border-white/[0.08] p-8 text-left align-middle shadow-[0_32px_100px_rgba(0,0,0,0.6)] shadow-violet-500/10 transition-all text-[#eeeeff]">
+                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[#08081e] border border-white/[0.08] p-8 text-left align-middle shadow-[0_32px_100px_rgba(0,0,0,0.6)] shadow-emerald-500/10 transition-all text-[#eeeeff]">
                                 {step !== 0 && step !== 3 && (
                                     <button
                                         onClick={onClose}
@@ -132,7 +132,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                 {/* Step 0: Loading */}
                                 {step === 0 && (
                                     <div className="flex flex-col items-center justify-center py-6">
-                                        <div className="w-12 h-12 rounded-full border-4 border-violet-500/30 border-t-violet-500 animate-spin mb-4"></div>
+                                        <div className="w-12 h-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-500 animate-spin mb-4"></div>
                                         <p className="text-gray-400 font-medium">Sending verification code...</p>
                                     </div>
                                 )}
@@ -140,8 +140,8 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                 {/* Step 1: OTP Entry */}
                                 {step === 1 && (
                                     <form onSubmit={handleOtpSubmit} className="flex flex-col items-center animate-in fade-in slide-in-from-right-4 duration-300">
-                                        <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-5">
-                                            <ShieldCheck className="w-7 h-7 text-violet-400" />
+                                        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5">
+                                            <ShieldCheck className="w-7 h-7 text-emerald-400" />
                                         </div>
                                         <Dialog.Title as="h3" className="text-xl font-bold text-white mb-2">
                                             Verify Identity
@@ -160,7 +160,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                                     value={digit}
                                                     onChange={(e) => handleOtpChange(e, index)}
                                                     onKeyDown={(e) => handleOtpKeyDown(e, index)}
-                                                    className="w-12 h-14 text-center text-xl font-bold bg-white/[0.03] border border-white/[0.1] rounded-xl text-white focus:bg-white/[0.05] focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-all shadow-inner shadow-black/20"
+                                                    className="w-12 h-14 text-center text-xl font-bold bg-white/[0.03] border border-white/[0.1] rounded-xl text-white focus:bg-white/[0.05] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all shadow-inner shadow-black/20"
                                                 />
                                             ))}
                                         </div>
@@ -168,7 +168,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                         <button
                                             type="submit"
                                             disabled={otp.join('').length !== 6}
-                                            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_30px_rgba(123,82,255,0.25)] active:scale-[0.98]"
+                                            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_30px_rgba(123,82,255,0.25)] active:scale-[0.98]"
                                         >
                                             Continue <ArrowRight className="w-4 h-4" />
                                         </button>
@@ -178,8 +178,8 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                 {/* Step 2: New Email Entry */}
                                 {step === 2 && (
                                     <form onSubmit={handleFinalSubmit} className="flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
-                                        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
-                                            <Mail className="w-7 h-7 text-blue-400" />
+                                        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-5">
+                                            <Mail className="w-7 h-7 text-emerald-400" />
                                         </div>
                                         <Dialog.Title as="h3" className="text-xl font-bold text-white mb-2 text-center">
                                             New Email Address
@@ -197,14 +197,14 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                                 value={newEmail}
                                                 onChange={(e) => setNewEmail(e.target.value)}
                                                 placeholder="new@example.com"
-                                                className="w-full pl-4 pr-4 py-3 bg-white/[0.03] border border-white/[0.1] rounded-xl text-white focus:bg-white/[0.05] focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-all"
+                                                className="w-full pl-4 pr-4 py-3 bg-white/[0.03] border border-white/[0.1] rounded-xl text-white focus:bg-white/[0.05] focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
                                             />
                                         </div>
 
                                         <button
                                             type="submit"
                                             disabled={isSubmitting || !newEmail}
-                                            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_30px_rgba(123,82,255,0.25)] active:scale-[0.98]"
+                                            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_30px_rgba(123,82,255,0.25)] active:scale-[0.98]"
                                         >
                                             {isSubmitting ? (
                                                 <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />

@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const dns = require('dns');
 const mongoSanitize = require('express-mongo-sanitize');
 const morganMiddleware = require('./middlewares/morgan.middleware');
+const { securityMiddleware } = require('./middlewares/security.middleware');
 const logger = require('./utils/logger');
 const session = require('express-session');
 const passport = require('./config/passport');
@@ -101,6 +102,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Global Security & Maintenance Check
+app.use(securityMiddleware);
+
 // Diagnostic Middleware for Auth
 app.use((req, res, next) => {
   if (req.originalUrl.includes('/api/auth')) {
@@ -153,18 +157,7 @@ app.use((req, res, next) => {
   next(new Error(`Not Found - ${req.originalUrl}`));
 });
 
-app.use((err, req, res, next) => {
-  if (err.status !== 404) {
-    logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-  }
-
-  res.status(res.statusCode === 200 ? 500 : res.statusCode).json({
-    status: 'error',
-    message: err.message,
-    requiresReactivation: err.requiresReactivation || false,
-    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
-  });
-});
+app.use(require('./middlewares/error.middleware'));
 
 // 8. Server Initialization
 const PORT = process.env.PORT || 5000;
