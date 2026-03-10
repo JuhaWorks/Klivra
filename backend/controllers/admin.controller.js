@@ -1,8 +1,8 @@
 const User = require('../models/user.model');
 const Project = require('../models/project.model');
-const Task = require('../models/Task.model');
+const Task = require('../models/task.model');
 const { logSecurityEvent, logActivity } = require('../utils/activityLogger');
-const SystemConfig = require('../models/SystemConfig.model');
+const SystemConfig = require('../models/systemConfig.model');
 
 // @desc    Get all users with pagination and search
 // @route   GET /api/admin/users

@@ -1,5 +1,5 @@
 const Project = require('../models/project.model');
-const Task = require('../models/Task.model');
+const Task = require('../models/task.model');
 const mongoose = require('mongoose');
 
 // @desc    Get project insights and analytics

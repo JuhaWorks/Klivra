@@ -1,4 +1,4 @@
-const SystemConfig = require('../models/SystemConfig.model');
+const SystemConfig = require('../models/systemConfig.model');
 
 const securityMiddleware = async (req, res, next) => {
     try {
