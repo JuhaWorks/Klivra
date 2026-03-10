@@ -18,7 +18,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-[#0a0a12]/80 backdrop-blur-sm transition-opacity"
+                className="fixed inset-0 bg-rich-black/80 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             ></div>
 

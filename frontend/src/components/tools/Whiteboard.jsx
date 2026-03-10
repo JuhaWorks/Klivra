@@ -155,7 +155,7 @@ const Whiteboard = ({ roomId }) => {
     ];
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a12] overflow-hidden relative">
+        <div className="flex flex-col h-full bg-rich-black overflow-hidden relative">
             {/* Floating Toolbar */}
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-[#12121e]/90 backdrop-blur-xl shadow-2xl shadow-black/40 rounded-2xl px-5 py-3 border border-white/[0.06] flex items-center gap-4">
                 {/* Tools */}

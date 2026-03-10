@@ -163,10 +163,19 @@ export default function Profile() {
             <Section title="Profile Picture">
                 <div className="flex items-center gap-4">
                     <div className="relative flex-shrink-0">
+<<<<<<< Updated upstream
                         <img src={preview || optimizeAvatar(user?.avatar)} alt={user?.name}
                             className="w-16 h-16 rounded-xl border border-white/[0.08] object-cover" />
                         <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0c0c14]"
                             style={{ background: STATUS_COLOR[user?.status] || STATUS_COLOR.Online }} />
+=======
+                        <img
+                            src={avatarPreview || getOptimizedAvatar(user?.avatar)}
+                            alt={user?.name}
+                            className="w-24 h-24 rounded-2xl border-2 border-white/[0.08] object-cover shadow-xl"
+                        />
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-rich-black ${STATUS_DOT[user?.status] || 'bg-emerald-500'}`} />
+>>>>>>> Stashed changes
                     </div>
                     <div>
                         <p className="text-sm font-semibold text-zinc-100">{user?.name || 'User'}</p>

@@ -47,7 +47,11 @@ const SidebarComponent = ({ isOpen, onClose }) => {
             )}
 
             <aside className={`
+<<<<<<< Updated upstream:frontend/src/components/layout/Sidebar.jsx
                 fixed top-0 left-0 h-full z-50 w-[260px] bg-[var(--bg-surface)] border-r border-[var(--border-subtle)]
+=======
+                fixed top-0 left-0 h-full z-50 w-[260px] bg-rich-black border-r border-white/[0.06]
+>>>>>>> Stashed changes:frontend/src/components/Sidebar.jsx
                 flex flex-col transition-transform duration-300 ease-in-out
                 lg:relative lg:translate-x-0
                 ${isOpen ? 'translate-x-0' : '-translate-x-full'}

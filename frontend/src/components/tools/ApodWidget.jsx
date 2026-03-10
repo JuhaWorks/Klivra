@@ -53,7 +53,7 @@ const ApodWidget = () => {
                             loading="eager"
                             onError={(e) => { e.target.src = FALLBACK.url; }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a12] via-transparent to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-rich-black via-transparent to-transparent" />
                         <div className="absolute bottom-0 left-0 right-0 p-5">
                             <p className="text-[13px] font-medium text-gray-200 leading-relaxed line-clamp-2" title={display.explanation}>
                                 "{display.explanation}"

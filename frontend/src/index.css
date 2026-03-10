@@ -6,6 +6,7 @@
 
 @layer base {
   :root {
+<<<<<<< Updated upstream
     /* ── Semantic Colors: Light Mode (Muted Warm Sage) ── */
     --bg-base: #d8d5cf;       /* Deep warm taupe — noticeably dim and calm */
     --bg-surface: #e2ded8;    /* Slightly lighter for cards */
@@ -44,6 +45,35 @@
     --theme-500: 45 179 138;  /* Muted emerald #2db38a */
     --theme-600: 22 149 110;  /* Deeper forest #16956e */
     --theme-900: 10 78 59;    /* Very dark green #0a4e3b */
+=======
+    --background: 0 0% 100%;
+    /* bg-white */
+    --foreground: 240 10% 3.9%;
+    /* text-zinc-950 */
+    --card: 0 0% 100%;
+    /* bg-white */
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 243 75% 59%;
+    /* indigo-600 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    /* zinc-100 */
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    /* zinc-200 */
+    --input: 240 5.9% 90%;
+    --ring: 243 75% 59%;
+    /* indigo-600 */
+    --rich-black: 240 10% 3.9%; /* This is #0a0a12 equivalent in HSL */
+>>>>>>> Stashed changes
   }
 
   /* --- Alternate Themes --- */
@@ -74,6 +104,7 @@
 
   /* --- Display Modes --- */
   .dark {
+<<<<<<< Updated upstream
     /* ── Semantic Colors: Dark Mode (Deep Charcoal) ── */
     --bg-base: #0e0f14;         /* Deep charcoal, slight blue tint */
     --bg-surface: #13151c;      /* Card surface, a step lighter */
@@ -108,6 +139,34 @@
     min-height: 100vh;
     font-family: 'Osiris', 'Orbitron', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
+=======
+    --background: 240 10% 3.9%;
+    /* zinc-950 */
+    --foreground: 0 0% 98%;
+    /* white */
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 243 75% 59%;
+    /* indigo-600 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    /* zinc-800 */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    /* zinc-400 */
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    /* zinc-800 */
+    --input: 240 3.7% 15.9%;
+    --ring: 243 75% 59%;
+    --rich-black: 250 15% 4%; /* Fine-tuned for #0a0a12 */
+>>>>>>> Stashed changes
   }
 }
 

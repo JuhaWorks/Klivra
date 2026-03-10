@@ -30,7 +30,11 @@ const TopBar = ({ onMenuToggle }) => {
     }, []);
 
     return (
+<<<<<<< Updated upstream:frontend/src/components/layout/TopBar.jsx
         <header className="h-14 bg-[var(--bg-surface)]/90 backdrop-blur-xl border-b border-[var(--border-subtle)] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 sticky top-0 z-30">
+=======
+        <header className="h-14 bg-rich-black/80 backdrop-blur-xl border-b border-white/[0.06] flex items-center justify-between px-4 sm:px-6 flex-shrink-0 sticky top-0 z-30">
+>>>>>>> Stashed changes:frontend/src/components/TopBar.jsx
             <div className="flex items-center gap-3 flex-1">
                 <button onClick={onMenuToggle} className="lg:hidden p-2 text-gray-500 hover:text-white hover:bg-white/[0.04] rounded-xl transition-colors" aria-label="Toggle sidebar">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -44,7 +48,11 @@ const TopBar = ({ onMenuToggle }) => {
             <div className="flex items-center gap-1.5">
                 <button className="relative p-2 text-gray-500 hover:text-white hover:bg-white/[0.04] rounded-xl transition-colors" aria-label="Notifications">
                     <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+<<<<<<< Updated upstream:frontend/src/components/layout/TopBar.jsx
                     <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-500 rounded-full ring-2 ring-[#0a0a12]" />
+=======
+                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-violet-500 rounded-full ring-2 ring-rich-black" />
+>>>>>>> Stashed changes:frontend/src/components/TopBar.jsx
                 </button>
                 <div className="w-px h-5 bg-white/[0.06] mx-1 hidden sm:block" />
                 <div className="relative" ref={dropdownRef}>

@@ -26,7 +26,7 @@ const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
 
 // Sleek, zero-lag loading fallback for code-split chunks
 const PageLoader = () => (
-  <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
+  <div className="min-h-screen bg-rich-black flex items-center justify-center">
     <div className="relative flex items-center justify-center">
       <div className="absolute w-12 h-12 border-4 border-emerald-500/20 rounded-full animate-ping shadow-[0_0_15px_rgba(16,185,129,0.3)]"></div>
       <div className="w-10 h-10 border-4 border-transparent border-t-emerald-500 border-b-emerald-600 rounded-full animate-spin"></div>

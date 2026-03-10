@@ -10,7 +10,11 @@ const Layout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
+<<<<<<< Updated upstream:frontend/src/components/layout/Layout.jsx
         <div className="flex h-screen bg-[var(--bg-base)] text-[var(--text-main)] overflow-hidden transition-colors duration-300">
+=======
+        <div className="flex h-screen bg-rich-black text-white overflow-hidden">
+>>>>>>> Stashed changes:frontend/src/components/Layout.jsx
             {/* Sidebar */}
             <SidebarComponent isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

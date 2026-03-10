@@ -59,6 +59,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        'rich-black': "hsl(var(--rich-black))",
         // Static Brand Mapping
         brand: {
           50: '#eef2ff',
