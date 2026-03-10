@@ -39,13 +39,19 @@ const securityMiddleware = async (req, res, next) => {
                     try {
                         const token = authHeader.split(' ')[1];
                         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                        
                         const user = await User.findById(decoded.id).select('role').lean();
                         if (user && user.role === 'Admin') {
                             isAdmin = true;
+                            // console.log(`[MAINTENANCE BYPASS] Admin identified via token: ${user._id}`);
+                        } else {
+                           // console.log(`[MAINTENANCE BLOCK] User identified but is not Admin. Role: ${user?.role}`);
                         }
                     } catch (err) {
-                        // Token invalid/expired - ignore, let protect handle it later
+                        console.log(`[MAINTENANCE BYPASS FAIL] Token verification error: ${err.message}`);
                     }
+                } else {
+                    // console.log(`[MAINTENANCE BLOCK] No Bearer token found in header: ${req.originalUrl}`);
                 }
             }
 
