@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSocketSync } from '../../hooks/useSocketSync';
 
 // URL resolved once at module level (no socket yet — that happens in useEffect)
-const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://klivra-backend.onrender.com' : 'http://localhost:5000');
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://syncforge-io.onrender.com';
 
 // Extracted into a pure memoized component to prevent re-rendering unaffected cards
 const TaskCard = React.memo(({ task, onDragStart }) => {

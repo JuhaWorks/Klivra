@@ -38,7 +38,7 @@ const Whiteboard = ({ roomId }) => {
 
     // Socket & Canvas initialization
     useEffect(() => {
-        const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://klivra-backend.onrender.com' : 'http://localhost:5000');
+        const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://syncforge-io.onrender.com';
         const socket = io(SOCKET_URL);
         socketRef.current = socket;
 

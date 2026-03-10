@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://klivra-backend.onrender.com' : 'http://localhost:5000');
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://syncforge-io.onrender.com';
 
 export const useSocketSync = (projectId) => {
     const queryClient = useQueryClient();

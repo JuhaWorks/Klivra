@@ -9,17 +9,12 @@ import axios from 'axios';
 // ENVIRONMENT TOGGLE (Switch between Local and Prod)
 // ==========================================
 
-// --- CASE A: FOR LOCALHOST DEVELOPMENT ---
-let BASE_URL = 'http://localhost:5000/api';
+// Production: relative path — Vercel rewrites /api → Render backend (same-origin, cookies work)
+let BASE_URL = '/api';
 
-// --- CASE B: FOR LIVE SERVER (VERCEL/RENDER) ---
-// let BASE_URL = '/api'; 
-
-// --- AUTOMATIC DETECTION (BACKUP) ---
+// Override via env var if explicitly set (e.g. for staging environments)
 if (import.meta.env.VITE_API_URL) {
     BASE_URL = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`;
-} else if (!import.meta.env.DEV && BASE_URL === 'http://localhost:5000/api') {
-    BASE_URL = '/api'; // Fallback to relative path in production if not manually set
 }
 
 // Create a configured Axios instance

@@ -13,7 +13,7 @@ if (import.meta.env.VITE_SENTRY_DSN) {
       Sentry.replayIntegration(),
     ],
     tracesSampleRate: 1.0,
-    tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
+    tracePropagationTargets: [/^https:\/\/syncforge-io\.onrender\.com/],
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
   });
