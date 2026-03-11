@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import Button from '../ui/Button';
-import Input from '../components/ui/Input';
+import Input from '../ui/Input';
 import Card from '../ui/Card';
 
 /**
