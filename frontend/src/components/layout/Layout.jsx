@@ -28,7 +28,6 @@ class GlobalErrorBoundary extends React.Component {
                     <button 
                         onClick={() => this.setState({ hasError: false })}
                         className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold hover:bg-white/10 active:scale-95 transition-all outline-none focus:ring-4 focus:ring-white/20"
-                        data-agent-intent="soft-reset-error-boundary"
                     >
                         Execute Soft Reset
                     </button>
@@ -41,7 +40,7 @@ class GlobalErrorBoundary extends React.Component {
 
 // ── Vanguard 2026: Zero-CLS Core Skeleton ──
 const PageSkeleton = () => (
-    <div className="w-full h-full min-h-[calc(100vh-140px)] rounded-[3rem] border border-[oklch(100%_0_0/0.05)] bg-[oklch(100%_0_0/0.01)] animate-pulse shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] flex items-center justify-center p-10" aria-hidden="true" data-agent-intent="loading-view">
+    <div className="w-full h-full min-height-[calc(100vh-140px)] rounded-[3rem] border border-[oklch(100%_0_0/0.05)] bg-[oklch(100%_0_0/0.01)] animate-pulse shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] flex items-center justify-center p-10" aria-hidden="true">
         <div className="w-full h-full rounded-[2rem] bg-[oklch(100%_0_0/0.02)] border border-[oklch(100%_0_0/0.03)]" />
     </div>
 );
@@ -60,24 +59,9 @@ const Layout = () => {
     const isFocusMode = location.pathname.includes('/tasks') || location.pathname.includes('/whiteboard');
     const layoutVibe = isFocusMode ? 'bg-[#050508]' : 'bg-[#09090b]';
 
-    // ── Vanguard 2026: Preemptive Resource Loading & JSON-LD ──
     useEffect(() => {
         // Preload core aesthetic assets immediately
         preload('https://grainy-gradients.vercel.app/noise.svg', { as: 'image', fetchpriority: 'low' });
-        
-        // Dynamic JSON-LD injection for Machine-to-Machine (M2M) SEO/MX
-        const script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.text = JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            "name": "Klivra 2026",
-            "applicationCategory": "BusinessApplication",
-            "operatingSystem": "Web",
-            "interactionCount": "UserAction:ViewPage"
-        });
-        document.head.appendChild(script);
-        return () => { document.head.removeChild(script); };
     }, [location.pathname]);
 
     // Intent Handshake for routing transitions
@@ -86,7 +70,7 @@ const Layout = () => {
     };
 
     return (
-        <div className={`flex h-screen ${layoutVibe} text-white selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`} aria-description="Main application viewport and operational environment">
+        <div className={`flex h-screen ${layoutVibe} text-white selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`}>
             
             {/* Global Anti-grid Grain Layer for Tactile Maximalism */}
             <div className="fixed inset-0 pointer-events-none opacity-[0.04] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay z-[100]" aria-hidden="true" />
@@ -101,7 +85,6 @@ const Layout = () => {
             <SidebarComponent 
                 isOpen={isSidebarExpanded} 
                 onClose={() => setIsSidebarExpanded(false)} 
-                data-agent-intent="primary-navigation"
             />
 
             {/* Main Operational Area */}

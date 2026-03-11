@@ -12,7 +12,7 @@ const MAGNETIC_SPRING_CONFIG = { damping: 15, stiffness: 150, mass: 0.1 };
 
 /**
  * Modern 2026 Vanguard Button
- * Liquid Glassmorphism, Magnetic Haptic Physics, Agentic MX
+ * Liquid Glassmorphism, Magnetic Haptic Physics
  */
 const Button = forwardRef(({
     children,
@@ -28,8 +28,6 @@ const Button = forwardRef(({
     fullWidth = false,
     onClick,
     type = 'button',
-    'data-agent-intent': agentIntent,
-    'aria-description': ariaDescription,
     hapticIntensity = 'light', // 'light' | 'heavy'
     ...props
 }, ref) => {
@@ -112,8 +110,6 @@ const Button = forwardRef(({
             whileHover={isDisabled ? {} : { scale: 1.02, rotateX: 2, perspective: 1000 }}
             whileTap={isDisabled ? {} : { scale: 0.96, rotateX: -2, z: -10 }}
             transition={LIQUID_SPRING}
-            data-agent-intent={agentIntent || `action-${variant}`}
-            aria-description={ariaDescription || `Executes ${variant} action`}
             aria-busy={isLoading}
             className={cn(
                 'relative inline-flex items-center justify-center font-bold tracking-tight select-none',

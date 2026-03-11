@@ -63,8 +63,6 @@ const Home = () => {
     // LCP Speculative Preload
     useEffect(() => {
         preload('/fonts/Inter-Black.woff2', { as: 'font', type: 'font/woff2', fetchpriority: 'high', crossOrigin: 'anonymous' });
-        // M2M Agent Intent Broadcast
-        document.documentElement.setAttribute('data-agent-context', 'dashboard-overview');
     }, []);
 
     const { data: actRes, isLoading: actLoading } = useQuery({
@@ -129,7 +127,6 @@ const Home = () => {
         <article 
             ref={containerRef} 
             className="space-y-12 pb-20 relative h-[calc(100vh-100px)] overflow-y-auto custom-scrollbar @container"
-            aria-description="Main operations dashboard and platform telemetry."
         >
             {/* Parallax 3.0 Background Layers */}
             <motion.div style={{ y: parallaxY1 }} className="absolute -top-40 right-10 w-[40vw] h-[40vw] bg-cyan-500/5 rounded-full blur-[140px] pointer-events-none -z-10 mix-blend-screen" aria-hidden />
@@ -145,7 +142,6 @@ const Home = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={LIQUID_SPRING}
                                 className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-[oklch(100%_0_0/0.03)] border border-[oklch(100%_0_0/0.05)] text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
-                                data-agent-intent="system-status-indicator"
                             >
                                 <Cpu className="w-3 h-3 animate-pulse" />
                                 <span>Node Status: Standard</span>
@@ -183,7 +179,6 @@ const Home = () => {
                                 leftIcon={Plus}
                                 as={Link}
                                 to="/projects"
-                                data-agent-intent="create-new-project-initiative"
                                 hapticIntensity="light"
                                 className="shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),_0_15px_30px_rgba(6,182,212,0.3)]"
                             >
@@ -199,10 +194,7 @@ const Home = () => {
                         <Card 
                             key={i} 
                             className="group relative overflow-hidden bg-[oklch(100%_0_0/0.02)] border-[oklch(100%_0_0/0.05)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] !p-8 transform-gpu transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
-                            data-agent-intent={`view-metric-${s.label.toLowerCase()}`}
                         >
-                            {/* Confidence Indicator (AI Readiness) */}
-                            <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" aria-label="High Confidence Metric" />
 
                             <div className={cn("absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[50px] opacity-20 transition-all duration-700 group-hover:opacity-40", s.bg.replace('bg-', 'bg-'))} aria-hidden />
 
@@ -264,7 +256,7 @@ const Home = () => {
 
                         <div className="flex-1 min-h-0 relative z-10 bg-gradient-to-b from-[oklch(100%_0_0/0.02)] to-transparent">
                             {!canViewActivity ? (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center" aria-label="Encrypted Segment Warning">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
                                     <Lock className="w-12 h-12 text-rose-500/80 mb-6 drop-shadow-[0_0_15px_rgba(244,63,94,0.4)]" />
                                     <h4 className="text-white text-lg font-black tracking-tight mb-2">Encrypted Segment</h4>
                                     <p className="text-sm text-gray-500 font-medium max-w-xs leading-relaxed">

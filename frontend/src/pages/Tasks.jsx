@@ -40,7 +40,7 @@ class TaskErrorBoundary extends React.Component {
 
 // ── Vanguard 2026: Zero-CLS Skeleton (Machine Layer) ──
 const TaskNexusSkeleton = () => (
-    <div className="w-full flex-1 min-h-[600px] rounded-[4rem] border border-[oklch(100%_0_0/0.05)] bg-[oklch(0%_0_0/0.2)] animate-pulse shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] aspect-[16/9] flex items-center justify-center" aria-hidden="true" data-agent-intent="loading-placeholder">
+    <div className="w-full flex-1 min-h-[600px] rounded-[4rem] border border-[oklch(100%_0_0/0.05)] bg-[oklch(0%_0_0/0.2)] animate-pulse shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] aspect-[16/9] flex items-center justify-center" aria-hidden="true">
         <div className="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
     </div>
 );
@@ -61,8 +61,6 @@ const TasksContent = ({ projectId, searchQuery, viewMode, activeProject }) => {
                         exit={{ opacity: 0, rotateX: -5, y: -20 }}
                         transition={LIQUID_SPRING}
                         className="flex flex-col items-center justify-center py-40 bg-[oklch(100%_0_0/0.02)] border border-[oklch(100%_0_0/0.08)] rounded-[4rem] text-center space-y-8 backdrop-blur-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_20px_40px_rgba(0,0,0,0.3)] z-10 relative"
-                        data-agent-intent="prompt-project-selection"
-                        aria-description="The task nexus is awaiting a project segment selection."
                     >
                         <div className="w-32 h-32 rounded-[3rem] bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-white/10 flex items-center justify-center relative group">
                             <Target className="w-16 h-16 text-gray-400 group-hover:text-cyan-400 transition-colors duration-500" />
@@ -143,7 +141,6 @@ export default function Tasks() {
     return (
         <article 
             className="min-h-screen pb-20 pt-8 px-inline-6 lg:px-inline-10 space-y-10 max-w-[1800px] mx-auto @container"
-            aria-description="Main command center for task orchestration."
         >
             <header className="flex flex-col @4xl:flex-row @4xl:items-end justify-between gap-8 z-20 relative">
                 <div className="space-y-4">
@@ -168,7 +165,6 @@ export default function Tasks() {
                             <button 
                                 key={mode}
                                 onClick={() => handleViewChange(mode)}
-                                data-agent-intent={`switch-view-to-${mode}`}
                                 className={`relative z-10 p-2.5 rounded-xl transition-colors duration-300 ${optimisticView === mode ? 'text-black' : 'text-gray-500 hover:text-white'}`}
                                 aria-label={`${mode} view`}
                             >
@@ -188,7 +184,6 @@ export default function Tasks() {
                         leftIcon={Plus}
                         size="lg"
                         className="rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),_0_10px_20px_rgba(6,182,212,0.3)] hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),_0_15px_30px_rgba(6,182,212,0.5)] transform hover:-translate-y-1 transition-all duration-300"
-                        data-agent-intent="create-new-task-directive"
                     >
                         New Directive
                     </Button>
@@ -206,7 +201,6 @@ export default function Tasks() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-[oklch(0%_0_0/0.2)] border border-[oklch(100%_0_0/0.05)] rounded-2xl pl-16 pr-6 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/30 focus:ring-[6px] focus:ring-cyan-500/10 transition-all font-medium text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
-                        data-agent-intent="search-tasks"
                     />
                 </div>
 
@@ -214,7 +208,6 @@ export default function Tasks() {
                 <div className="relative shrink-0 w-full md:w-auto">
                     <button 
                         className="w-full flex items-center justify-between md:justify-start gap-3 px-6 py-4 bg-[oklch(100%_0_0/0.03)] border border-[oklch(100%_0_0/0.05)] rounded-2xl hover:border-white/10 transition-colors group shadow-sm active:scale-95"
-                        data-agent-intent="filter-project-segments"
                         aria-haspopup="listbox"
                         onClick={() => {/* Trigger unified global selection modal in future integration */}}
                     >

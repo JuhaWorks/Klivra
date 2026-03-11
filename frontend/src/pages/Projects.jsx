@@ -23,7 +23,7 @@ import ProjectCreationModal from '../components/projects/ProjectCreationModal';
 import ProjectImage from '../components/projects/ProjectImage';
 import { toast } from 'react-hot-toast';
 import Button from '../components/ui/Button';
-import Card from '../ui/Card';
+import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { Skeleton } from '../components/ui/Loading';
 
