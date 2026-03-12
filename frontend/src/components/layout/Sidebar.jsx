@@ -39,7 +39,8 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
             onClick={onClose}
             onMouseEnter={() => onPrefetch(item.path)}
             className={({ isActive: linkActive }) => twMerge(clsx(
-                "group relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300",
+                "group relative flex items-center rounded-2xl transition-all duration-300",
+                isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                 "hover:bg-white/[0.04] active:scale-[0.98]",
                 linkActive ? "text-cyan-400" : "text-gray-400 hover:text-gray-200"
             ))}
@@ -138,7 +139,10 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
 
                 {/* Brand */}
-                <div className="h-20 flex items-center gap-4 px-6 relative z-10">
+                <div className={twMerge(clsx(
+                    "h-20 flex items-center relative z-10",
+                    isCollapsed ? "justify-center px-0" : "gap-4 px-6"
+                ))}>
                     <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10">
                         <span className="text-white font-black text-xl">K</span>
                     </div>
@@ -161,7 +165,10 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto relative z-10">
+                <nav className={twMerge(clsx(
+                    "flex-1 py-6 space-y-2 overflow-y-auto relative z-10",
+                    isCollapsed ? "px-2" : "px-4"
+                ))}>
                     {!isCollapsed && (
                         <p className="px-4 mb-4 text-[10px] font-black text-tertiary uppercase tracking-[0.2em]">
                             {isAdminSection ? 'System Control' : 'Navigation'}
@@ -175,7 +182,8 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                 end
                                 onClick={onClose}
                                 className={({ isActive }) => twMerge(clsx(
-                                    "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                                    "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
+                                    isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
                                         ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" 
                                         : "text-gray-400 hover:text-white"
@@ -194,7 +202,8 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                 to="/admin/security"
                                 onClick={onClose}
                                 className={({ isActive }) => twMerge(clsx(
-                                    "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                                    "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
+                                    isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
                                         ? "bg-red-500/10 text-red-400 border border-red-500/20" 
                                         : "text-red-400/60 hover:text-red-300 hover:bg-red-500/5 border border-red-500/5"
@@ -221,14 +230,18 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 </nav>
 
                 {/* Footer Section */}
-                <div className="p-4 border-t border-white/5 bg-white/[0.01] relative z-10">
+                <div className={twMerge(clsx(
+                    "border-t border-white/5 bg-white/[0.01] relative z-10",
+                    isCollapsed ? "p-2" : "p-4"
+                ))}>
                     <div className="flex flex-col gap-1">
                         {!isAdminSection && (
                             <NavLink
                                 to="/settings"
                                 onClick={onClose}
                                 className={({ isActive }) => twMerge(clsx(
-                                    "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                                    "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
+                                    isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive ? "bg-white/5 text-white" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
                                 ))}
                             >
@@ -237,36 +250,55 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                             </NavLink>
                         )}
 
-                        <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div className={twMerge(clsx(
+                            "grid gap-2 mt-2",
+                            isCollapsed ? "grid-cols-1" : "grid-cols-2"
+                        ))}>
                              <button
                                 onClick={() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK)}
-                                className="flex items-center justify-center gap-2 h-11 px-3 rounded-2xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                                className={twMerge(clsx(
+                                    "flex items-center justify-center rounded-2xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-white/5",
+                                    isCollapsed ? "h-12 w-full p-0" : "gap-2 h-11 px-3"
+                                ))}
                             >
                                 {mode === MODES.DARK ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                                <span className="text-xs font-bold leading-none">{mode === MODES.DARK ? 'Light' : 'Dark'}</span>
+                                {!isCollapsed && <span className="text-xs font-bold leading-none">{mode === MODES.DARK ? 'Light' : 'Dark'}</span>}
                             </button>
                         </div>
                     </div>
 
-                    <div className="mt-auto px-6 py-8 border-t border-white/5 space-y-6">
+                    <div className={twMerge(clsx(
+                        "mt-auto border-t border-white/5 space-y-6",
+                        isCollapsed ? "px-0 py-4" : "px-6 py-8"
+                    ))}>
                     <button 
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all group"
+                        className={twMerge(clsx(
+                            "w-full flex items-center rounded-2xl text-gray-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all group",
+                            isCollapsed ? "justify-center h-12 px-0" : "gap-4 px-4 py-3"
+                        ))}
                     >
-                        <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-                        <span className="font-bold text-sm">Sign Out</span>
+                        <LogOut className={twMerge(clsx("w-5 h-5 transition-transform", !isCollapsed && "group-hover:-translate-x-1"))} />
+                        {!isCollapsed && <span className="font-bold text-sm">Sign Out</span>}
                     </button>
                         </div>
 
-                    <div className="mt-6 flex items-center gap-3 px-3 py-3 rounded-3xl bg-white/5 border border-white/5">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                    <div className={twMerge(clsx(
+                        "mt-6 flex items-center bg-white/5 border border-white/5",
+                        isCollapsed ? "justify-center rounded-2xl p-2" : "gap-3 px-3 py-3 rounded-3xl"
+                    ))}>
+                        <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
                             <UserCircle className="w-6 h-6 text-gray-400" />
                         </div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-bold text-white truncate">{user?.name}</span>
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter truncate">{user?.role}</span>
-                        </div>
-                        <ChevronRight className="ml-auto w-4 h-4 text-gray-600" />
+                        {!isCollapsed && (
+                            <>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-sm font-bold text-white truncate">{user?.name}</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter truncate">{user?.role}</span>
+                                </div>
+                                <ChevronRight className="ml-auto w-4 h-4 text-gray-600" />
+                            </>
+                        )}
                     </div>
                 </div>
             </aside>
