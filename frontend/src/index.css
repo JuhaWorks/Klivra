@@ -229,8 +229,6 @@
    cream-friendly equivalents when .dark is NOT active.
    ══════════════════════════════════════════════════ */
 html:not(.dark) {
-  /* Text overrides: white & light grays → readable charcoal */
-  --tw-white-override: #1c1c20;
 
   /* Card / panel backgrounds */
   .bg-black\/50,
@@ -333,4 +331,4 @@ html:not(.dark) {
     --tw-gradient-to: #065f46 !important; /* emerald-800 */
   }
 
-}
+}
