@@ -9,13 +9,31 @@ import axios from 'axios';
 // ENVIRONMENT TOGGLE (Switch between Local and Prod)
 // ==========================================
 
-// Production: relative path — Vercel rewrites /api → Render backend (same-origin, cookies work)
-let BASE_URL = '/api';
+// ==========================================
+// ENVIRONMENT DYNAMIC LOGIC
+// ==========================================
+// 1. If VITE_API_URL is set (Production or .env.development), use it.
+// 2. If in DEV mode and no variable exists, fallback to localhost:5000.
+// 3. Otherwise, use relative /api (handled by Vercel/Nginx proxy).
 
-// Override via env var if explicitly set AND NOT in local dev
-// This ensures that local dev always uses the Vite proxy to localhost:5000
-if (import.meta.env.VITE_API_URL && !import.meta.env.DEV) {
-    BASE_URL = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`;
+const getBaseUrl = () => {
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (envUrl) return `${envUrl.replace(/\/$/, '')}/api`;
+    
+    // Auto-detect local development
+    if (import.meta.env.DEV) {
+        return 'http://localhost:5000/api';
+    }
+    
+    return '/api';
+};
+
+export const BASE_URL = getBaseUrl();
+const API_BASE_WITHOUT_API = BASE_URL.replace(/\/api$/, '');
+
+// Fallback to absolute localhost for local development if Vite proxy is NOT being used (rare)
+if (import.meta.env.DEV && !BASE_URL.startsWith('/') && !BASE_URL.includes('localhost')) {
+    console.warn('[AUTH] BASE_URL is absolute but not localhost in DEV. Ensure this is intentional.');
 }
 
 // Create a configured Axios instance
@@ -23,7 +41,7 @@ if (import.meta.env.VITE_API_URL && !import.meta.env.DEV) {
 export const api = axios.create({
     baseURL: BASE_URL,
     withCredentials: true,
-    timeout: 10000, // 10s maximum to prevent infinite hangs on load
+    timeout: 10000, 
 });
 
 // Add Request Interceptor to inject the access token

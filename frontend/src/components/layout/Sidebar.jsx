@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     LayoutDashboard, 
@@ -21,7 +21,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTheme, MODES } from '../../store/useTheme';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-
 
 const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -74,8 +73,11 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch }) => {
 const SidebarComponent = ({ isOpen, onClose }) => {
     const { logout, user } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
     const queryClient = useQueryClient();
     const { mode, setMode } = useTheme();
+
+    const isAdminSection = location.pathname.startsWith('/admin');
 
     const handlePrefetch = (path) => {
         if (path === '/projects') {
@@ -94,6 +96,11 @@ const SidebarComponent = ({ isOpen, onClose }) => {
         await logout();
         navigate('/login');
     };
+
+    // Filter nav items: keep only Dashboard if in admin section
+    const visibleNavItems = isAdminSection 
+        ? navItems.filter(item => item.path === '/')
+        : navItems;
 
     return (
         <>
@@ -125,7 +132,7 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-lg font-black tracking-tighter text-[var(--text-main)]">Klivra</span>
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Workspace</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{isAdminSection ? 'Administration' : 'Workspace'}</span>
                     </div>
                     <button onClick={onClose} className="lg:hidden ml-auto p-2 text-gray-500 hover:text-white rounded-xl transition-all hover:bg-white/5">
                         <X className="w-5 h-5" />
@@ -134,12 +141,15 @@ const SidebarComponent = ({ isOpen, onClose }) => {
 
                 {/* Nav */}
                 <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto relative z-10">
-                    <p className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Navigation</p>
+                    <p className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                        {isAdminSection ? 'System Control' : 'Navigation'}
+                    </p>
 
                     {user?.role === 'Admin' && (
                         <div className="mb-6 space-y-2">
                             <NavLink
                                 to="/admin"
+                                end
                                 onClick={onClose}
                                 className={({ isActive }) => twMerge(clsx(
                                     "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
@@ -174,10 +184,11 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                     )}
 
                     <div className="space-y-1">
-                        {navItems.map((item) => (
+                        {visibleNavItems.map((item) => (
                             <SidebarItem 
                                 key={item.path} 
                                 item={item} 
+                                isActive={location.pathname === item.path}
                                 onClose={onClose} 
                                 onPrefetch={handlePrefetch}
                             />
@@ -188,17 +199,19 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                 {/* Footer Section */}
                 <div className="p-4 border-t border-white/5 bg-white/[0.01] relative z-10">
                     <div className="flex flex-col gap-1">
-                        <NavLink
-                            to="/settings"
-                            onClick={onClose}
-                            className={({ isActive }) => twMerge(clsx(
-                                "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
-                                isActive ? "bg-white/5 text-white" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
-                            ))}
-                        >
-                            <Settings className="w-5 h-5" />
-                            <span>Settings</span>
-                        </NavLink>
+                        {!isAdminSection && (
+                            <NavLink
+                                to="/settings"
+                                onClick={onClose}
+                                className={({ isActive }) => twMerge(clsx(
+                                    "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                                    isActive ? "bg-white/5 text-white" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                                ))}
+                            >
+                                <Settings className="w-5 h-5" />
+                                <span>Settings</span>
+                            </NavLink>
+                        )}
 
                         <div className="grid grid-cols-2 gap-2 mt-2">
                              <button

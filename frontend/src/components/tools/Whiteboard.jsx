@@ -61,7 +61,7 @@ const Whiteboard = ({ roomId }) => {
     }, [strokeColor, strokeWidth]);
 
     useEffect(() => {
-        const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://syncforge-io.onrender.com';
+        const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://syncforge-io.onrender.com');
         const socket = io(SOCKET_URL);
         socketRef.current = socket;
 

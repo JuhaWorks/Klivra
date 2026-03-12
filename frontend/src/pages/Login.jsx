@@ -67,14 +67,14 @@ const Login = () => {
                         className="lg:hidden flex justify-center mb-6"
                     >
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                            <span className="text-white font-black text-2xl">K</span>
+                            <span className="text-white font-bold text-2xl">K</span>
                         </div>
                     </motion.div>
                     
                     <motion.h2 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-4xl font-black tracking-tighter text-white mb-2"
+                        className="text-4xl font-bold tracking-tighter text-white mb-2"
                     >
                         Welcome Back
                     </motion.h2>
@@ -95,7 +95,7 @@ const Login = () => {
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="glass-2 p-8 border-white/5 bg-white/[0.03]"
+                    className="glass-2 p-7 border-white/5 bg-white/[0.03]"
                 >
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <AnimatePresence>
@@ -156,12 +156,12 @@ const Login = () => {
                                     ))} />
                                     <Check className="absolute inset-0 m-auto w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
                                 </div>
-                                <span className="text-sm font-bold text-gray-400 group-hover:text-gray-300 transition-colors">
+                                <span className="text-sm font-semibold text-gray-400 group-hover:text-gray-300 transition-colors">
                                     Remember me
                                 </span>
                             </label>
                             
-                            <button type="button" className="text-sm font-bold text-gray-500 hover:text-cyan-400 transition-colors">
+                            <button type="button" className="text-sm font-semibold text-gray-500 hover:text-cyan-400 transition-colors">
                                 Reset Password
                             </button>
                         </div>
@@ -179,7 +179,7 @@ const Login = () => {
                     <div className="mt-8">
                         <div className="relative flex items-center gap-4 mb-6">
                             <div className="flex-1 h-px bg-white/5" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">
                                 or continue with
                             </span>
                             <div className="flex-1 h-px bg-white/5" />

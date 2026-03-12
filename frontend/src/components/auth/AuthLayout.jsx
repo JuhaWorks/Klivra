@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Layout as Kanban, Shapes, Check, ArrowRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import InteractiveGridBackground from '../ui/InteractiveGridBackground';
 
 
 const WORDS = ['high-quality software.', 'your team projects.', 'your workflow efficiently.'];
@@ -44,13 +45,13 @@ const Typewriter = () => {
 
     return (
         <span className="relative">
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent italic">
                 {WORDS[index].substring(0, subIndex)}
             </span>
             <motion.span 
                 animate={{ opacity: [1, 0] }}
                 transition={{ repeat: Infinity, duration: 0.8 }}
-                className="inline-block w-1.5 h-10 bg-cyan-400 ml-1 rounded-full align-middle"
+                className="inline-block w-1.5 h-10 bg-emerald-400 ml-1 rounded-full align-middle"
             />
         </span>
     );
@@ -64,20 +65,20 @@ export const Brand = ({ rightSide }) => {
             rightSide ? "border-l" : "border-r"
         ))}>
             {/* Organic Ambient Glows */}
-            <div className="absolute -top-20 -left-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
 
             <motion.header 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-center gap-4 relative z-10"
             >
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/20">
-                    <span className="text-white font-black text-2xl">K</span>
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shadow-2xl shadow-emerald-500/20">
+                    <span className="text-white font-bold text-2xl">K</span>
                 </div>
                 <div>
-                    <h1 className="text-2xl font-black tracking-tighter text-white">Klivra</h1>
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500">Enterprise Edition</p>
+                    <h1 className="text-2xl font-bold tracking-tighter text-white">Klivra</h1>
+                    <p className="text-[10px] uppercase tracking-widest font-medium text-gray-500">Enterprise Edition</p>
                 </div>
             </motion.header>
 
@@ -85,15 +86,15 @@ export const Brand = ({ rightSide }) => {
                 <motion.p 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-xs font-black uppercase tracking-[0.3em] text-cyan-400 mb-6"
+                    className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-400 mb-6"
                 >
                     Team Workspace
                 </motion.p>
-                <h2 className="text-6xl font-black leading-none tracking-tighter text-white mb-8">
+                <h2 className="text-6xl font-bold leading-[0.9] tracking-tighter text-white mb-6">
                     Build great things,<br />
                     <Typewriter />
                 </h2>
-                <p className="text-lg text-gray-400 leading-relaxed max-w-sm mb-12">
+                <p className="text-lg text-gray-400 leading-relaxed max-w-sm mb-10">
                     A professional platform for high-performance teams. Streamlined collaboration and project management.
                 </p>
 
@@ -104,10 +105,10 @@ export const Brand = ({ rightSide }) => {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: i * 0.1 }}
-                            className="group flex items-center gap-4 p-4 rounded-3xl glass-2 hoverable border-white/5 bg-white/[0.02]"
+                            className="group flex items-center gap-4 p-4 rounded-3xl glass-2 border-white/5"
                         >
-                            <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-cyan-500/10 group-hover:border-cyan-500/20">
-                                <feat.icon className="w-5 h-5 text-gray-400 group-hover:text-cyan-400" />
+                            <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-emerald-500/10 group-hover:border-emerald-500/20">
+                                <feat.icon className="w-5 h-5 text-gray-400 group-hover:text-emerald-400" />
                             </div>
                             <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
                                 {feat.label}
@@ -135,13 +136,19 @@ export const Brand = ({ rightSide }) => {
 
 export const AuthLayout = ({ children, reverse = false }) => {
     return (
-        <div className="min-h-screen bg-[#09090b] text-white selection:bg-cyan-500/30 overflow-hidden font-sans">
-            {/* Global Anti-grid Grain */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.03] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] z-50" />
+        <div className="min-h-screen bg-[#09090b] text-white selection:bg-cyan-500/30 overflow-hidden font-sans relative">
+            {/* Technical Interactive Grid Background */}
+            <div className="fixed inset-0 z-0">
+                <InteractiveGridBackground 
+                    className="w-full h-full"
+                    gridSize={70}
+                />
+            </div>
+
             
-            <div className="flex flex-col lg:flex-row min-h-screen relative z-10">
+            <div className="flex flex-col lg:flex-row min-h-screen relative z-10 pointer-events-none">
                 {!reverse && <Brand rightSide={false} />}
-                <main className="flex-1 flex items-center justify-center p-8 bg-[#09090b]">
+                <main className="flex-1 flex items-center justify-center p-8 bg-transparent pointer-events-auto backdrop-blur-[2px]">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={reverse ? 'register' : 'login'}
@@ -163,6 +170,6 @@ export const AuthLayout = ({ children, reverse = false }) => {
 
 export default AuthLayout;
 
-// Re-exporting legacy constants if they are used elsewhere to prevent breaks
-export const API_BASE = import.meta.env.VITE_API_URL || '';
+// Re-exporting dynamic constants
+export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
 export const useCursor = () => {}; // No longer needed in 2026 design

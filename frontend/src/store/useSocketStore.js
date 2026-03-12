@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from './useAuthStore';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 
-                    (import.meta.env.DEV ? 'http://127.0.0.1:5000' : 'https://syncforge-io.onrender.com');
+                    (import.meta.env.DEV ? 'http://127.0.0.1:5000' : window.location.origin);
 
 export const useSocketStore = create((set, get) => ({
     socket: null,

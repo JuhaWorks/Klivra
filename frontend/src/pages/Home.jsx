@@ -3,34 +3,30 @@ import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { preload } from 'react-dom';
-import { 
-    FolderKanban, CheckSquare, Zap, Plus, ChevronRight, Activity, 
-    Lock, Cpu, Network, Trophy, RefreshCw
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    FolderKanban, CheckSquare, Zap, Plus, ChevronRight, Activity,
+    Lock, Cpu, Network, RefreshCw, ArrowUpRight, Shield
 } from 'lucide-react/dist/esm/lucide-react';
 import ApodWidget from '../components/tools/ApodWidget';
 import { useSocketStore } from '../store/useSocketStore';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
+/* ─── Physics ─────────────────────────────────────────────────── */
+const SPRING = { type: 'spring', stiffness: 260, damping: 22, mass: 0.6 };
+const EASE = { duration: 0.45, ease: [0.22, 1, 0.36, 1] };
 
-// ── Vanguard 2026: Physics Configuration ──
-const LIQUID_SPRING = { type: 'spring', stiffness: 260, damping: 20, mass: 0.5 };
-const KINETIC_SPRING = { type: 'spring', stiffness: 100, damping: 30 };
-
-// ── Vanguard 2026: Error Boundary ──
+/* ─── Error Boundary ─────────────────────────────────────────── */
 class DashboardErrorBoundary extends React.Component {
     constructor(props) { super(props); this.state = { hasError: false }; }
     static getDerivedStateFromError() { return { hasError: true }; }
     render() {
         if (this.state.hasError) {
             return (
-                <div className="w-full flex-1 flex flex-col items-center justify-center p-10 bg-rose-500/5 rounded-[3rem] border border-rose-500/20 text-center">
-                    <RefreshCw className="w-8 h-8 text-rose-500 mb-4" />
-                    <h2 className="text-xl font-black text-rose-400">Dashboard Synchronization Failed</h2>
+                <div className="flex-1 flex flex-col items-center justify-center p-12 rounded-3xl border border-rose-500/15 bg-rose-500/5 text-center gap-4">
+                    <RefreshCw className="w-7 h-7 text-rose-400" />
+                    <p className="text-sm font-semibold text-rose-400">Dashboard failed to synchronize. Please refresh.</p>
                 </div>
             );
         }
@@ -38,36 +34,79 @@ class DashboardErrorBoundary extends React.Component {
     }
 }
 
-// ── Vanguard 2026: Zero-CLS Skeleton Array ──
-const ActivitySkeleton = () => (
-    <div className="flex items-center gap-5 border-b border-[oklch(100%_0_0/0.03)] pb-4 mb-4 opacity-50 animate-pulse">
-        <div className="w-10 h-10 rounded-2xl bg-[oklch(100%_0_0/0.05)] border border-[oklch(100%_0_0/0.05)]" />
+/* ─── Activity Skeleton ───────────────────────────────────────── */
+const ActivitySkeleton = ({ delay = 0 }) => (
+    <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay }}
+        className="flex items-center gap-4 py-3.5 border-b border-white/[0.03]"
+    >
+        <div className="w-9 h-9 rounded-xl bg-white/[0.04] shrink-0 animate-pulse" />
         <div className="flex-1 space-y-2">
-            <div className="h-4 w-3/4 rounded-md bg-[oklch(100%_0_0/0.05)]" />
-            <div className="h-2 w-1/4 rounded-md bg-[oklch(100%_0_0/0.05)]" />
+            <div className="h-3 w-2/3 rounded bg-white/[0.04] animate-pulse" />
+            <div className="h-2 w-1/4 rounded bg-white/[0.03] animate-pulse" />
         </div>
-    </div>
+    </motion.div>
 );
 
+/* ─── Animated Counter ───────────────────────────────────────── */
+const Counter = ({ value, delay = 0 }) => {
+    const [display, setDisplay] = useState(0);
+    useEffect(() => {
+        let start = 0;
+        const end = Number(value) || 0;
+        if (end === 0) { setDisplay(0); return; }
+        const duration = 900;
+        const step = end / (duration / 16);
+        const timer = setTimeout(() => {
+            const tick = () => {
+                start = Math.min(start + step, end);
+                setDisplay(Math.round(start));
+                if (start < end) requestAnimationFrame(tick);
+            };
+            tick();
+        }, delay);
+        return () => clearTimeout(timer);
+    }, [value, delay]);
+    return <span>{display.toLocaleString()}</span>;
+};
+
+/* ─── Inline Status Pip ──────────────────────────────────────── */
+const StatusPip = ({ active }) => (
+    <span className="relative inline-flex w-2 h-2">
+        {active && <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />}
+        <span className={`relative rounded-full w-2 h-2 ${active ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+    </span>
+);
+
+/* ═══════════════════════════════════════════════════════════════
+   HOME DASHBOARD
+═══════════════════════════════════════════════════════════════ */
 const Home = () => {
     const { user } = useAuthStore();
     const { onlineUsers } = useSocketStore();
     const canViewActivity = user && ['Admin', 'Manager'].includes(user.role);
-    const containerRef = useRef(null);
-    const parentRef = useRef();
+    const parentRef = useRef(null);
 
-    // Removed speculative preload that may cause hanging network requests
+    const [greeting, setGreeting] = useState('');
     useEffect(() => {
-        // Font loading handles naturally by CSS
+        const h = new Date().getHours();
+        if (h < 5) setGreeting('Working Late');
+        else if (h < 12) setGreeting('Good Morning');
+        else if (h < 17) setGreeting('Good Afternoon');
+        else setGreeting('Good Evening');
     }, []);
 
+    const firstName = user?.name?.split(' ')[0] || 'Operator';
+    const roleLabel = user?.role === 'Admin' ? 'Administrator' : user?.role === 'Manager' ? 'Manager' : 'Developer';
+    const timeString = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    /* ── Queries ── */
     const { data: actRes, isLoading: actLoading } = useQuery({
         queryKey: ['activityFeed'],
         queryFn: async ({ signal }) => (await api.get('/audit?limit=100', { signal })).data,
         staleTime: 1000 * 60 * 5,
         enabled: canViewActivity,
     });
-
     const activity = actRes?.data || [];
 
     const { data: statsRes } = useQuery({
@@ -90,240 +129,445 @@ const Home = () => {
             completedTasks: platformStatsRes?.data?.tasks.completed || 0,
             pendingTasks: platformStatsRes?.data?.tasks.pending || 0,
             completionPct: platformStatsRes?.data?.tasks.completionPct || 0,
-            totalProjects: platformStatsRes?.data?.projects.total || 0
+            totalProjects: platformStatsRes?.data?.projects.total || 0,
         }
         : statsRes?.data || { activeProjects: 0, totalTasks: 0, completedTasks: 0, pendingTasks: 0, completionPct: 0 };
 
     const STATS = [
-        { label: 'Active Projects', value: statsData.activeProjects, sub: `${statsData.totalProjects || 0} total`, icon: FolderKanban, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-        { label: 'Total Tasks', value: statsData.totalTasks, sub: `${statsData.pendingTasks} pending`, icon: CheckSquare, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-        { label: 'Goal Progress', value: statsData.completedTasks, sub: `${statsData.completionPct}% output`, icon: Zap, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-        { label: 'Active Users', value: onlineUsers.filter(u => u.status !== 'Offline').length, sub: 'Connected now', icon: Network, color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10' },
+        {
+            label: 'Active Projects',
+            value: statsData.activeProjects,
+            sub: `${statsData.totalProjects || 0} total`,
+            icon: FolderKanban,
+            accent: '#22d3ee', /* cyan */
+            ring: 'rgba(34,211,238,0.12)',
+        },
+        {
+            label: 'Total Tasks',
+            value: statsData.totalTasks,
+            sub: `${statsData.pendingTasks} pending`,
+            icon: CheckSquare,
+            accent: '#818cf8', /* indigo */
+            ring: 'rgba(129,140,248,0.12)',
+        },
+        {
+            label: 'Completed Tasks',
+            value: statsData.completedTasks,
+            sub: `${statsData.completionPct}% completion`,
+            icon: Zap,
+            accent: '#34d399', /* emerald */
+            ring: 'rgba(52,211,153,0.12)',
+        },
+        {
+            label: 'Online Users',
+            value: onlineUsers.filter(u => u.status !== 'Offline').length,
+            sub: 'Connected now',
+            icon: Network,
+            accent: '#e879f9', /* fuchsia */
+            ring: 'rgba(232,121,249,0.12)',
+        },
     ];
 
+    /* ── Virtualizer ── */
     const virt = useVirtualizer({
         count: activity.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 76,
-        overscan: 5,
+        estimateSize: () => 68,
+        overscan: 6,
     });
 
-    const [greeting, setGreeting] = useState('');
-    useEffect(() => {
-        const h = new Date().getHours();
-        if (h < 5) setGreeting('System Standby');
-        else if (h < 12) setGreeting('Good Morning');
-        else if (h < 17) setGreeting('Good Afternoon');
-        else setGreeting('Good Evening');
-    }, []);
-
-    const firstName = user?.name?.split(' ')[0] || 'Operator';
+    /* ── Action keyword map ── */
+    const actionLabel = (action) => {
+        const map = {
+            'created': 'created',
+            'updated': 'updated',
+            'deleted': 'removed',
+            'assigned': 'assigned',
+            'completed': 'marked complete',
+        };
+        for (const [k, v] of Object.entries(map)) {
+            if (action?.toLowerCase().includes(k)) return v;
+        }
+        return action;
+    };
 
     return (
-        <article 
-            ref={containerRef} 
-            className="space-y-12 pb-20 relative h-[calc(100vh-100px)] overflow-y-auto custom-scrollbar @container"
-        >
-            <DashboardErrorBoundary>
-                {/* ── Header Area ── */}
-                <header className="relative pt-10 z-10 w-full">
-                    <div className="flex flex-col @4xl:flex-row @4xl:items-end justify-between gap-8">
-                        <div className="space-y-3">
-                            <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]"
-                            >
-                                <Cpu className="w-3 h-3" />
-                                <span>All systems normal</span>
-                            </motion.div>
-                            
-                            <motion.h1 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={LIQUID_SPRING}
-                                className="text-6xl font-black text-[var(--text-main)] tracking-tighter leading-[0.9]"
-                            >
-                                <span className="text-theme">Welcome</span> back, <br />
-                                <span className="text-hue">{firstName}.</span>
-                            </motion.h1>
+        <>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
-                            <motion.p 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1, ...LIQUID_SPRING }}
-                                className="text-gray-500 font-medium text-sm max-w-xl leading-relaxed"
-                            >
-                                {user?.role === 'Admin'
-                                    ? "Your workspace is ready. Here's a brief overview of the current status."
-                                    : "Everything is running smoothly. Your project links are stable."}
-                            </motion.p>
-                        </div>
+                .h-root {
+                    --sans:   'DM Sans', sans-serif;
+                    --mono:   'DM Mono', monospace;
+                    --bg:     #07070f;
+                    --surface: rgba(255,255,255,0.025);
+                    --border:  rgba(255,255,255,0.06);
+                    --muted:   #3f4558;
+                    --text:    #e1e4ed;
+                    --dim:     #6b7280;
+                    font-family: var(--sans);
+                }
 
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2, ...LIQUID_SPRING }}
-                            className="shrink-0"
+                /* scrollbar */
+                .h-scroll::-webkit-scrollbar       { width: 4px; }
+                .h-scroll::-webkit-scrollbar-track  { background: transparent; }
+                .h-scroll::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.06); border-radius: 2px; }
+                .h-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+                /* stat card */
+                .stat-card {
+                    position: relative;
+                    border: 1px solid var(--border);
+                    border-radius: 18px;
+                    padding: 28px 26px 22px;
+                    background: var(--surface);
+                    overflow: hidden;
+                    transition: border-color .3s, transform .25s;
+                    cursor: default;
+                }
+                .stat-card:hover { transform: translateY(-3px); }
+
+                /* activity item */
+                .act-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    padding: 12px 8px;
+                    border-radius: 12px;
+                    transition: background .15s;
+                    cursor: default;
+                }
+                .act-row:hover { background: rgba(255,255,255,0.025); }
+
+                /* progress bar */
+                @keyframes prog-in {
+                    from { width: 0; }
+                }
+
+                /* grid line bg */
+                .h-bg-grid {
+                    background-image:
+                        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+                    background-size: 44px 44px;
+                }
+            `}</style>
+
+            <article className="h-root h-bg-grid min-h-screen pb-20 space-y-10 relative overflow-y-auto h-scroll">
+
+                {/* Ambient top glow */}
+                <div style={{ position: 'fixed', top: -180, left: '50%', transform: 'translateX(-50%)', width: 700, height: 380, background: 'radial-gradient(ellipse, rgba(34,211,238,0.055) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+
+                <div style={{ position: 'relative', zIndex: 1, maxWidth: 1300, margin: '0 auto', padding: '36px 32px 0' }}>
+                    <DashboardErrorBoundary>
+
+                        {/* ── HEADER ────────────────────────────────── */}
+                        <motion.header
+                            initial={{ opacity: 0, y: -12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={EASE}
+                            style={{ marginBottom: 40 }}
                         >
-                            <Button 
-                                variant="primary" 
-                                size="lg" 
-                                leftIcon={Plus}
-                                as={Link}
-                                to="/projects"
-                                hapticIntensity="light"
-                                className="shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),_0_15px_30px_rgba(6,182,212,0.3)]"
-                            >
-                                New Initiative
-                            </Button>
-                        </motion.div>
-                    </div>
-                </header>
-
-                {/* ── Vanguard 2026: Generative UI Grid ── */}
-                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 @container" aria-label="Workspace Statistics">
-                    {STATS.map((s, i) => (
-                        <Card 
-                            key={i} 
-                            className="group relative overflow-hidden bg-[oklch(100%_0_0/0.02)] border-[oklch(100%_0_0/0.05)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] !p-8 transform-gpu transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
-                        >
-
-                            <div className={twMerge(clsx("absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[50px] opacity-20 transition-all duration-700 group-hover:opacity-40", s.bg.replace('bg-', 'bg-')))} aria-hidden />
-
-                            <div className="relative z-10 flex flex-col justify-between h-full gap-8">
-                                <div className={twMerge(clsx("w-14 h-14 rounded-[1.25rem] flex items-center justify-center border border-white/10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-inner", s.bg))}>
-                                    <s.icon className={twMerge(clsx("w-6 h-6", s.color))} />
-                                </div>
-                                
-                                <div className="space-y-1">
-                                    <motion.span 
-                                        className="text-5xl font-black text-theme block tracking-tighter"
-                                        initial={{ scale: 0.8, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ delay: i * 0.1, ...LIQUID_SPRING }}
-                                    >
-                                        {s.value}
-                                    </motion.span>
-                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-theme transition-colors duration-300">
-                                        {s.label}
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="h-0.5 flex-1 bg-[oklch(100%_0_0/0.05)] rounded-full overflow-hidden">
-                                        <motion.div 
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${Math.min(100, (s.value / (statsData.totalProjects || 100)) * 100)}%` }} // Fallback purely visual calculation
-                                            className={twMerge(clsx("h-full", s.bg.replace('/10', '')))}
-                                            transition={{ duration: 1, delay: i * 0.1 + 0.5 }}
-                                        />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-gray-600 whitespace-nowrap uppercase">{s.sub}</span>
-                                </div>
-                            </div>
-                        </Card>
-                    ))}
-                </section>
-
-                {/* ── Main Dashboard Area ── */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
-                    {/* Neural Feed (Activity) - Liquid Glass Container */}
-                    <Card className="lg:col-span-2 flex flex-col h-[550px] !p-0 bg-[oklch(100%_0_0/0.02)] border-[oklch(100%_0_0/0.05)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] overflow-hidden relative">
-                        <header className="p-8 border-b border-[oklch(100%_0_0/0.05)] flex items-center justify-between bg-[oklch(100%_0_0/0.01)] backdrop-blur-md relative z-20">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-[1.25rem] bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                                    <Activity className="w-6 h-6 text-cyan-400" />
-                                </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
                                 <div>
-                                    <h3 className="text-xl font-black text-[var(--text-main)] tracking-tighter">Activity Feed</h3>
-                                    <p className="text-[10px] font-bold text-theme uppercase tracking-widest mt-0.5">Real-time Updates</p>
+                                    {/* system status chip */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                                        transition={{ ...EASE, delay: .08 }}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 12px', borderRadius: 100, border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', marginBottom: 18 }}
+                                    >
+                                        <StatusPip active />
+                                        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase', color: '#3f4558', fontFamily: 'var(--mono)' }}>
+                                            All systems operational
+                                        </span>
+                                        <span style={{ fontSize: 10, color: '#1e2130', fontFamily: 'var(--mono)' }}>·</span>
+                                        <span style={{ fontSize: 10, color: '#3f4558', fontFamily: 'var(--mono)' }}>{timeString}</span>
+                                    </motion.div>
+
+                                    {/* greeting */}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                                        transition={{ ...SPRING, delay: .06 }}
+                                    >
+                                        <h1 style={{ fontSize: 34, fontWeight: 700, color: '#e1e4ed', letterSpacing: '-0.6px', lineHeight: 1.15, margin: 0 }}>
+                                            {greeting},{' '}
+                                            <span style={{ color: '#22d3ee' }}>{firstName}</span>
+                                            <span style={{ color: '#22d3ee' }}>.</span>
+                                        </h1>
+                                        <p style={{ marginTop: 8, fontSize: 13.5, color: 'var(--dim)', lineHeight: 1.6, maxWidth: 480 }}>
+                                            {user?.role === 'Admin'
+                                                ? 'Your workspace is active. Below is a summary of current platform activity and project status.'
+                                                : 'Your project environment is ready. All services are running within expected parameters.'}
+                                        </p>
+                                    </motion.div>
                                 </div>
+
+                                {/* CTA */}
+                                <motion.div initial={{ opacity: 0, scale: .95 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...SPRING, delay: .18 }}>
+                                    <Button
+                                        variant="primary"
+                                        size="lg"
+                                        leftIcon={Plus}
+                                        as={Link}
+                                        to="/projects"
+                                        style={{ boxShadow: '0 12px 28px rgba(34,211,238,0.18), inset 0 1px 0 rgba(255,255,255,0.15)' }}
+                                    >
+                                        New Project
+                                    </Button>
+                                </motion.div>
                             </div>
-                            {canViewActivity && (
-                                <Link to="/admin/security" className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400 hover:text-white transition-colors">
-                                    Full Audit Log
-                                </Link>
-                            )}
-                        </header>
+                        </motion.header>
 
-                        <div className="flex-1 min-h-0 relative z-10 bg-gradient-to-b from-[oklch(100%_0_0/0.02)] to-transparent">
-                            {!canViewActivity ? (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-                                    <Lock className="w-12 h-12 text-rose-500/80 mb-6" />
-                                    <h4 className="text-white text-lg font-black tracking-tight mb-2">Access Restricted</h4>
-                                    <p className="text-sm text-gray-500 font-medium max-w-xs leading-relaxed">
-                                        You do not have the required permissions to view the activity feed.
-                                    </p>
-                                </div>
-                            ) : actLoading ? (
-                                <div className="p-8 space-y-2">
-                                    {[1, 2, 3, 4, 5].map(i => <ActivitySkeleton key={i} />)}
-                                </div>
-                            ) : (
-                                <div ref={parentRef} className="h-full overflow-y-auto px-8 py-4 custom-scrollbar" aria-live="polite">
-                                    <div style={{ height: virt.getTotalSize(), width: '100%', position: 'relative' }}>
-                                        {virt.getVirtualItems().map(vi => {
-                                            const a = activity[vi.index];
-                                            const t = new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                            return (
-                                                <div 
-                                                    key={vi.key} 
-                                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: vi.size, transform: `translateY(${vi.start}px)` }}
-                                                    className="flex items-center gap-5 border-b border-[oklch(100%_0_0/0.03)] last:border-0 hover:bg-[oklch(100%_0_0/0.02)] transition-colors rounded-xl px-2"
-                                                >
-                                                    <div className="relative flex-shrink-0">
-                                                        <div className="w-11 h-11 rounded-[1.125rem] bg-[oklch(100%_0_0/0.05)] border border-[oklch(100%_0_0/0.1)] flex items-center justify-center font-black text-sm text-gray-300 shadow-inner">
-                                                            {a.user?.name?.charAt(0)}
-                                                        </div>
-                                                    </div>
-                                                    <div className="min-w-0 pr-4 flex-1 py-3 border-r border-[oklch(100%_0_0/0.03)]">
-                                                        <p className="text-sm text-gray-300 font-medium truncate leading-tight">
-                                                            <span className="font-black text-cyan-400 mr-2">{a.user?.name}</span>
-                                                            <span className="text-gray-500">{a.action}</span>
-                                                            {a.details?.title && <span className="ml-2 text-white">"{a.details.title}"</span>}
-                                                        </p>
-                                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mt-1.5">{t}</p>
-                                                    </div>
-                                                    <ChevronRight className="ml-3 w-4 h-4 text-gray-700 shrink-0" />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
+                        {/* ── STAT CARDS ────────────────────────────── */}
+                        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14, marginBottom: 28 }} aria-label="Workspace overview">
+                            {STATS.map((s, i) => (
+                                <motion.div
+                                    key={s.label}
+                                    className="stat-card"
+                                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                                    transition={{ ...EASE, delay: i * .07 }}
+                                    style={{ '--hover-border': s.accent + '33' }}
+                                    onMouseEnter={e => e.currentTarget.style.borderColor = s.accent + '33'}
+                                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
+                                >
+                                    {/* corner glow */}
+                                    <div style={{ position: 'absolute', top: 0, right: 0, width: 110, height: 110, background: `radial-gradient(circle at top right, ${s.ring}, transparent 70%)`, pointerEvents: 'none' }} />
 
-                    {/* Right Column (Widgets) - M2M Adaptive Space */}
-                    <aside className="space-y-8 h-full flex flex-col relative">
-                        <div className="absolute -top-20 -right-20 w-64 h-64 bg-theme-500/10 rounded-full blur-[80px] pointer-events-none animate-pulse" />
-                        <ApodWidget />
-                        
-                        <Card className="flex-1 bg-gradient-to-br from-indigo-500/10 to-[oklch(100%_0_0/0.02)] border-indigo-500/20 overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" padding="p-8">
-                            <div className="relative z-10 flex flex-col h-full justify-center">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-theme mb-8 border-b border-white/5 pb-4 inline-block">Milestone Tracking</h4>
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between px-1">
-                                        <span className="text-lg font-black tracking-tight text-white">Project Completion</span>
-                                        <span className="text-base font-black text-indigo-400">92%</span>
+                                    {/* icon */}
+                                    <div style={{ width: 38, height: 38, borderRadius: 12, background: s.ring, border: `1px solid ${s.accent}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                                        <s.icon style={{ width: 17, height: 17, color: s.accent }} />
                                     </div>
-                                    <div className="h-1.5 bg-[oklch(100%_0_0/0.05)] rounded-full overflow-hidden shadow-inner">
-                                        <motion.div 
+
+                                    {/* value */}
+                                    <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px', color: '#e1e4ed', lineHeight: 1, marginBottom: 6 }}>
+                                        <Counter value={s.value} delay={i * 70 + 200} />
+                                    </div>
+
+                                    {/* label */}
+                                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: '#3f4558', fontFamily: 'var(--mono)', marginBottom: 14 }}>
+                                        {s.label}
+                                    </div>
+
+                                    {/* progress track */}
+                                    <div style={{ height: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 2, overflow: 'hidden' }}>
+                                        <motion.div
                                             initial={{ width: 0 }}
-                                            animate={{ width: '92%' }}
-                                            transition={{ ...LIQUID_SPRING, delay: 0.5 }}
-                                            className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 shadow-[0_0_15px_rgba(99,102,241,0.6)]"
+                                            animate={{ width: `${Math.min(100, (s.value / Math.max(statsData.totalProjects || 1, s.value)) * 100)}%` }}
+                                            transition={{ duration: 1.1, delay: i * .07 + .4, ease: 'easeOut' }}
+                                            style={{ height: '100%', background: s.accent, borderRadius: 2 }}
                                         />
                                     </div>
-                                    <p className="text-xs text-indigo-300/50 font-medium">On track to reach next milestone by end of week.</p>
+                                    <div style={{ marginTop: 7, fontSize: 10, color: '#3f4558', fontFamily: 'var(--mono)' }}>{s.sub}</div>
+                                </motion.div>
+                            ))}
+                        </section>
+
+                        {/* ── MAIN CONTENT GRID ─────────────────────── */}
+                        <section style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, alignItems: 'start' }}>
+
+                            {/* ── ACTIVITY FEED ── */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                                transition={{ ...EASE, delay: .22 }}
+                                style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, background: 'rgba(255,255,255,0.015)', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: 520 }}
+                            >
+                                {/* feed header */}
+                                <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.01)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Activity style={{ width: 16, height: 16, color: '#22d3ee' }} />
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#d1d5db', margin: 0, letterSpacing: '-0.2px' }}>Activity Feed</h3>
+                                            <p style={{ fontSize: 10, color: '#3f4558', fontFamily: 'var(--mono)', margin: '2px 0 0', letterSpacing: '.12em', textTransform: 'uppercase' }}>Real-time audit log</p>
+                                        </div>
+                                    </div>
+                                    {canViewActivity && (
+                                        <Link
+                                            to="/admin/security"
+                                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#3f4558', textDecoration: 'none', letterSpacing: '.05em', transition: 'color .15s' }}
+                                            onMouseEnter={e => e.currentTarget.style.color = '#22d3ee'}
+                                            onMouseLeave={e => e.currentTarget.style.color = '#3f4558'}
+                                        >
+                                            View full log
+                                            <ArrowUpRight style={{ width: 12, height: 12 }} />
+                                        </Link>
+                                    )}
                                 </div>
+
+                                {/* feed body */}
+                                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="h-scroll">
+                                    {!canViewActivity ? (
+                                        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32, textAlign: 'center' }}>
+                                            <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Lock style={{ width: 18, height: 18, color: '#f87171' }} />
+                                            </div>
+                                            <div>
+                                                <p style={{ fontSize: 14, fontWeight: 600, color: '#d1d5db', margin: '0 0 5px' }}>Restricted Access</p>
+                                                <p style={{ fontSize: 12, color: 'var(--dim)', margin: 0, maxWidth: 260, lineHeight: 1.6 }}>
+                                                    Audit log visibility is limited to Administrators and Managers.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : actLoading ? (
+                                        <div style={{ padding: '16px 24px' }}>
+                                            {[0, .08, .16, .24, .32].map((d, i) => <ActivitySkeleton key={i} delay={d} />)}
+                                        </div>
+                                    ) : activity.length === 0 ? (
+                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <p style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>No recent activity</p>
+                                        </div>
+                                    ) : (
+                                        <div ref={parentRef} style={{ height: '100%', overflowY: 'auto', padding: '8px 16px' }} className="h-scroll" aria-live="polite">
+                                            <div style={{ height: virt.getTotalSize(), position: 'relative' }}>
+                                                {virt.getVirtualItems().map(vi => {
+                                                    const a = activity[vi.index];
+                                                    const t = new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                                    const initial = a.user?.name?.charAt(0)?.toUpperCase() || '?';
+                                                    return (
+                                                        <div
+                                                            key={vi.key}
+                                                            className="act-row"
+                                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: vi.size, transform: `translateY(${vi.start}px)` }}
+                                                        >
+                                                            {/* avatar */}
+                                                            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#94a3b8', flexShrink: 0 }}>
+                                                                {initial}
+                                                            </div>
+
+                                                            {/* text */}
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <p style={{ margin: 0, fontSize: 12.5, color: '#94a3b8', lineHeight: 1.45, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    <span style={{ fontWeight: 600, color: '#cbd5e1' }}>{a.user?.name}</span>
+                                                                    {' '}
+                                                                    <span style={{ color: 'var(--dim)' }}>{actionLabel(a.action)}</span>
+                                                                    {a.details?.title && (
+                                                                        <>
+                                                                            {' '}
+                                                                            <span style={{ color: '#e1e4ed', fontStyle: 'italic' }}>"{a.details.title}"</span>
+                                                                        </>
+                                                                    )}
+                                                                </p>
+                                                                <p style={{ margin: '3px 0 0', fontSize: 10, color: '#374151', fontFamily: 'var(--mono)', letterSpacing: '.06em' }}>{t}</p>
+                                                            </div>
+
+                                                            <ChevronRight style={{ width: 13, height: 13, color: '#1e2130', flexShrink: 0 }} />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+
+                            {/* ── RIGHT COLUMN ── */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                                {/* APOD widget */}
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ...EASE, delay: .3 }}>
+                                    <ApodWidget />
+                                </motion.div>
+
+                                {/* Milestone card */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                                    transition={{ ...EASE, delay: .38 }}
+                                    style={{ border: '1px solid rgba(129,140,248,0.15)', borderRadius: 18, background: 'rgba(129,140,248,0.04)', padding: '22px 22px 20px', overflow: 'hidden', position: 'relative' }}
+                                >
+                                    <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, background: 'radial-gradient(circle, rgba(129,140,248,0.08), transparent 70%)', pointerEvents: 'none' }} />
+
+                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#374151', fontFamily: 'var(--mono)', marginBottom: 16 }}>Milestone Tracking</p>
+
+                                    <div style={{ marginBottom: 10 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                                            <span style={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>Project Completion</span>
+                                            <span style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', fontFamily: 'var(--mono)' }}>92%</span>
+                                        </div>
+                                        <div style={{ height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
+                                            <motion.div
+                                                initial={{ width: 0 }} animate={{ width: '92%' }}
+                                                transition={{ duration: 1.2, delay: .6, ease: 'easeOut' }}
+                                                style={{ height: '100%', background: 'linear-gradient(90deg, #818cf8, #22d3ee)', borderRadius: 2, boxShadow: '0 0 10px rgba(129,140,248,0.4)' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <p style={{ fontSize: 11, color: '#374151', lineHeight: 1.55, margin: '12px 0 0' }}>
+                                        On track to reach the next milestone by end of week.
+                                    </p>
+
+                                    {/* mini milestones */}
+                                    <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 9 }}>
+                                        {[
+                                            { label: 'Design Review', pct: 100, done: true },
+                                            { label: 'Backend API', pct: 88, done: false },
+                                            { label: 'QA & Staging', pct: 45, done: false },
+                                        ].map((m, i) => (
+                                            <div key={i}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                    <span style={{ fontSize: 11, color: m.done ? '#4a5568' : '#6b7280' }}>{m.label}</span>
+                                                    <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: m.done ? '#34d399' : '#374151' }}>{m.done ? '✓' : `${m.pct}%`}</span>
+                                                </div>
+                                                <div style={{ height: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 1, overflow: 'hidden' }}>
+                                                    <motion.div
+                                                        initial={{ width: 0 }} animate={{ width: `${m.pct}%` }}
+                                                        transition={{ duration: 1, delay: .7 + i * .1, ease: 'easeOut' }}
+                                                        style={{ height: '100%', background: m.done ? '#34d399' : '#818cf8', borderRadius: 1 }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+
+                                {/* Quick links */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                                    transition={{ ...EASE, delay: .46 }}
+                                    style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18, background: 'rgba(255,255,255,0.015)', padding: '18px 20px' }}
+                                >
+                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#374151', fontFamily: 'var(--mono)', marginBottom: 12 }}>Quick Navigation</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                        {[
+                                            { label: 'Projects', to: '/projects', icon: FolderKanban },
+                                            { label: 'Tasks', to: '/tasks', icon: CheckSquare },
+                                            ...(canViewActivity ? [{ label: 'Security & Access', to: '/admin', icon: Shield }] : []),
+                                        ].map((link, i) => (
+                                            <Link key={i} to={link.to}
+                                                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, textDecoration: 'none', transition: 'background .15s', color: '#6b7280' }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = '#d1d5db'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#6b7280'; }}
+                                            >
+                                                <link.icon style={{ width: 14, height: 14, flexShrink: 0 }} />
+                                                <span style={{ fontSize: 13, fontWeight: 500 }}>{link.label}</span>
+                                                <ChevronRight style={{ width: 12, height: 12, marginLeft: 'auto', opacity: .5 }} />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </motion.div>
                             </div>
-                        </Card>
-                    </aside>
-                </section>
-            </DashboardErrorBoundary>
-        </article>
+                        </section>
+
+                        {/* ── FOOTER STATUS BAR ─────────────────────── */}
+                        <motion.footer
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .6 }}
+                            style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 4 }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <StatusPip active />
+                                <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>Platform operational</span>
+                            </div>
+                            <span style={{ fontSize: 10, color: '#1e293b' }}>·</span>
+                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748', textTransform: 'uppercase', letterSpacing: '.08em' }}>{roleLabel}</span>
+                            <span style={{ fontSize: 10, color: '#1e293b' }}>·</span>
+                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>{user?.email}</span>
+                        </motion.footer>
+
+                    </DashboardErrorBoundary>
+                </div>
+            </article>
+        </>
     );
 };
 

@@ -2,7 +2,9 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://syncforge-io.onrender.com';
+import { BASE_URL } from '../store/useAuthStore';
+
+const SOCKET_URL = BASE_URL.replace(/\/api$/, '');
 
 export const useSocketSync = (projectId) => {
     const queryClient = useQueryClient();

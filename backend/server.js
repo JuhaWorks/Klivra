@@ -39,8 +39,9 @@ const allowedOrigins = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'https://klivra.vercel.app',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
   process.env.FRONTEND_URL?.replace(/\/$/, '')
-].filter(Boolean));
+].filter(Boolean).map(origin => origin.trim()));
 
 // Log Active Mode
 logger.info(`🌐 Server starting in ${process.env.NODE_ENV || 'development'} mode`);

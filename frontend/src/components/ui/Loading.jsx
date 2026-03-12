@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import AsciiWave from './AsciiWave';
 
 
 /**
@@ -48,11 +49,16 @@ export const PageLoader = () => (
 );
 
 export const GlobalLoadingScreen = () => (
-    <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-10">
+    <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-10 relative overflow-hidden">
+        {/* Background ASCII Animation */}
+        <div className="absolute inset-x-0 bottom-0 h-64 opacity-20 pointer-events-none">
+            <AsciiWave speed={0.5} />
+        </div>
+        
         <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative"
+            className="relative z-10"
         >
             <div className="absolute inset-0 w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 blur-2xl animate-pulse" />
             <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/25">
@@ -60,7 +66,7 @@ export const GlobalLoadingScreen = () => (
             </div>
         </motion.div>
         
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 relative z-10">
             <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
                 <motion.div 
                     initial={{ x: "-100%" }}
