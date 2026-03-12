@@ -88,10 +88,10 @@ export default function ModeSelector() {
                             <div className="space-y-2 w-full">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <variant.icon className={twMerge(clsx("w-4 h-4 transition-colors", isActive ? variant.accent : "text-gray-500"))} />
+                                        <variant.icon className={twMerge(clsx("w-4 h-4 transition-colors", isActive ? variant.accent : "text-secondary"))} />
                                         <h4 className={twMerge(clsx(
                                             "font-black text-sm uppercase tracking-widest",
-                                            isActive ? "text-white" : "text-gray-500 group-hover:text-gray-300"
+                                            isActive ? "text-white" : "text-secondary group-hover:text-primary"
                                         ))}>
                                             {variant.name}
                                         </h4>
@@ -103,7 +103,7 @@ export default function ModeSelector() {
                                         </div>
                                     )}
                                 </div>
-                                <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                                <p className="text-[11px] text-secondary font-medium leading-relaxed">
                                     {variant.description}
                                 </p>
                             </div>
@@ -122,10 +122,10 @@ export default function ModeSelector() {
 
             {/* Sub-directives */}
             <div className="flex items-center gap-4 p-5 glass-2 bg-white/[0.02] border border-white/5 rounded-[2rem] opacity-50">
-                <Monitor className="w-5 h-5 text-gray-700" />
+                <Monitor className="w-5 h-5 text-tertiary" />
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none">Ambient Sync</span>
-                    <span className="text-[9px] text-gray-700 font-medium">Follow system light-level protocols and ambient sensors.</span>
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-widest leading-none">Ambient Sync</span>
+                    <span className="text-[9px] text-tertiary font-medium">Follow system light-level protocols and ambient sensors.</span>
                 </div>
                 <div className="ml-auto flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
                     <Sparkles className="w-3 h-3 text-cyan-400" />

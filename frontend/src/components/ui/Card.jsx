@@ -24,9 +24,9 @@ const Card = ({
             } : {}}
             className={twMerge(clsx(
                 'relative flex flex-col overflow-hidden rounded-[2rem] transition-all duration-500',
-                variant === 'glass' && 'glass-2 border-white/10 bg-[var(--bg-surface)]',
-                variant === 'solid' && 'bg-[var(--bg-surface)] border border-white/10',
-                variant === 'outline' && 'bg-transparent border border-white/10',
+                variant === 'glass' && 'glass-2 border-default bg-[var(--bg-surface)]',
+                variant === 'solid' && 'bg-[var(--bg-surface)] border border-default',
+                variant === 'outline' && 'bg-transparent border border-default',
                 padding,
                 className
             ))}

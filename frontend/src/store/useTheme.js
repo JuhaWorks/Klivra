@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-
 export const THEMES = {
-  EMERALD: 'default',
-  NEON_PURPLE: 'theme-neon-purple',
-  CYBER_YELLOW: 'theme-cyber-yellow',
-  CRIMSON_RED: 'theme-crimson-red',
+  EMERALD: 'emerald',
+  VIOLET: 'violet',
+  AMBER: 'amber',
+  ROSE: 'rose',
+  SKY: 'sky',
 };
 
 export const MODES = {
@@ -15,15 +15,12 @@ export const MODES = {
 const applyThemeToDOM = (theme, mode) => {
   const root = document.documentElement;
 
-  // --- Apply Accent Theme ---
-  Object.values(THEMES).forEach(t => {
-    if (t !== 'default') root.classList.remove(t);
-  });
-  if (theme !== THEMES.EMERALD) {
-    root.classList.add(theme);
+  if (theme === THEMES.EMERALD) {
+    root.removeAttribute('data-theme');
+  } else {
+    root.setAttribute('data-theme', theme);
   }
 
-  // --- Apply Display Mode ---
   if (mode === MODES.DARK) {
     root.classList.add('dark');
   } else {

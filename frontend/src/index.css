@@ -203,9 +203,9 @@
   --bg-elevated: oklch(1 0 0 / 0.96);
   --bg-sunken: oklch(0.94 0.003 247 / 0.60);
   --text-primary: oklch(0.12 0.008 247);
-  --text-secondary: oklch(0.42 0.012 247);
-  --text-tertiary: oklch(0.60 0.010 247);
-  --text-disabled: oklch(0.74 0.006 247);
+  --text-secondary: oklch(0.28 0.012 247);
+  --text-tertiary: oklch(0.42 0.010 247);
+  --text-disabled: oklch(0.65 0.006 247);
   --border-default: oklch(0.88 0.006 247 / 0.80);
   --border-strong: oklch(0.76 0.008 247 / 0.85);
   --border-subtle: oklch(0.92 0.004 247 / 0.50);

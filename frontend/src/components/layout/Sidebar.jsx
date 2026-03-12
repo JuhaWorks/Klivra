@@ -53,11 +53,22 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch }) => {
             )}
             
             <Icon className={twMerge(clsx(
-                "w-5 h-5 transition-colors z-10",
-                isActive ? "text-cyan-400" : "group-hover:text-cyan-300"
+                "w-5 h-5 transition-colors z-10 shrink-0",
+                isActive ? "text-theme" : "group-hover:text-theme-lt"
             ))} />
             
-            <span className="font-bold text-sm tracking-tight z-10">{item.label}</span>
+            <AnimatePresence>
+                {!isCollapsed && (
+                    <motion.span 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="font-bold text-sm tracking-tight z-10 truncate"
+                    >
+                        {item.label}
+                    </motion.span>
+                )}
+            </AnimatePresence>
             
             {isActive && (
                 <motion.div
@@ -70,7 +81,7 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch }) => {
     );
 };
 
-const SidebarComponent = ({ isOpen, onClose }) => {
+const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
     const { logout, user } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
@@ -117,9 +128,10 @@ const SidebarComponent = ({ isOpen, onClose }) => {
             </AnimatePresence>
 
             <aside className={twMerge(clsx(
-                "fixed top-0 left-0 h-full z-50 w-[280px] glass-2 border-r border-white/5 bg-[var(--bg-surface)]",
+                "fixed top-0 left-0 h-full z-50 glass-2 border-r border-default bg-surface",
                 "flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
                 "lg:relative lg:translate-x-0 rounded-none",
+                isCollapsed ? "w-[80px]" : "w-[280px]",
                 isOpen ? 'translate-x-0' : '-translate-x-full'
             ))}>
                 {/* Theme Ambient Effect */}
@@ -127,23 +139,34 @@ const SidebarComponent = ({ isOpen, onClose }) => {
 
                 {/* Brand */}
                 <div className="h-20 flex items-center gap-4 px-6 relative z-10">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-xl shadow-cyan-500/10">
+                    <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10">
                         <span className="text-white font-black text-xl">K</span>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-lg font-black tracking-tighter text-[var(--text-main)]">Klivra</span>
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{isAdminSection ? 'Administration' : 'Workspace'}</span>
-                    </div>
-                    <button onClick={onClose} className="lg:hidden ml-auto p-2 text-gray-500 hover:text-white rounded-xl transition-all hover:bg-white/5">
+                    {!isCollapsed && (
+                        <div className="flex flex-col">
+                            <span className="text-lg font-black tracking-tighter text-primary">Klivra</span>
+                            <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest">{isAdminSection ? 'Administration' : 'Workspace'}</span>
+                        </div>
+                    )}
+                    <button 
+                        onClick={onToggleCollapse} 
+                        className="hidden lg:flex ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken"
+                        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                    >
+                        <ChevronRight className={twMerge(clsx("w-5 h-5 transition-transform", !isCollapsed && "rotate-180"))} />
+                    </button>
+                    <button onClick={onClose} className="lg:hidden ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Nav */}
                 <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto relative z-10">
-                    <p className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                        {isAdminSection ? 'System Control' : 'Navigation'}
-                    </p>
+                    {!isCollapsed && (
+                        <p className="px-4 mb-4 text-[10px] font-black text-tertiary uppercase tracking-[0.2em]">
+                            {isAdminSection ? 'System Control' : 'Navigation'}
+                        </p>
+                    )}
 
                     {user?.role === 'Admin' && (
                         <div className="mb-6 space-y-2">

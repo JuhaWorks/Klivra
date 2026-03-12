@@ -71,11 +71,11 @@ const Projects = () => {
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'Active': return 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
-            case 'Paused': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
-            case 'Completed': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-            case 'Archived': return 'text-gray-400 bg-white/5 border-white/10';
-            default: return 'text-gray-400 bg-white/5 border-white/10';
+            case 'Active': return 'text-theme bg-accent-muted border-accent';
+            case 'Paused': return 'text-warning bg-warning/10 border-warning/20';
+            case 'Completed': return 'text-success bg-success/10 border-success/20';
+            case 'Archived': return 'text-tertiary bg-sunken border-default';
+            default: return 'text-tertiary bg-sunken border-default';
         }
     };
 
@@ -87,12 +87,12 @@ const Projects = () => {
                 
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]">
+                        <div className="flex items-center gap-3 text-theme font-black text-[10px] uppercase tracking-[0.4em]">
                             <LayoutGrid className="w-3 h-3" />
                             <span>Project Management</span>
                         </div>
-                        <h1 className="text-6xl font-black text-theme tracking-tighter">Projects</h1>
-                        <p className="text-gray-500 font-medium text-lg max-w-xl leading-relaxed">
+                        <h1 className="text-6xl font-black text-primary tracking-tighter">Projects</h1>
+                        <p className="text-secondary font-medium text-lg max-w-xl leading-relaxed">
                             Manage and collaborate on team projects efficiently in a centralized workspace.
                         </p>
                     </div>
@@ -109,7 +109,7 @@ const Projects = () => {
                                     onClick={() => setView(tab.id)}
                                     className={twMerge(clsx(
                                         "flex items-center gap-3 px-6 py-2.5 rounded-xl text-xs font-black transition-all relative overflow-hidden",
-                                        view === tab.id ? "text-cyan-400" : "text-gray-500 hover:text-gray-300"
+                                        view === tab.id ? "text-theme" : "text-tertiary hover:text-secondary"
                                     ))}
                                 >
                                     {view === tab.id && (
@@ -123,7 +123,7 @@ const Projects = () => {
                                     <span className="relative z-10">{tab.label}</span>
                                     <span className={twMerge(clsx(
                                         "relative z-10 px-1.5 py-0.5 rounded-md text-[9px]",
-                                        view === tab.id ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-600"
+                                        view === tab.id ? "bg-theme-muted text-theme" : "bg-sunken text-tertiary"
                                     ))}>{tab.count}</span>
                                 </button>
                             ))}
@@ -189,28 +189,28 @@ const Projects = () => {
 
                                     <div className="px-4 space-y-4 mb-8">
                                         <div className="space-y-1">
-                                            <h3 className="text-2xl font-black text-theme tracking-tighter group-hover:text-cyan-400 transition-colors line-clamp-1">
+                                            <h3 className="text-2xl font-black text-primary tracking-tighter group-hover:text-theme transition-colors line-clamp-1">
                                                 {project.name}
                                             </h3>
-                                            <p className="text-gray-500 text-xs font-medium line-clamp-2 leading-relaxed min-h-[32px]">
+                                            <p className="text-tertiary text-xs font-medium line-clamp-2 leading-relaxed min-h-[32px]">
                                                 {project.description}
                                             </p>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-6 pt-2">
                                             <div className="space-y-1">
-                                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest block">Deadline</span>
-                                                <div className="flex items-center gap-2 text-theme">
-                                                    <Calendar className="w-3.5 h-3.5 text-cyan-500/60" />
+                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block">Deadline</span>
+                                                <div className="flex items-center gap-2 text-primary">
+                                                    <Calendar className="w-3.5 h-3.5 text-theme-lt" />
                                                     <span className="text-xs font-bold">
                                                         {new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                                     </span>
                                                 </div>
                                             </div>
                                             <div className="space-y-1">
-                                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest block">Team Members</span>
-                                                <div className="flex items-center gap-2 text-theme">
-                                                    <Users className="w-3.5 h-3.5 text-indigo-500/60" />
+                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block">Team Members</span>
+                                                <div className="flex items-center gap-2 text-primary">
+                                                    <Users className="w-3.5 h-3.5 text-theme-lt" />
                                                     <span className="text-xs font-bold">{project.members?.length || 0}</span>
                                                 </div>
                                             </div>
@@ -229,7 +229,7 @@ const Projects = () => {
                                                 </div>
                                             ))}
                                             {project.members?.length > 4 && (
-                                                <div className="w-8 h-8 rounded-xl border-2 border-[var(--bg-base)] bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">
+                                                <div className="w-8 h-8 rounded-xl border-2 border-base bg-sunken flex items-center justify-center text-[9px] font-black text-tertiary">
                                                     +{project.members.length - 4}
                                                 </div>
                                             )}

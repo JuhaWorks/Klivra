@@ -37,6 +37,7 @@ const InteractiveGridBackground = ({
   const COLORS = {
     emerald: "#10b981", // Exact Emerald
     emeraldGlow: "rgba(16, 185, 129, 0.8)", // Highly saturated glow core
+    cyan: "#22d3ee", // Subtler cyan accents for idle
     cyanGlow: "rgba(34, 211, 238, 0.4)", // Subtler cyan accents for idle
     gridDark: "rgba(16, 185, 129, 0.08)",
     gridLight: "rgba(16, 185, 129, 0.12)"
@@ -84,7 +85,7 @@ const InteractiveGridBackground = ({
       if (!containerRef.current) return;
       width = containerRef.current.clientWidth;
       height = containerRef.current.clientHeight;
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = window.devicePixelRatio || 2; // High DPI for vector sharp lines
 
       // Dual-Canvas Setup
       canvas.width = gridCanvas.width = width * dpr;
@@ -122,7 +123,7 @@ const InteractiveGridBackground = ({
       ctx.clearRect(0, 0, width, height);
 
       // ── Responsive Motion (Optimized Lerp) ────────────────
-      const lerpVelocity = 18.0; // Snappy, liquid feel
+      const lerpVelocity = 24.0; // Smoother, faster responsive flow
       lerpMouseRef.current.x += (mouseRef.current.x - lerpMouseRef.current.x) * lerpVelocity * dt;
       lerpMouseRef.current.y += (mouseRef.current.y - lerpMouseRef.current.y) * lerpVelocity * dt;
 
@@ -168,7 +169,7 @@ const InteractiveGridBackground = ({
         ctx.globalAlpha = alpha;
         
         if (glow) {
-          ctx.shadowColor = COLORS.emerald;
+          ctx.shadowColor = cell.type === 'mouse' ? COLORS.emerald : COLORS.cyan;
           ctx.shadowBlur = 20 * factor;
         }
 
@@ -197,10 +198,13 @@ const InteractiveGridBackground = ({
     };
   }, [gridSize, trailLength, idleSpeed, glow, idleRandomCount, isDarkMode]);
 
+  const backgroundVar = isDarkMode ? '#09090b' : 'var(--bg-base)';
+
   return (
     <div
       ref={containerRef}
-      className={cn("relative w-full h-full overflow-hidden bg-[#09090b] select-none", className)}
+      className={cn("relative w-full h-full overflow-hidden select-none transition-colors duration-1000", className)}
+      style={{ backgroundColor: backgroundVar }}
       {...props}
     >
       <canvas ref={gridCanvasRef} className="absolute inset-0 z-0 pointer-events-none opacity-50" />
@@ -210,7 +214,7 @@ const InteractiveGridBackground = ({
         <div
           className="pointer-events-none absolute inset-0 z-20"
           style={{
-            background: `radial-gradient(circle at center, transparent ${fadeIntensity}%, #09090b 95%)`,
+            background: `radial-gradient(circle at center, transparent ${fadeIntensity}%, ${backgroundVar} 95%)`,
           }}
         />
       )}

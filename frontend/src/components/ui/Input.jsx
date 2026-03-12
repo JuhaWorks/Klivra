@@ -23,14 +23,14 @@ const Input = forwardRef(({
             {label && (
                 <label 
                     htmlFor={id} 
-                    className="text-xs font-bold uppercase tracking-widest text-[#94a3b8] ml-1"
+                    className="text-xs font-bold uppercase tracking-widest text-secondary ml-1"
                 >
                     {label}
                 </label>
             )}
             <div className="relative group">
                 {LeftIcon && (
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8] group-focus-within:text-cyan-400 transition-colors">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-tertiary group-focus-within:text-cyan-400 transition-colors">
                         <LeftIcon className="w-4 h-4" />
                     </div>
                 )}
@@ -38,11 +38,11 @@ const Input = forwardRef(({
                     id={id}
                     ref={ref}
                     className={twMerge(clsx(
-                        'w-full h-11 px-4 text-sm bg-white/5 border border-white/10 rounded-2xl outline-none',
+                        'w-full h-11 px-4 text-sm bg-surface border border-default rounded-2xl outline-none text-primary',
                         'backdrop-blur-xl transition-all duration-300',
-                        'placeholder:text-[#4b5563]',
+                        'placeholder:text-tertiary',
                         'focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5',
-                        'hover:bg-white/[0.08] hover:border-white/20',
+                        'hover:bg-white/[0.08] dark:hover:bg-white/[0.03] hover:border-accent-border',
                         LeftIcon && 'pl-11',
                         RightIcon && 'pr-11',
                         error && 'border-red-500/30 focus:border-red-500/50 focus:ring-red-500/5',

@@ -37,7 +37,7 @@ export default function Settings() {
                         <h1 className="text-6xl font-black text-theme tracking-tighter leading-none">
                             Settings.
                         </h1>
-                        <p className="text-gray-500 font-medium text-lg max-w-xl">
+                        <p className="text-secondary font-medium text-lg max-w-xl">
                             Manage your account settings, security preferences, and general profile information.
                         </p>
                     </div>
@@ -56,7 +56,7 @@ export default function Settings() {
                                     "flex items-center gap-4 px-6 py-4 rounded-2xl transition-all relative group whitespace-nowrap lg:whitespace-normal",
                                     activeTab === tab.id
                                         ? "text-white"
-                                        : "text-gray-500 hover:text-gray-200"
+                                        : "text-secondary hover:text-primary"
                                 ))}
                             >
                                 {activeTab === tab.id && (
@@ -68,11 +68,11 @@ export default function Settings() {
                                 )}
                                 <tab.icon className={twMerge(clsx(
                                     "w-5 h-5 transition-colors relative z-10",
-                                    activeTab === tab.id ? tab.color : "group-hover:text-gray-400"
+                                    activeTab === tab.id ? tab.color : "group-hover:text-primary/70"
                                 ))} />
                                 <span className="font-black text-[10px] uppercase tracking-[0.2em] relative z-10">{tab.label}</span>
                                 {activeTab === tab.id && (
-                                    <ChevronRight className="ml-auto w-4 h-4 text-gray-700 hidden lg:block relative z-10" />
+                                    <ChevronRight className="ml-auto w-4 h-4 text-tertiary hidden lg:block relative z-10" />
                                 )}
                             </button>
                         ))}
@@ -84,7 +84,7 @@ export default function Settings() {
                                 <Zap className="w-4 h-4 text-cyan-400" />
                                 <span className="text-[10px] font-black text-theme uppercase tracking-widest">System Version</span>
                             </div>
-                            <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                            <p className="text-[11px] text-tertiary font-medium leading-relaxed">
                                 Your workspace is up to date with the latest standards.
                             </p>
                         </div>

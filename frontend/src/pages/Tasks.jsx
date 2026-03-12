@@ -1,6 +1,6 @@
-import React, { useState, Suspense, useTransition, useOptimistic, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSocketStore } from '../store/useSocketStore';
 import { api } from '../store/useAuthStore';
 import KanbanBoard from '../components/tools/KanbanBoard';
 import { preload } from 'react-dom';
@@ -137,6 +137,15 @@ export default function Tasks() {
     });
 
     const activeProject = projects.find(p => p._id === projectId);
+
+    const { joinProject, leaveProject } = useSocketStore();
+
+    useEffect(() => {
+        if (projectId) {
+            joinProject(projectId);
+            return () => leaveProject(projectId);
+        }
+    }, [projectId, joinProject, leaveProject]);
 
     return (
         <article 

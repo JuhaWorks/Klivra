@@ -53,6 +53,7 @@ const Layout = () => {
     useIdleTimer(); // Global idle tracking
     const location = useLocation();
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('klivra-sidebar-collapsed') === 'true');
     const [isPending, startTransition] = useTransition();
 
     // Context-Driven Theme Analysis based on routing
@@ -70,6 +71,12 @@ const Layout = () => {
         startTransition(() => { newPathFn(); });
     };
 
+    const toggleCollapse = () => {
+        const newState = !isCollapsed;
+        setIsCollapsed(newState);
+        localStorage.setItem('klivra-sidebar-collapsed', newState);
+    };
+
     return (
         <div className={`flex h-screen ${layoutBg} text-[var(--text-main)] selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`}>
             
@@ -85,7 +92,9 @@ const Layout = () => {
             {/* Sidebar (Navigation Node) */}
             <SidebarComponent 
                 isOpen={isSidebarExpanded} 
+                isCollapsed={isCollapsed}
                 onClose={() => setIsSidebarExpanded(false)} 
+                onToggleCollapse={toggleCollapse}
             />
 
             {/* Main Operational Area */}

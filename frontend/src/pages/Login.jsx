@@ -66,7 +66,7 @@ const Login = () => {
                         animate={{ opacity: 1, x: 0 }}
                         className="lg:hidden flex justify-center mb-6"
                     >
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-lg shadow-accent-500/20">
                             <span className="text-white font-bold text-2xl">K</span>
                         </div>
                     </motion.div>
@@ -74,7 +74,7 @@ const Login = () => {
                     <motion.h2 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-4xl font-bold tracking-tighter text-white mb-2"
+                        className="text-4xl font-bold tracking-tighter text-primary mb-2"
                     >
                         Welcome Back
                     </motion.h2>
@@ -82,10 +82,10 @@ const Login = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="text-gray-500 font-medium"
+                        className="text-secondary font-medium"
                     >
                         Don't have an account?{' '}
-                        <Link to="/register" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+                        <Link to="/register" className="text-theme hover:text-theme-lt transition-colors">
                             Create Workspace
                         </Link>
                     </motion.p>
@@ -95,7 +95,7 @@ const Login = () => {
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="glass-2 p-7 border-white/5 bg-white/[0.03]"
+                    className="glass-2 p-7 border-default bg-surface"
                 >
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <AnimatePresence>
@@ -134,7 +134,7 @@ const Login = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowPw(!showPw)}
-                                    className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white"
+                                    className="p-2 hover:bg-sunken rounded-lg transition-colors text-tertiary hover:text-primary"
                                 >
                                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
@@ -151,17 +151,17 @@ const Login = () => {
                                     />
                                     <div className={twMerge(clsx(
                                         "absolute inset-0 rounded-lg border transition-all duration-300",
-                                        "border-white/10 bg-white/5 peer-checked:bg-cyan-500 peer-checked:border-cyan-500",
-                                        "group-hover:border-cyan-500/50"
+                                        "border-default bg-sunken peer-checked:bg-theme peer-checked:border-theme",
+                                        "group-hover:border-theme/50"
                                     ))} />
                                     <Check className="absolute inset-0 m-auto w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
                                 </div>
-                                <span className="text-sm font-semibold text-gray-400 group-hover:text-gray-300 transition-colors">
+                                <span className="text-sm font-semibold text-tertiary group-hover:text-secondary transition-colors">
                                     Remember me
                                 </span>
                             </label>
                             
-                            <button type="button" className="text-sm font-semibold text-gray-500 hover:text-cyan-400 transition-colors">
+                             <button type="button" className="text-sm font-semibold text-tertiary hover:text-theme transition-colors">
                                 Reset Password
                             </button>
                         </div>
@@ -178,11 +178,11 @@ const Login = () => {
 
                     <div className="mt-8">
                         <div className="relative flex items-center gap-4 mb-6">
-                            <div className="flex-1 h-px bg-white/5" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">
+                            <div className="flex-1 h-px bg-default" />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
                                 or continue with
                             </span>
-                            <div className="flex-1 h-px bg-white/5" />
+                            <div className="flex-1 h-px bg-default" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -207,7 +207,7 @@ const Login = () => {
                 </motion.div>
 
                 <footer className="mt-8 text-center">
-                    <p className="text-xs font-medium text-gray-600">
+                    <p className="text-xs font-medium text-tertiary">
                         Secure Access Provided by Klivra<br />
                         © 2026 Klivra Technologies
                     </p>

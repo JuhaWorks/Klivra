@@ -66,7 +66,7 @@ export default function GeneralTab() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Profile <span className="text-cyan-400">Info.</span></h2>
-                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Manage your public profile</p>
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-[0.3em]">Manage your public profile</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
                     <BadgeCheck className="w-4 h-4 text-emerald-400" />
@@ -78,7 +78,7 @@ export default function GeneralTab() {
             <Card padding="p-0" className="overflow-hidden border-white/5">
                 <div className="px-10 py-6 border-b border-white/5 bg-white/[0.02]">
                     <div className="flex items-center gap-3">
-                        <User className="w-4 h-4 text-gray-600" />
+                        <User className="w-4 h-4 text-secondary" />
                         <span className="text-[10px] font-black text-white uppercase tracking-widest">Account Details</span>
                     </div>
                 </div>
@@ -86,9 +86,9 @@ export default function GeneralTab() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         {/* Name Field */}
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
+                            <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">Full Name</label>
                             <div className="relative group">
-                                <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-cyan-400 transition-colors" />
+                                <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-cyan-400 transition-colors" />
                                 <input
                                     id="name"
                                     type="text"
@@ -103,7 +103,7 @@ export default function GeneralTab() {
                         {/* Status Message Field */}
                         <div className="space-y-3">
                             <div className="flex justify-between items-center px-1">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Bio</label>
+                                <label className="text-[10px] font-black text-secondary uppercase tracking-widest">Bio</label>
                                 <span className={twMerge(clsx(
                                     "text-[9px] font-black uppercase tracking-widest",
                                     bioValue.length >= 250 ? 'text-rose-500' : 'text-gray-700'
@@ -112,7 +112,7 @@ export default function GeneralTab() {
                                 </span>
                             </div>
                             <div className="relative group">
-                                <FileText className="absolute top-5 left-5 w-4 h-4 text-gray-700 group-focus-within:text-cyan-400 transition-colors" />
+                                <FileText className="absolute top-5 left-5 w-4 h-4 text-tertiary group-focus-within:text-cyan-400 transition-colors" />
                                 <textarea
                                     id="customMessage"
                                     rows={1}
@@ -127,7 +127,7 @@ export default function GeneralTab() {
                     <div className="pt-4 flex items-center justify-between border-t border-white/5">
                         <div className="flex items-center gap-3">
                             <Info className="w-4 h-4 text-gray-700" />
-                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest max-w-[300px] leading-relaxed">
+                            <p className="text-[9px] font-black text-secondary uppercase tracking-widest max-w-[300px] leading-relaxed">
                                 Updates to your profile will be reflected across the platform immediately.
                             </p>
                         </div>
@@ -157,7 +157,7 @@ export default function GeneralTab() {
                 </div>
                 <div className="flex flex-col">
                     <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Profile Synced</span>
-                    <span className="text-[10px] text-gray-500 font-medium tracking-wide">All profile updates has been successfully and updated globally.</span>
+                    <span className="text-[10px] text-secondary font-medium tracking-wide">All profile updates has been successfully and updated globally.</span>
                 </div>
             </div>
         </div>

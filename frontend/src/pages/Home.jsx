@@ -197,35 +197,39 @@ const Home = () => {
                 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
                 .h-root {
-                    --sans:   'DM Sans', sans-serif;
-                    --mono:   'DM Mono', monospace;
-                    --bg:     #07070f;
-                    --surface: rgba(255,255,255,0.025);
-                    --border:  rgba(255,255,255,0.06);
-                    --muted:   #3f4558;
-                    --text:    #e1e4ed;
-                    --dim:     #6b7280;
+                    --sans:   "Switzer", system-ui, sans-serif;
+                    --mono:   "Geist Mono", monospace;
+                    --bg:     var(--bg-base);
+                    --surface: var(--bg-surface);
+                    --border:  var(--border-subtle);
+                    --muted:   var(--text-tertiary);
+                    --text:    var(--text-primary);
+                    --dim:     var(--text-secondary);
                     font-family: var(--sans);
                 }
 
                 /* scrollbar */
                 .h-scroll::-webkit-scrollbar       { width: 4px; }
                 .h-scroll::-webkit-scrollbar-track  { background: transparent; }
-                .h-scroll::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.06); border-radius: 2px; }
-                .h-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+                .h-scroll::-webkit-scrollbar-thumb  { background: var(--border-subtle); border-radius: 2px; }
+                .h-scroll::-webkit-scrollbar-thumb:hover { background: var(--border-default); }
 
                 /* stat card */
                 .stat-card {
                     position: relative;
-                    border: 1px solid var(--border);
+                    border: 1px solid var(--border-subtle);
                     border-radius: 18px;
                     padding: 28px 26px 22px;
-                    background: var(--surface);
+                    background: var(--bg-surface);
                     overflow: hidden;
-                    transition: border-color .3s, transform .25s;
+                    transition: all .3s var(--ease-fluid);
                     cursor: default;
                 }
-                .stat-card:hover { transform: translateY(-3px); }
+                .stat-card:hover { 
+                    transform: translateY(-4px);
+                    border-color: var(--accent-border);
+                    box-shadow: 0 12px 32px -8px var(--accent-glow);
+                }
 
                 /* activity item */
                 .act-row {
@@ -237,7 +241,7 @@ const Home = () => {
                     transition: background .15s;
                     cursor: default;
                 }
-                .act-row:hover { background: rgba(255,255,255,0.025); }
+                .act-row:hover { background: var(--bg-sunken); }
 
                 /* progress bar */
                 @keyframes prog-in {
@@ -247,8 +251,8 @@ const Home = () => {
                 /* grid line bg */
                 .h-bg-grid {
                     background-image:
-                        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+                        linear-gradient(var(--border-subtle) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
                     background-size: 44px 44px;
                 }
             `}</style>
@@ -271,17 +275,17 @@ const Home = () => {
                             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
                                 <div>
                                     {/* system status chip */}
-                                    <motion.div
+                                        <motion.div
                                         initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                                         transition={{ ...EASE, delay: .08 }}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 12px', borderRadius: 100, border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', marginBottom: 18 }}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 12px', borderRadius: 100, border: '1px solid var(--border-subtle)', background: 'var(--bg-sunken)', marginBottom: 18 }}
                                     >
                                         <StatusPip active />
-                                        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase', color: '#3f4558', fontFamily: 'var(--mono)' }}>
+                                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>
                                             All systems operational
                                         </span>
-                                        <span style={{ fontSize: 10, color: '#1e2130', fontFamily: 'var(--mono)' }}>·</span>
-                                        <span style={{ fontSize: 10, color: '#3f4558', fontFamily: 'var(--mono)' }}>{timeString}</span>
+                                        <span style={{ fontSize: 10, color: 'var(--border-strong)', fontFamily: 'var(--mono)' }}>·</span>
+                                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>{timeString}</span>
                                     </motion.div>
 
                                     {/* greeting */}
@@ -289,12 +293,12 @@ const Home = () => {
                                         initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
                                         transition={{ ...SPRING, delay: .06 }}
                                     >
-                                        <h1 style={{ fontSize: 34, fontWeight: 700, color: '#e1e4ed', letterSpacing: '-0.6px', lineHeight: 1.15, margin: 0 }}>
+                                        <h1 style={{ fontSize: 34, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.6px', lineHeight: 1.15, margin: 0 }}>
                                             {greeting},{' '}
-                                            <span style={{ color: '#22d3ee' }}>{firstName}</span>
-                                            <span style={{ color: '#22d3ee' }}>.</span>
+                                            <span style={{ color: 'var(--accent-500)' }}>{firstName}</span>
+                                            <span style={{ color: 'var(--accent-500)' }}>.</span>
                                         </h1>
-                                        <p style={{ marginTop: 8, fontSize: 13.5, color: 'var(--dim)', lineHeight: 1.6, maxWidth: 480 }}>
+                                        <p style={{ marginTop: 8, fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 480 }}>
                                             {user?.role === 'Admin'
                                                 ? 'Your workspace is active. Below is a summary of current platform activity and project status.'
                                                 : 'Your project environment is ready. All services are running within expected parameters.'}
@@ -339,17 +343,17 @@ const Home = () => {
                                     </div>
 
                                     {/* value */}
-                                    <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px', color: '#e1e4ed', lineHeight: 1, marginBottom: 6 }}>
+                                    <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-1.5px', color: 'var(--text-primary)', lineHeight: 1, marginBottom: 6 }}>
                                         <Counter value={s.value} delay={i * 70 + 200} />
                                     </div>
 
                                     {/* label */}
-                                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: '#3f4558', fontFamily: 'var(--mono)', marginBottom: 14 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 14 }}>
                                         {s.label}
                                     </div>
 
                                     {/* progress track */}
-                                    <div style={{ height: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 2, overflow: 'hidden' }}>
+                                    <div style={{ height: 2, background: 'var(--bg-sunken)', borderRadius: 2, overflow: 'hidden' }}>
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${Math.min(100, (s.value / Math.max(statsData.totalProjects || 1, s.value)) * 100)}%` }}
@@ -357,7 +361,7 @@ const Home = () => {
                                             style={{ height: '100%', background: s.accent, borderRadius: 2 }}
                                         />
                                     </div>
-                                    <div style={{ marginTop: 7, fontSize: 10, color: '#3f4558', fontFamily: 'var(--mono)' }}>{s.sub}</div>
+                                    <div style={{ marginTop: 7, fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>{s.sub}</div>
                                 </motion.div>
                             ))}
                         </section>
@@ -378,16 +382,16 @@ const Home = () => {
                                             <Activity style={{ width: 16, height: 16, color: '#22d3ee' }} />
                                         </div>
                                         <div>
-                                            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#d1d5db', margin: 0, letterSpacing: '-0.2px' }}>Activity Feed</h3>
-                                            <p style={{ fontSize: 10, color: '#3f4558', fontFamily: 'var(--mono)', margin: '2px 0 0', letterSpacing: '.12em', textTransform: 'uppercase' }}>Real-time audit log</p>
+                                            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', margin: 0, letterSpacing: '-0.2px' }}>Activity Feed</h3>
+                                            <p style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', margin: '2px 0 0', letterSpacing: '.12em', textTransform: 'uppercase' }}>Real-time audit log</p>
                                         </div>
                                     </div>
                                     {canViewActivity && (
                                         <Link
                                             to="/admin/security"
-                                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#3f4558', textDecoration: 'none', letterSpacing: '.05em', transition: 'color .15s' }}
-                                            onMouseEnter={e => e.currentTarget.style.color = '#22d3ee'}
-                                            onMouseLeave={e => e.currentTarget.style.color = '#3f4558'}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', textDecoration: 'none', letterSpacing: '.05em', transition: 'color .15s' }}
+                                            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-500)'}
+                                            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
                                         >
                                             View full log
                                             <ArrowUpRight style={{ width: 12, height: 12 }} />
@@ -473,27 +477,27 @@ const Home = () => {
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: .38 }}
-                                    style={{ border: '1px solid rgba(129,140,248,0.15)', borderRadius: 18, background: 'rgba(129,140,248,0.04)', padding: '22px 22px 20px', overflow: 'hidden', position: 'relative' }}
+                                    style={{ border: '1px solid var(--accent-border)', borderRadius: 18, background: 'var(--accent-bg)', padding: '22px 22px 20px', overflow: 'hidden', position: 'relative' }}
                                 >
                                     <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, background: 'radial-gradient(circle, rgba(129,140,248,0.08), transparent 70%)', pointerEvents: 'none' }} />
 
-                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#374151', fontFamily: 'var(--mono)', marginBottom: 16 }}>Milestone Tracking</p>
+                                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 16 }}>Milestone Tracking</p>
 
                                     <div style={{ marginBottom: 10 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                                            <span style={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>Project Completion</span>
-                                            <span style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', fontFamily: 'var(--mono)' }}>92%</span>
+                                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Project Completion</span>
+                                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent-500)', fontFamily: 'var(--mono)' }}>92%</span>
                                         </div>
-                                        <div style={{ height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
+                                        <div style={{ height: 3, background: 'var(--bg-sunken)', borderRadius: 2, overflow: 'hidden' }}>
                                             <motion.div
                                                 initial={{ width: 0 }} animate={{ width: '92%' }}
                                                 transition={{ duration: 1.2, delay: .6, ease: 'easeOut' }}
-                                                style={{ height: '100%', background: 'linear-gradient(90deg, #818cf8, #22d3ee)', borderRadius: 2, boxShadow: '0 0 10px rgba(129,140,248,0.4)' }}
+                                                style={{ height: '100%', background: 'linear-gradient(90deg, var(--accent-400), var(--accent-600))', borderRadius: 2, boxShadow: '0 0 10px var(--accent-glow)' }}
                                             />
                                         </div>
                                     </div>
 
-                                    <p style={{ fontSize: 11, color: '#374151', lineHeight: 1.55, margin: '12px 0 0' }}>
+                                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.55, margin: '12px 0 0' }}>
                                         On track to reach the next milestone by end of week.
                                     </p>
 
@@ -527,7 +531,7 @@ const Home = () => {
                                     transition={{ ...EASE, delay: .46 }}
                                     style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18, background: 'rgba(255,255,255,0.015)', padding: '18px 20px' }}
                                 >
-                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#374151', fontFamily: 'var(--mono)', marginBottom: 12 }}>Quick Navigation</p>
+                                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 12 }}>Quick Navigation</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                         {[
                                             { label: 'Projects', to: '/projects', icon: FolderKanban },
@@ -535,9 +539,9 @@ const Home = () => {
                                             ...(canViewActivity ? [{ label: 'Security & Access', to: '/admin', icon: Shield }] : []),
                                         ].map((link, i) => (
                                             <Link key={i} to={link.to}
-                                                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, textDecoration: 'none', transition: 'background .15s', color: '#6b7280' }}
-                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = '#d1d5db'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#6b7280'; }}
+                                                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, textDecoration: 'none', transition: 'background .15s', color: 'var(--text-secondary)' }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-sunken)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                                             >
                                                 <link.icon style={{ width: 14, height: 14, flexShrink: 0 }} />
                                                 <span style={{ fontSize: 13, fontWeight: 500 }}>{link.label}</span>
@@ -556,12 +560,12 @@ const Home = () => {
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <StatusPip active />
-                                <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>Platform operational</span>
+                                <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)' }}>Platform operational</span>
                             </div>
-                            <span style={{ fontSize: 10, color: '#1e293b' }}>·</span>
-                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748', textTransform: 'uppercase', letterSpacing: '.08em' }}>{roleLabel}</span>
-                            <span style={{ fontSize: 10, color: '#1e293b' }}>·</span>
-                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>{user?.email}</span>
+                            <span style={{ fontSize: 10, color: 'var(--border-subtle)' }}>·</span>
+                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.08em' }}>{roleLabel}</span>
+                            <span style={{ fontSize: 10, color: 'var(--border-subtle)' }}>·</span>
+                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)' }}>{user?.email}</span>
                         </motion.footer>
 
                     </DashboardErrorBoundary>
