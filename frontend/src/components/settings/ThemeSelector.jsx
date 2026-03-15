@@ -1,20 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme, THEMES } from '../../store/useTheme';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Palette, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 
 const THEME_OPTIONS = [
-    { id: THEMES.EMERALD, name: 'Emerald', colors: ['#059669', '#10b981', '#34d399'] },
-    { id: THEMES.VIOLET, name: 'Violet', colors: ['#7c3aed', '#8b5cf6', '#a78bfa'] },
-    { id: THEMES.SKY, name: 'Sky', colors: ['#0284c7', '#0ea5e9', '#38bdf8'] },
-    { id: THEMES.AMBER, name: 'Amber', colors: ['#d97706', '#f59e0b', '#fbbf24'] },
-    { id: THEMES.ROSE, name: 'Rose', colors: ['#e11d48', '#f43f5e', '#fb7185'] },
-    { id: THEMES.INDIGO, name: 'Indigo', colors: ['#4f46e5', '#6366f1', '#818cf8'] },
-    { id: THEMES.TEAL, name: 'Teal', colors: ['#0d9488', '#14b8a6', '#2dd4bf'] },
-    { id: THEMES.ORANGE, name: 'Orange', colors: ['#ea580c', '#f97316', '#fb923c'] },
-    { id: THEMES.PINK, name: 'Pink', colors: ['#db2777', '#ec4899', '#f472b6'] },
-    { id: THEMES.SLATE, name: 'Slate', colors: ['#475569', '#64748b', '#94a3b8'] },
+    { id: THEMES.VIOLET, name: 'Violet', stops: ['#4c1d95', '#7c3aed', '#a78bfa', '#c4b5fd'] },
+    { id: THEMES.EMERALD, name: 'Emerald', stops: ['#064e3b', '#059669', '#34d399', '#6ee7b7'] },
+    { id: THEMES.SKY, name: 'Sky', stops: ['#0c4a6e', '#0284c7', '#38bdf8', '#7dd3fc'] },
+    { id: THEMES.AMBER, name: 'Amber', stops: ['#78350f', '#d97706', '#fbbf24', '#fde68a'] },
+    { id: THEMES.ROSE, name: 'Rose', stops: ['#881337', '#e11d48', '#fb7185', '#fda4af'] },
+    { id: THEMES.INDIGO, name: 'Indigo', stops: ['#312e81', '#4f46e5', '#818cf8', '#a5b4fc'] },
+    { id: THEMES.TEAL, name: 'Teal', stops: ['#134e4a', '#0d9488', '#2dd4bf', '#99f6e4'] },
+    { id: THEMES.ORANGE, name: 'Orange', stops: ['#7c2d12', '#ea580c', '#fb923c', '#fdba74'] },
+    { id: THEMES.PINK, name: 'Pink', stops: ['#831843', '#db2777', '#f472b6', '#f9a8d4'] },
+    { id: THEMES.SLATE, name: 'Slate', stops: ['#1e293b', '#475569', '#94a3b8', '#cbd5e1'] },
 ];
+
+function makeGradient(stops, deg = 135) {
+    return `linear-gradient(${deg}deg, ${stops[0]} 0%, ${stops[1]} 35%, ${stops[2]} 70%, ${stops[3]} 100%)`;
+}
+
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r},${g},${b}`;
+}
 
 export default function ThemeSelector() {
     const { theme, setTheme } = useTheme();
@@ -22,10 +33,12 @@ export default function ThemeSelector() {
     const dropdownRef = useRef(null);
 
     const activeTheme = THEME_OPTIONS.find(t => t.id === theme) || THEME_OPTIONS[0];
+    const activeGrad = makeGradient(activeTheme.stops);
+    const activeGlow = `rgba(${hexToRgb(activeTheme.stops[2])}, 0.12)`;
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
                 setIsOpen(false);
             }
         };
@@ -34,112 +47,181 @@ export default function ThemeSelector() {
     }, []);
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                    <h3 className="text-[11px] font-black text-primary uppercase tracking-[0.3em] flex items-center gap-2">
-                        <Palette className="w-3.5 h-3.5 text-theme" />
-                        Color Atmosphere
+        <div
+            className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500 relative overflow-hidden rounded-2xl p-7 bg-zinc-950 border border-white/[0.07]"
+            style={{ '--panel-glow': activeGlow }}
+        >
+            {/* Ambient glow */}
+            <div
+                className="absolute -top-20 -right-20 w-64 h-64 rounded-full pointer-events-none"
+                style={{ background: `radial-gradient(circle, ${activeGlow} 0%, transparent 70%)`, transition: 'background 0.6s' }}
+            />
+
+            {/* Header */}
+            <div className="flex items-center justify-between relative z-10">
+                <div>
+                    <p className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.2em] font-mono mb-1">
+                        Workspace · Appearance
+                    </p>
+                    <h3 className="text-[18px] font-black leading-none tracking-tight text-zinc-100">
+                        Color{' '}
+                        <span
+                            className="bg-clip-text text-transparent"
+                            style={{ backgroundImage: activeGrad, transition: 'background-image 0.5s' }}
+                        >
+                            Atmosphere
+                        </span>
                     </h3>
                 </div>
 
-                {/* Streamlined Dropdown */}
-                <div className="relative w-full sm:w-56" ref={dropdownRef}>
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="w-full h-10 px-4 flex items-center justify-between bg-surface border border-default rounded-xl hover:bg-white/[0.08] transition-all group active:scale-[0.98]"
-                    >
-                        <div className="flex items-center gap-2.5">
-                            <ThemeGradient colors={activeTheme.colors} size="w-3.5 h-3.5" />
-                            <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{activeTheme.name}</span>
-                        </div>
-                        <ChevronDown className={`w-3.5 h-3.5 text-tertiary transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
-                    </button>
-
-                    <AnimatePresence>
-                        {isOpen && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                                transition={{ duration: 0.2, ease: "easeOut" }}
-                                className="absolute top-12 left-0 right-0 z-[100] bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-1.5"
-                            >
-                                <div className="grid grid-cols-1 gap-1">
-                                    {THEME_OPTIONS.map((t) => {
-                                        const active = theme === t.id;
-                                        return (
-                                            <button
-                                                key={t.id}
-                                                onClick={() => {
-                                                    setTheme(t.id);
-                                                    setIsOpen(false);
-                                                }}
-                                                className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${active ? 'bg-white/10' : 'hover:bg-white/5'}`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <ThemeGradient colors={t.colors} size="w-6 h-6" rounded="rounded-md" />
-                                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">{t.name}</span>
-                                                </div>
-                                                {active && <Check className="w-3 h-3 text-theme" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                {/* Active pill */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/[0.07] rounded-full">
+                    <div
+                        className="w-4 h-4 rounded-[5px] border border-white/10 flex-shrink-0 overflow-hidden"
+                        style={{ background: activeGrad, transition: 'background 0.4s' }}
+                    />
+                    <span className="text-[10px] font-bold text-zinc-100 uppercase tracking-[0.1em] font-mono">
+                        {activeTheme.name}
+                    </span>
                 </div>
             </div>
 
-            {/* High-density Grid Preview */}
-            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 sm:gap-3">
-                {THEME_OPTIONS.map((t) => {
+            {/* Preview strip */}
+            <div className="flex gap-1.5 h-[5px] relative z-10">
+                {THEME_OPTIONS.map(t => {
                     const active = theme === t.id;
                     return (
                         <button
                             key={t.id}
                             onClick={() => setTheme(t.id)}
-                            className={`group relative flex flex-col items-center transition-all duration-300 ${active ? 'scale-110' : 'hover:scale-105 opacity-50 hover:opacity-100'}`}
+                            className="rounded-full transition-all duration-300 flex-1"
+                            style={{
+                                background: makeGradient(t.stops, 90),
+                                opacity: active ? 1 : 0.28,
+                                flex: active ? 3 : 1,
+                                boxShadow: active ? `0 0 10px rgba(${hexToRgb(t.stops[2])}, 0.55)` : 'none',
+                            }}
+                        />
+                    );
+                })}
+            </div>
+
+            {/* Swatch grid */}
+            <div className="grid grid-cols-5 gap-2.5 relative z-10">
+                {THEME_OPTIONS.map(t => {
+                    const active = theme === t.id;
+                    const grad = makeGradient(t.stops);
+                    const glow = `rgba(${hexToRgb(t.stops[2])}, 0.4)`;
+                    return (
+                        <button
+                            key={t.id}
+                            onClick={() => setTheme(t.id)}
+                            className="group transition-transform duration-200"
+                            style={{ transform: active ? 'translateY(-3px)' : undefined }}
                         >
-                            <ThemeGradient 
-                                colors={t.colors} 
-                                size="w-8 h-8 sm:w-10 sm:h-10" 
-                                active={active}
-                            />
-                            {active && (
-                                <motion.div 
-                                    layoutId="theme-active-dot"
-                                    className="absolute -bottom-2.5 w-1 h-1 rounded-full bg-theme shadow-theme" 
+                            <div
+                                className="w-full h-[72px] rounded-xl relative overflow-hidden transition-all duration-300"
+                                style={{
+                                    border: active ? '1.5px solid rgba(255,255,255,0.3)' : '1.5px solid rgba(255,255,255,0.06)',
+                                    boxShadow: active ? `0 0 0 2.5px ${glow}` : 'none',
+                                }}
+                            >
+                                {/* Gradient fill */}
+                                <div className="absolute inset-0" style={{ background: grad }} />
+                                {/* Gloss shine */}
+                                <div className="absolute top-0 left-0 right-0 h-[45%] pointer-events-none"
+                                    style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.18), transparent)' }}
                                 />
-                            )}
+                                {/* Name label */}
+                                <span className="absolute bottom-[7px] left-0 right-0 text-center text-[8px] font-medium font-mono uppercase tracking-[0.12em] text-white/70"
+                                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
+                                    {t.name}
+                                </span>
+                                {/* Check tick */}
+                                {active && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.5 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="absolute top-1.5 right-1.5 w-[17px] h-[17px] bg-white/90 rounded-full flex items-center justify-center"
+                                    >
+                                        <Check className="w-2.5 h-2.5 text-black" strokeWidth={2.5} />
+                                    </motion.div>
+                                )}
+                            </div>
                         </button>
                     );
                 })}
             </div>
 
-            {/* Minimalist Status */}
-            <div className="flex items-center gap-3 py-3 px-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.15em]">
-                    Atmosphere <span className="text-zinc-300">Synchronized</span> across workspace
+            {/* Dropdown */}
+            <div className="relative z-10" ref={dropdownRef}>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={`w-full h-[46px] flex items-center justify-between px-3.5 bg-zinc-900 border rounded-[13px] transition-all ${isOpen ? 'border-white/13' : 'border-white/[0.07]'} hover:border-white/13 hover:bg-[#1c1c25]`}
+                >
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-[7px] overflow-hidden border border-white/10 flex-shrink-0 relative">
+                            <div className="absolute inset-0" style={{ background: activeGrad }} />
+                        </div>
+                        <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-zinc-100">
+                            {activeTheme.name}
+                        </span>
+                    </div>
+                    <ChevronDown
+                        className={`w-3.5 h-3.5 text-zinc-600 transition-transform duration-250 ${isOpen ? 'rotate-180 !text-zinc-100' : ''}`}
+                    />
+                </button>
+
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                            className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#13131a] border border-white/10 rounded-[14px] p-1.5 shadow-2xl overflow-hidden max-h-[310px] overflow-y-auto"
+                            style={{ zIndex: 100 }}
+                        >
+                            {THEME_OPTIONS.map(t => {
+                                const active = theme === t.id;
+                                const grad = makeGradient(t.stops);
+                                return (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => { setTheme(t.id); setIsOpen(false); }}
+                                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] transition-colors ${active ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}
+                                    >
+                                        <div className="w-[30px] h-[30px] rounded-[8px] overflow-hidden border border-white/[0.07] flex-shrink-0 relative">
+                                            <div className="absolute inset-0" style={{ background: grad }} />
+                                            <div className="absolute top-0 left-0 right-0 h-1/2"
+                                                style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.18), transparent)' }} />
+                                        </div>
+                                        <span className="flex-1 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-zinc-100">
+                                            {t.name}
+                                        </span>
+                                        {active && (
+                                            <div
+                                                className="w-[15px] h-[15px] rounded-full flex items-center justify-center flex-shrink-0"
+                                                style={{ background: grad }}
+                                            >
+                                                <Check className="w-2 h-2 text-white/90" strokeWidth={2.5} />
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Status bar */}
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white/[0.025] border border-white/[0.05] rounded-[9px] relative z-10">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                <span className="text-[9px] font-medium font-mono text-zinc-600 uppercase tracking-[0.12em]">
+                    Theme · <em className="not-italic text-zinc-500">{activeTheme.name}</em> · Applied
                 </span>
             </div>
-        </div>
-    );
-}
-
-function ThemeGradient({ colors, size = "w-10 h-10", rounded = "rounded-xl", active = false }) {
-    return (
-        <div 
-            className={`${size} ${rounded} relative overflow-hidden transition-all duration-500 ${active ? 'ring-2 ring-white ring-offset-2 ring-offset-zinc-950' : 'border border-white/10 shadow-lg'}`}
-            style={{
-                background: `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`
-            }}
-        >
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
         </div>
     );
 }

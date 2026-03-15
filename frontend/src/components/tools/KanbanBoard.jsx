@@ -28,10 +28,10 @@ import Card from '../ui/Card';
  */
 const TaskCard = React.memo(({ task, onDragStart }) => {
     const priorityStyles = {
-        Urgent: "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-rose-500/5",
-        High: "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-amber-500/5",
-        Medium: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-cyan-500/5",
-        Low: "bg-gray-500/10 text-gray-400 border-white/5"
+        Urgent: "bg-danger/10 text-danger border-danger/20 shadow-danger/5",
+        High: "bg-warning/10 text-warning border-warning/20 shadow-warning/5",
+        Medium: "bg-theme/10 text-theme border-theme/20 shadow-theme/5",
+        Low: "bg-tertiary/10 text-tertiary border-subtle"
     };
 
     return (
@@ -46,18 +46,18 @@ const TaskCard = React.memo(({ task, onDragStart }) => {
             onDragStart={(e) => onDragStart(e, task._id, task.status)}
             className="group relative cursor-grab active:cursor-grabbing"
         >
-            <Card className="overflow-hidden border-white/5 hover:border-white/10 transition-colors shadow-2xl" padding="p-5">
+            <Card className="overflow-hidden border-subtle hover:border-theme/30 transition-colors shadow-2xl bg-surface" padding="p-5">
                 <div className="flex flex-col gap-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1 overflow-hidden">
-                             <h4 className="text-sm font-black text-white tracking-tight truncate group-hover:text-cyan-400 transition-colors">
+                             <h4 className="text-sm font-black text-primary tracking-tight truncate group-hover:text-theme transition-colors">
                                 {task.title}
                             </h4>
-                            <p className="text-[10px] text-gray-500 font-medium line-clamp-2 leading-relaxed">
+                            <p className="text-[10px] text-tertiary font-medium line-clamp-2 leading-relaxed">
                                 {task.description || "Operational directive parameters pending definition."}
                             </p>
                         </div>
-                        <button className="p-2 -mr-2 text-gray-700 hover:text-white transition-colors">
+                        <button className="p-2 -mr-2 text-tertiary hover:text-primary transition-colors">
                             <MoreVertical className="w-4 h-4" />
                         </button>
                     </div>
@@ -72,21 +72,21 @@ const TaskCard = React.memo(({ task, onDragStart }) => {
                                 {task.priority}
                             </div>
                         )}
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/5 rounded-lg text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-sunken border border-subtle rounded-lg text-[9px] font-black text-tertiary uppercase tracking-widest">
                             <Clock className="w-3 h-3" />
                             {new Date(task.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                         </div>
                     </div>
 
-                    <footer className="pt-2 flex items-center justify-between border-t border-white/5">
+                    <footer className="pt-2 flex items-center justify-between border-t border-subtle">
                         <div className="flex -space-x-2">
                             {[1, 2].map(i => (
-                                <div key={i} className="w-6 h-6 rounded-lg bg-[#09090b] border border-white/10 flex items-center justify-center overflow-hidden shadow-lg">
-                                    <UserIcon className="w-3 h-3 text-gray-700" />
+                                <div key={i} className="w-6 h-6 rounded-lg bg-base border border-subtle flex items-center justify-center overflow-hidden shadow-lg">
+                                    <UserIcon className="w-3 h-3 text-tertiary" />
                                 </div>
                             ))}
                         </div>
-                        <div className="flex items-center gap-3 text-gray-700">
+                        <div className="flex items-center gap-3 text-tertiary">
                              <div className="flex items-center gap-1">
                                 <MessageSquare className="w-3 h-3" />
                                 <span className="text-[9px] font-black">4</span>
@@ -100,7 +100,7 @@ const TaskCard = React.memo(({ task, onDragStart }) => {
                 </div>
 
                 {/* Ambient Interaction Glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-theme/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </Card>
         </motion.div>
     );
@@ -183,16 +183,16 @@ const KanbanBoard = ({ projectId, searchQuery = '' }) => {
     }, [updateTaskMutation]);
 
     const columns = [
-        { id: 'Pending', label: 'Backlog', icon: Clock, color: 'text-gray-500' },
-        { id: 'In Progress', label: 'Active Sync', icon: Zap, color: 'text-cyan-400' },
-        { id: 'Completed', label: 'Finalized', icon: CheckCircle2, color: 'text-emerald-400' }
+        { id: 'Pending', label: 'Backlog', icon: Clock, color: 'text-tertiary' },
+        { id: 'In Progress', label: 'Active Sync', icon: Zap, color: 'text-theme' },
+        { id: 'Completed', label: 'Finalized', icon: CheckCircle2, color: 'text-success' }
     ];
 
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 h-[600px]">
                 {[1, 2, 3].map(i => (
-                    <div key={i} className="glass-2 bg-white/[0.02] border border-white/5 rounded-[3rem] animate-pulse" />
+                    <div key={i} className="glass-2 bg-sunken/50 border border-subtle rounded-[3rem] animate-pulse" />
                 ))}
             </div>
         );
@@ -209,15 +209,15 @@ const KanbanBoard = ({ projectId, searchQuery = '' }) => {
                 >
                     <div className="flex items-center justify-between mb-6 px-4">
                         <div className="flex items-center gap-3">
-                            <div className={twMerge(clsx("p-2 rounded-xl bg-white/5 border border-white/5 shadow-xl", col.color))}>
+                            <div className={twMerge(clsx("p-2 rounded-xl bg-sunken border border-subtle shadow-xl", col.color))}>
                                 <col.icon className="w-4 h-4" />
                             </div>
                             <div className="flex flex-col">
-                                <h2 className="text-sm font-black text-white uppercase tracking-widest">{col.label}</h2>
-                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">{filteredTasks[col.id].length} Node(s)</span>
+                                <h2 className="text-sm font-black text-primary uppercase tracking-widest">{col.label}</h2>
+                                <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em]">{filteredTasks[col.id].length} Node(s)</span>
                             </div>
                         </div>
-                        <button className="p-2 text-gray-700 hover:text-white transition-colors">
+                        <button className="p-2 text-tertiary hover:text-primary transition-colors">
                             <Plus className="w-5 h-5" />
                         </button>
                     </div>

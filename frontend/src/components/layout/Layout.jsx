@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SidebarComponent from './Sidebar';
 import TopBar from './TopBar';
-import MobileDock from './MobileDock';
 import { useIdleTimer } from '../../hooks/useIdleTimer';
 import { useAuthStore } from '../../store/useAuthStore';
 import { RefreshCw } from 'lucide-react';
@@ -121,9 +120,9 @@ const Layout = () => {
                     <TopBar onMenuToggle={toggleSidebar} />
                 </header>
 
-                {/* Centered Content Container */}
-                <div className="flex-1 w-full max-w-screen-2xl mx-auto flex flex-col pt-4">
-                    <section className="flex-1 relative perspective-1000 pb-24 lg:pb-8" aria-live="polite">
+                {/* Content Container (Full Width) */}
+                <div className="flex-1 w-full flex flex-col pt-4">
+                    <section className="flex-1 relative perspective-1000 pb-10" aria-live="polite">
                         <GlobalErrorBoundary>
                             <AnimatePresence mode="wait" initial={false}>
                                 <motion.div
@@ -133,7 +132,7 @@ const Layout = () => {
                                     exit={{ opacity: 0, scale: 0.99, y: -8 }}
                                     transition={LIQUID_SPRING}
                                     style={{ willChange: 'transform, opacity' }}
-                                    className={`px-6 lg:px-12 h-full ${isPending ? 'opacity-50 blur-sm pointer-events-none' : ''}`}
+                                    className={`px-6 lg:px-10 h-full ${isPending ? 'opacity-50 blur-sm pointer-events-none' : ''}`}
                                 >
                                     <Suspense fallback={<PageSkeleton />}>
                                         <Outlet context={{ handleRouteTransition }} />
@@ -144,9 +143,6 @@ const Layout = () => {
                     </section>
                 </div>
             </main>
-
-            {/* Mobile Native Navigation */}
-            <MobileDock />
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 8px; }

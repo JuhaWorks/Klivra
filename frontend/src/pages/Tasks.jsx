@@ -40,8 +40,8 @@ class TaskErrorBoundary extends React.Component {
 
 // ── Vanguard 2026: Zero-CLS Skeleton (Machine Layer) ──
 const TaskNexusSkeleton = () => (
-    <div className="w-full flex-1 min-h-[600px] rounded-[4rem] border border-[oklch(100%_0_0/0.05)] bg-[oklch(0%_0_0/0.2)] animate-pulse shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] aspect-[16/9] flex items-center justify-center" aria-hidden="true">
-        <div className="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+    <div className="w-full flex-1 min-h-[600px] rounded-[4rem] border border-subtle bg-sunken animate-pulse aspect-[16/9] flex items-center justify-center" aria-hidden="true">
+        <div className="w-10 h-10 border-2 border-theme/30 border-t-theme rounded-full animate-spin" />
     </div>
 );
 
@@ -60,11 +60,11 @@ const TasksContent = ({ projectId, searchQuery, viewMode, activeProject }) => {
                         animate={{ opacity: 1, rotateX: 0, y: 0 }}
                         exit={{ opacity: 0, rotateX: -5, y: -20 }}
                         transition={LIQUID_SPRING}
-                        className="flex flex-col items-center justify-center py-40 bg-[oklch(100%_0_0/0.02)] border border-[oklch(100%_0_0/0.08)] rounded-[4rem] text-center space-y-8 backdrop-blur-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_20px_40px_rgba(0,0,0,0.3)] z-10 relative"
+                        className="flex flex-col items-center justify-center py-40 bg-surface border border-subtle rounded-[4rem] text-center space-y-8 backdrop-blur-3xl shadow-xl z-10 relative"
                     >
-                        <div className="w-32 h-32 rounded-[3rem] bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-white/10 flex items-center justify-center relative group">
-                            <Target className="w-16 h-16 text-gray-400 group-hover:text-cyan-400 transition-colors duration-500" />
-                            <div className="absolute inset-0 bg-cyan-500/10 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="w-32 h-32 rounded-[3rem] bg-theme/5 border border-subtle flex items-center justify-center relative group">
+                            <Target className="w-16 h-16 text-tertiary group-hover:text-theme transition-colors duration-500" />
+                            <div className="absolute inset-0 bg-theme/10 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         <div className="space-y-3">
                             <h2 className="text-[length:clamp(1.5rem,3vw,2.5rem)] font-black text-[var(--text-main)] tracking-tighter">Domain Uninitialized.</h2>
@@ -96,8 +96,8 @@ const TasksContent = ({ projectId, searchQuery, viewMode, activeProject }) => {
             </AnimatePresence>
 
             {/* Tactile Maximalism: Ambient Decorative Elements */}
-            <div className="absolute -top-40 -right-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen" aria-hidden="true" />
-            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen" aria-hidden="true" />
+            <div className="absolute -top-40 -right-40 w-96 h-96 bg-theme/5 rounded-full blur-[120px] pointer-events-none -z-10" aria-hidden="true" />
+            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-theme/5 rounded-full blur-[120px] pointer-events-none -z-10" aria-hidden="true" />
         </section>
     );
 };
@@ -149,11 +149,11 @@ export default function Tasks() {
 
     return (
         <article 
-            className="min-h-screen pb-20 pt-8 px-inline-6 lg:px-inline-10 space-y-10 max-w-[1800px] mx-auto @container"
+            className="min-h-screen pb-20 pt-8 px-[var(--spacing-fluid-sm)] md:px-[var(--spacing-fluid-md)] space-y-10 w-full @container"
         >
-            <header className="flex flex-col @4xl:flex-row @4xl:items-end justify-between gap-8 z-20 relative">
+            <header className="flex flex-col @4xl:flex-row @4xl:items-end justify-between gap-6 z-20 relative">
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em] animate-in fade-in slide-in-from-left duration-700">
+                    <div className="flex items-center gap-3 text-theme font-black text-[10px] uppercase tracking-[0.4em] animate-in fade-in slide-in-from-left duration-700">
                         <CheckSquare className="w-4 h-4" />
                         <span>Core Operations</span>
                     </div>
@@ -200,46 +200,46 @@ export default function Tasks() {
             </header>
 
             {/* Orchestration Toolbar (Liquid Glass) */}
-            <nav className="bg-[oklch(100%_0_0/0.02)] backdrop-blur-3xl border border-[oklch(100%_0_0/0.1)] p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_20px_40px_rgba(0,0,0,0.4)] z-20 relative">
+            <nav className="bg-surface/80 backdrop-blur-3xl border border-subtle p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-6 shadow-2xl z-20 relative">
                 {/* Search Uplink */}
                 <div className="relative flex-1 group w-full">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 transition-colors group-within:text-cyan-400" />
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-tertiary transition-colors group-within:text-theme" />
                     <input 
                         type="text"
                         placeholder="Search neural link for tasks..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[var(--bg-surface)] border border-white/10 rounded-2xl pl-16 pr-6 py-4 text-[var(--text-main)] placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/30 focus:ring-[6px] focus:ring-cyan-500/10 transition-all font-medium text-sm shadow-inner"
+                        className="w-full bg-sunken border border-subtle rounded-2xl pl-16 pr-6 py-4 text-primary placeholder:text-tertiary focus:outline-none focus:border-theme/30 focus:ring-[6px] focus:ring-theme/10 transition-all font-medium text-sm shadow-inner"
                     />
                 </div>
 
                 {/* Project Segment Filter */}
                 <div className="relative shrink-0 w-full md:w-auto">
                     <button 
-                        className="w-full flex items-center justify-between md:justify-start gap-3 px-6 py-4 bg-[oklch(100%_0_0/0.03)] border border-[oklch(100%_0_0/0.05)] rounded-2xl hover:border-white/10 transition-colors group shadow-sm active:scale-95"
+                        className="w-full flex items-center justify-between md:justify-start gap-3 px-6 py-4 bg-sunken border border-subtle rounded-2xl hover:border-theme/50 transition-colors group active:scale-95"
                         aria-haspopup="listbox"
                         onClick={() => {/* Trigger unified global selection modal in future integration */}}
                     >
                         <div className="flex items-center gap-3">
-                            <Filter className="w-4 h-4 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                            <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest">
+                            <Filter className="w-4 h-4 text-tertiary group-hover:text-theme transition-colors" />
+                            <span className="text-[11px] font-black text-secondary uppercase tracking-widest">
                                 {activeProject ? activeProject.name : 'All Segments'}
                             </span>
                         </div>
-                        <ChevronDown className="w-4 h-4 text-gray-600" />
+                        <ChevronDown className="w-4 h-4 text-tertiary" />
                     </button>
                 </div>
 
                 {/* Statistics Shaper */}
                 <div className="hidden @2xl:flex items-center gap-6 px-4">
                     <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Active</span>
-                        <span className="text-sm font-black text-theme px-3 py-1 bg-white/5 rounded-lg border border-white/10">12</span>
+                        <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-1">Active</span>
+                        <span className="text-sm font-black text-theme px-3 py-1 bg-theme/5 rounded-lg border border-theme/10">12</span>
                     </div>
-                    <div className="w-px h-8 bg-white/5 shadow-[2px_0_5px_rgba(255,255,255,0.05)]" />
+                    <div className="w-px h-8 bg-subtle shadow-sm" />
                     <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1">Risk</span>
-                        <span className="text-sm font-black text-amber-500 px-3 py-1 bg-amber-500/5 rounded-lg border border-amber-500/10 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]">02</span>
+                        <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-1">Risk</span>
+                        <span className="text-sm font-black text-danger px-3 py-1 bg-danger/5 rounded-lg border border-danger/10 shadow-sm">02</span>
                     </div>
                 </div>
             </nav>

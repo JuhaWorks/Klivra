@@ -80,10 +80,10 @@ const Projects = () => {
     };
 
     return (
-        <div className="max-w-screen-2xl mx-auto w-full space-y-12 pb-20">
+        <div className="w-full space-y-12 pb-20">
             {/* Header Area */}
             <header className="relative pt-4 pb-8">
-                <div className="absolute -top-10 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute -top-10 left-0 w-64 h-64 bg-theme/5 rounded-full blur-[100px] pointer-events-none" />
                 
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
                     <div className="space-y-4">
@@ -99,7 +99,7 @@ const Projects = () => {
 
                     <div className="flex flex-wrap items-center gap-4">
                         {/* Segmented Control */}
-                        <div className="flex p-1.5 glass-2 bg-white/5 border-white/10 rounded-2xl">
+                        <div className="flex p-1.5 glass-2 bg-sunken/50 border-subtle rounded-2xl">
                             {[
                                 { id: 'active', label: 'Active', count: activeProjects.length, icon: Box },
                                 { id: 'archived', label: 'Archived', count: archivedProjects.length, icon: Trash2 }
@@ -115,7 +115,7 @@ const Projects = () => {
                                     {view === tab.id && (
                                         <motion.div 
                                             layoutId="project-tab"
-                                            className="absolute inset-0 bg-white/5 border border-white/10 rounded-xl"
+                                            className="absolute inset-0 bg-surface border border-subtle rounded-xl"
                                             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                         />
                                     )}
@@ -175,7 +175,7 @@ const Projects = () => {
                                     <div className="relative mb-6">
                                         <ProjectImage
                                             project={project}
-                                            className="rounded-3xl border border-white/5"
+                                            className="rounded-3xl border border-subtle"
                                         />
                                         <div className="absolute top-4 right-4">
                                             <div className={twMerge(clsx(
@@ -217,10 +217,10 @@ const Projects = () => {
                                         </div>
                                     </div>
 
-                                    <div className="mt-auto px-4 py-6 border-t border-white/5 flex items-center justify-between">
+                                    <div className="mt-auto px-4 py-6 border-t border-subtle flex items-center justify-between">
                                         <div className="flex -space-x-2">
                                             {project.members?.slice(0, 4).map((m, i) => (
-                                                <div key={i} className="w-8 h-8 rounded-xl border-2 border-[var(--bg-base)] bg-white/5 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
+                                                <div key={i} className="w-8 h-8 rounded-xl border-2 border-base bg-sunken flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
                                                     {m.userId?.avatar ? (
                                                         <img src={m.userId.avatar} alt="" className="w-full h-full object-cover" />
                                                     ) : (
@@ -274,9 +274,9 @@ const Projects = () => {
                     </AnimatePresence>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-40 text-center glass-2 border-dashed border-white/5 rounded-[4rem]">
-                    <div className="w-24 h-24 rounded-[2.5rem] bg-white/5 border border-white/10 flex items-center justify-center mb-8">
-                        <SearchX className="w-10 h-10 text-gray-600" />
+                <div className="flex flex-col items-center justify-center py-40 text-center glass-2 border-dashed border-subtle rounded-[4rem]">
+                    <div className="w-24 h-24 rounded-[2.5rem] bg-sunken border border-subtle flex items-center justify-center mb-8">
+                        <SearchX className="w-10 h-10 text-tertiary" />
                     </div>
                     <h2 className="text-4xl font-black text-white tracking-tighter mb-3">No Projects Found</h2>
                     <p className="text-gray-500 font-medium max-w-sm mb-12 leading-relaxed">

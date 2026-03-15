@@ -24,17 +24,17 @@ import { twMerge } from 'tailwind-merge';
 const STATUSES = ['Online', 'Away', 'Do Not Disturb', 'Offline'];
 
 const STATUS_CONFIG = {
-    Online: { dot: 'bg-emerald-500', label: 'text-emerald-600 dark:text-emerald-400', ring: 'ring-emerald-500/20' },
-    Away: { dot: 'bg-amber-500', label: 'text-amber-600   dark:text-amber-400', ring: 'ring-amber-500/20' },
-    'Do Not Disturb': { dot: 'bg-rose-500', label: 'text-rose-600    dark:text-rose-400', ring: 'ring-rose-500/20' },
-    Offline: { dot: 'bg-zinc-400', label: 'text-zinc-500    dark:text-zinc-400', ring: 'ring-zinc-400/20' },
+    Online: { dot: 'bg-success', label: 'text-success', ring: 'ring-success/20' },
+    Away: { dot: 'bg-warning', label: 'text-warning', ring: 'ring-warning/20' },
+    'Do Not Disturb': { dot: 'bg-danger', label: 'text-danger', ring: 'ring-danger/20' },
+    Offline: { dot: 'bg-tertiary', label: 'text-tertiary', ring: 'ring-tertiary/20' },
 };
 
 const ROLE_CONFIG = {
-    Admin: { bg: 'bg-rose-50   dark:bg-rose-950/40', text: 'text-rose-700   dark:text-rose-300', border: 'border-rose-200   dark:border-rose-800' },
-    Manager: { bg: 'bg-blue-50   dark:bg-blue-950/40', text: 'text-blue-700   dark:text-blue-300', border: 'border-blue-200   dark:border-blue-800' },
-    Developer: { bg: 'bg-violet-50 dark:bg-violet-950/40', text: 'text-violet-700 dark:text-violet-300', border: 'border-violet-200 dark:border-violet-800' },
-    Guest: { bg: 'bg-zinc-100  dark:bg-zinc-800/60', text: 'text-zinc-600   dark:text-zinc-400', border: 'border-zinc-200   dark:border-zinc-700' },
+    Admin: { bg: 'bg-danger/5', text: 'text-danger', border: 'border-danger/20' },
+    Manager: { bg: 'bg-theme/5', text: 'text-theme', border: 'border-theme/20' },
+    Developer: { bg: 'bg-theme/5', text: 'text-theme', border: 'border-theme/20' },
+    Guest: { bg: 'bg-sunken', text: 'text-tertiary', border: 'border-subtle' },
 };
 
 function cn(...args) { return twMerge(clsx(args)); }
@@ -52,10 +52,10 @@ function FieldWrapper({ icon: Icon, children, disabled }) {
         <div className={cn(
             "flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all",
             disabled
-                ? "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700/50 opacity-60 cursor-not-allowed"
-                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-700"
+                ? "bg-sunken border-subtle opacity-60 cursor-not-allowed"
+                : "bg-surface border-subtle focus-within:border-theme focus-within:ring-2 focus-within:ring-theme/20"
         )}>
-            {Icon && <Icon className="w-4 h-4 shrink-0 text-zinc-400 dark:text-zinc-500" />}
+            {Icon && <Icon className="w-4 h-4 shrink-0 text-tertiary" />}
             {children}
         </div>
     );
@@ -139,7 +139,7 @@ export default function Profile() {
 
     return (
         <div className="flex flex-col gap-8 pb-20">
-            <div className="max-w-screen-2xl mx-auto w-full space-y-8">
+            <div className="w-full space-y-8">
 
                 {/* Page Header */}
                 <div className="flex items-start justify-between">
@@ -206,7 +206,7 @@ export default function Profile() {
                             <div className="w-full space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                                 <button
                                     onClick={() => fileRef.current?.click()}
-                                    className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-lg transition-all"
+                                    className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-secondary hover:text-primary hover:bg-sunken rounded-lg transition-all"
                                 >
                                     <Camera className="w-4 h-4" />
                                     Upload photo
@@ -247,7 +247,7 @@ export default function Profile() {
                                                 value={form.name}
                                                 onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
                                                 placeholder="Your name"
-                                                className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none"
+                                                className="w-full bg-transparent text-sm text-primary placeholder-tertiary outline-none"
                                             />
                                         </FieldWrapper>
                                     </div>
@@ -257,7 +257,7 @@ export default function Profile() {
                                             <input
                                                 disabled
                                                 value={user?.email}
-                                                className="w-full bg-transparent text-sm text-zinc-500 dark:text-zinc-500 outline-none cursor-not-allowed"
+                                                className="w-full bg-transparent text-sm text-secondary outline-none cursor-not-allowed"
                                             />
                                         </FieldWrapper>
                                         <p className="mt-1.5 text-[11px] text-zinc-400 ml-1">Email cannot be changed.</p>
@@ -286,10 +286,10 @@ export default function Profile() {
                                                     type="button"
                                                     onClick={() => setStatus(s)}
                                                     className={cn(
-                                                        "flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all",
+                                                        "flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all text-tertiary",
                                                         active
-                                                            ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100"
-                                                            : "bg-white dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                                            ? "bg-theme text-white border-theme"
+                                                            : "bg-surface border-subtle hover:border-theme hover:text-primary"
                                                     )}
                                                 >
                                                     <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.dot)} />

@@ -134,10 +134,10 @@ const SecurityFeed = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">
                     <div className="flex items-center gap-4 mb-2">
-                        <Link to="/admin" className="p-2.5 bg-white/5 hover:bg-white/10 rounded-2xl text-gray-500 hover:text-white transition-all border border-white/5 shadow-inner">
+                        <Link to="/admin" className="p-2.5 bg-sunken hover:bg-theme/10 rounded-2xl text-tertiary hover:text-theme transition-all border border-subtle">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         </Link>
-                        <h1 className="serif text-4xl tracking-tight text-white italic">Security Feed</h1>
+                        <h1 className="serif text-4xl tracking-tight text-primary italic">Security Feed</h1>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -148,8 +148,8 @@ const SecurityFeed = () => {
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                         Manage Firewall
                     </button>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-700 bg-white/[0.02] px-3 py-1.5 rounded-full border border-white/[0.05]">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-tertiary bg-sunken px-3 py-1.5 rounded-full border border-subtle">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-[0_0_8px_var(--success)]" />
                     </div>
                 </div>
             </div>
@@ -174,7 +174,7 @@ const SecurityFeed = () => {
                     logs.map((log) => (
                         <div key={log._id} className="k-card k-card-hover group relative p-6 overflow-hidden transition-all duration-500">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <code className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">{log._id.slice(-6)}</code>
+                                <code className="text-[10px] font-mono text-tertiary uppercase tracking-widest">{log._id.slice(-6)}</code>
                             </div>
 
                             <div className="flex items-start gap-6">

@@ -41,8 +41,8 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
             className={({ isActive: linkActive }) => twMerge(clsx(
                 "group relative flex items-center rounded-2xl transition-all duration-200",
                 isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                "hover:bg-white/[0.04] active:scale-[0.98]",
-                linkActive ? "text-theme" : "text-gray-400 hover:text-gray-200"
+                "hover:bg-sunken active:scale-[0.98]",
+                linkActive ? "text-theme" : "text-tertiary hover:text-primary"
             ))}
         >
             {isActive && (
@@ -134,8 +134,8 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
             <motion.aside 
                 initial={false}
                 animate={{ 
-                    width: isCollapsed ? 80 : 280,
-                    x: isOpen ? 0 : '-100%'
+                    width: isOpen ? (isCollapsed ? 80 : 280) : 0,
+                    x: isOpen ? 0 : -280
                 }}
                 transition={{ 
                     type: 'spring', 
@@ -145,11 +145,11 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 }}
                 style={{ willChange: 'width, transform' }}
                 className={twMerge(clsx(
-                "fixed top-0 left-0 h-screen z-50 glass-2 border-r border-default bg-surface",
+                "fixed inset-y-0 left-0 z-50 glass-2 border-r border-default bg-surface/95 backdrop-blur-xl",
                 "flex flex-col rounded-none shadow-2xl shadow-black/50 overflow-hidden"
             ))}>
                 {/* Theme Ambient Effect */}
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-theme-bg to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-accent-bg to-transparent pointer-events-none" />
 
                 {/* Brand */}
                 <div className={twMerge(clsx(
@@ -212,8 +212,8 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
                                     isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
-                                        ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" 
-                                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                                        ? "bg-theme/10 text-theme border border-theme/20" 
+                                        : "text-tertiary hover:text-primary hover:bg-sunken"
                                 ))}
                             >
                                 <ShieldAlert className="w-5 h-5 shrink-0" />
@@ -222,7 +222,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                     <motion.span 
                                         animate={{ scale: [1, 1.2, 1] }}
                                         transition={{ repeat: Infinity, duration: 2 }}
-                                        className="ml-auto w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                                        className="ml-auto w-2 h-2 rounded-full bg-theme shadow-theme"
                                     />
                                 )}
                             </NavLink>
@@ -234,8 +234,8 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
                                     isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
-                                        ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" 
-                                        : "text-tertiary/60 hover:text-rose-400 hover:bg-rose-500/5"
+                                        ? "bg-danger/10 text-danger border border-danger/20" 
+                                        : "text-tertiary hover:text-danger hover:bg-danger/5"
                                 ))}
                             >
                                 <Activity className="w-5 h-5 shrink-0" />
@@ -320,7 +320,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                         {!isCollapsed && (
                             <button 
                                 onClick={handleLogout}
-                                className="p-2 text-tertiary hover:text-rose-500 transition-colors"
+                                className="p-2 text-tertiary hover:text-danger transition-colors"
                                 title="Sign Out"
                             >
                                 <LogOut className="w-4 h-4" />
@@ -330,7 +330,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                         {isCollapsed && (
                              <button 
                                 onClick={handleLogout}
-                                className="w-10 h-10 rounded-2xl flex items-center justify-center text-tertiary hover:text-rose-500 hover:bg-rose-500/5 transition-all"
+                                className="w-10 h-10 rounded-2xl flex items-center justify-center text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
                                 title="Sign Out"
                             >
                                 <LogOut className="w-5 h-5" />

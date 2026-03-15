@@ -11,9 +11,9 @@ import {
 import ApodWidget from '../components/tools/ApodWidget';
 import { useSocketStore } from '../store/useSocketStore';
 import Button from '../components/ui/Button';
+import DecryptedText from '../components/ui/DecryptedText';
 
 const EASE = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
-const SPRING = { type: 'spring', stiffness: 260, damping: 22, mass: 0.6 };
 
 /* ─── Error Boundary ─────────────────────────────────────────── */
 class DashboardErrorBoundary extends React.Component {
@@ -22,9 +22,9 @@ class DashboardErrorBoundary extends React.Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 rounded-2xl border border-rose-500/15 bg-rose-500/5 text-center gap-3">
-                    <RefreshCw className="w-5 h-5 text-rose-400" />
-                    <p className="text-sm text-rose-400">Something went wrong. Please refresh the page.</p>
+                <div className="flex-1 flex flex-col items-center justify-center p-12 rounded-2xl border border-danger/15 bg-danger/5 text-center gap-3">
+                    <RefreshCw className="w-5 h-5 text-danger" />
+                    <p className="text-sm text-danger">Something went wrong. Please refresh the page.</p>
                 </div>
             );
         }
@@ -36,12 +36,12 @@ class DashboardErrorBoundary extends React.Component {
 const ActivitySkeleton = ({ delay = 0 }) => (
     <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay }}
-        className="flex items-center gap-3 py-3 border-b border-white/[0.03]"
+        className="flex items-center gap-3 py-3 border-b border-default"
     >
-        <div className="w-8 h-8 rounded-lg bg-white/[0.04] shrink-0 animate-pulse" />
+        <div className="w-8 h-8 rounded-lg bg-surface shrink-0 animate-pulse" />
         <div className="flex-1 space-y-1.5">
-            <div className="h-2.5 w-2/3 rounded bg-white/[0.04] animate-pulse" />
-            <div className="h-2 w-1/4 rounded bg-white/[0.03] animate-pulse" />
+            <div className="h-2.5 w-2/3 rounded bg-surface animate-pulse" />
+            <div className="h-2 w-1/4 rounded bg-surface-lighter animate-pulse" />
         </div>
     </motion.div>
 );
@@ -70,14 +70,11 @@ const Counter = ({ value, delay = 0 }) => {
 /* ─── Status Dot ─────────────────────────────────────────────── */
 const StatusDot = ({ active }) => (
     <span className="relative inline-flex w-1.5 h-1.5">
-        {active && <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-50" />}
-        <span className={`relative rounded-full w-1.5 h-1.5 ${active ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+        {active && <span className="absolute inset-0 rounded-full bg-theme animate-ping opacity-50" />}
+        <span className={`relative rounded-full w-1.5 h-1.5 ${active ? 'bg-theme' : 'bg-disabled'}`} />
     </span>
 );
 
-/* ═══════════════════════════════════════════════════════════════
-   HOME DASHBOARD
-═══════════════════════════════════════════════════════════════ */
 const Home = () => {
     const { user } = useAuthStore();
     const { onlineUsers } = useSocketStore();
@@ -144,28 +141,27 @@ const Home = () => {
             value: statsData.totalTasks,
             sub: `${statsData.pendingTasks} pending`,
             icon: CheckSquare,
-            accent: '#818cf8',
-            glow: 'rgba(129,140,248,0.10)',
+            accent: 'oklch(0.70 0.15 240)',
+            glow: 'oklch(0.70 0.15 240 / 0.10)',
         },
         {
             label: 'Completed Tasks',
             value: statsData.completedTasks,
             sub: `${statsData.completionPct}% completion rate`,
             icon: TrendingUp,
-            accent: '#34d399',
-            glow: 'rgba(52,211,153,0.10)',
+            accent: 'var(--color-success)',
+            glow: 'oklch(0.72 0.18 142 / 0.10)',
         },
         {
             label: 'Online Now',
             value: onlineUsers.filter(u => u.status !== 'Offline').length,
             sub: 'Active members',
             icon: Users,
-            accent: '#e879f9',
-            glow: 'rgba(232,121,249,0.10)',
+            accent: 'var(--accent-500)',
+            glow: 'var(--accent-bg)',
         },
     ];
 
-    /* ── Virtualizer ── */
     const virt = useVirtualizer({
         count: activity.length,
         getScrollElement: () => parentRef.current,
@@ -187,30 +183,29 @@ const Home = () => {
         return action;
     };
 
+    const [isAuditExpanded, setIsAuditExpanded] = useState(false);
+
     return (
         <>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-                .h-root {
-                    font-family: 'Sora', system-ui, sans-serif;
-                    --mono: 'JetBrains Mono', monospace;
-                }
-
+                .h-root { font-family: 'Sora', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace; }
                 .h-scroll::-webkit-scrollbar { width: 3px; }
                 .h-scroll::-webkit-scrollbar-track { background: transparent; }
-                .h-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+                .h-scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
 
                 .stat-card {
-                    border: 1px solid rgba(255,255,255,0.06);
+                    border: 1px solid var(--border-subtle);
                     border-radius: 16px;
                     padding: 24px;
-                    background: rgba(255,255,255,0.02);
+                    background: var(--bg-surface);
                     transition: border-color 0.2s, transform 0.2s;
                     cursor: default;
                 }
                 .stat-card:hover {
                     transform: translateY(-2px);
+                    border-color: var(--border-strong);
                 }
 
                 .act-row {
@@ -222,7 +217,7 @@ const Home = () => {
                     transition: background 0.12s;
                     cursor: default;
                 }
-                .act-row:hover { background: rgba(255,255,255,0.025); }
+                .act-row:hover { background: var(--bg-sunken); }
 
                 .nav-link {
                     display: flex;
@@ -241,18 +236,15 @@ const Home = () => {
             `}</style>
 
             <article className="h-root min-h-full pb-16" style={{
-                backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                backgroundImage: 'linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px)',
                 backgroundSize: '44px 44px',
             }}>
-                {/* Ambient top glow */}
                 <div className="fixed top-[-180px] left-1/2 -translate-x-1/2 w-[700px] h-[380px] pointer-events-none z-0"
                     style={{ background: 'radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%)' }}
                 />
 
-                <div className="max-w-[1280px] mx-auto px-6 md:px-8 pt-8 relative z-10">
+                <div className="px-1 relative z-10">
                     <DashboardErrorBoundary>
-
-                        {/* ── HEADER ── */}
                         <motion.header
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -261,16 +253,24 @@ const Home = () => {
                         >
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
                                 <div>
-                                    {/* date + status */}
                                     <div className="flex items-center gap-2 mb-3">
                                         <StatusDot active />
                                         <span className="text-[11px] text-tertiary" style={{ fontFamily: 'var(--mono)' }}>
                                             {dateString}
                                         </span>
                                     </div>
-
                                     <h1 className="text-3xl md:text-4xl font-semibold text-primary tracking-tight leading-tight m-0">
-                                        {greeting}, <span className="text-theme">{firstName}</span>
+                                        {greeting}, <DecryptedText 
+                                            text={firstName}
+                                            animateOn="inViewHover"
+                                            revealDirection="center"
+                                            useOriginalCharsOnly={true}
+                                            className="text-theme"
+                                            encryptedClassName="text-theme opacity-50"
+                                            speed={100}
+                                            maxIterations={20}
+                                            sequential={false}
+                                        />
                                     </h1>
                                     <p className="mt-2 text-sm text-secondary max-w-md leading-relaxed">
                                         {user?.role === 'Admin'
@@ -278,26 +278,13 @@ const Home = () => {
                                             : 'Your workspace is ready. Here\'s what\'s happening across your projects.'}
                                     </p>
                                 </div>
-
-                                <motion.div
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    transition={{ ...EASE, delay: 0.15 }}
-                                >
-                                    <Button
-                                        variant="primary"
-                                        size="md"
-                                        leftIcon={Plus}
-                                        as={Link}
-                                        to="/projects"
-                                    >
-                                        New Project
-                                    </Button>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...EASE, delay: 0.15 }}>
+                                    <Button variant="primary" size="md" leftIcon={Plus} as={Link} to="/projects">New Project</Button>
                                 </motion.div>
                             </div>
                         </motion.header>
 
-                        {/* ── STAT CARDS ── */}
-                        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+                        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                             {STATS.map((s, i) => (
                                 <motion.div
                                     key={s.label}
@@ -305,10 +292,7 @@ const Home = () => {
                                     initial={{ opacity: 0, y: 12 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: i * 0.06 }}
-                                    onMouseEnter={e => e.currentTarget.style.borderColor = s.accent + '30'}
-                                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
                                 >
-                                    {/* icon */}
                                     <div style={{
                                         width: 34, height: 34, borderRadius: 10,
                                         background: s.glow,
@@ -318,18 +302,12 @@ const Home = () => {
                                     }}>
                                         <s.icon style={{ width: 15, height: 15, color: s.accent }} />
                                     </div>
-
-                                    {/* value */}
                                     <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-1px', color: 'var(--text-primary)', lineHeight: 1, marginBottom: 5 }}>
                                         <Counter value={s.value} delay={i * 60 + 180} />
                                     </div>
-
-                                    {/* label */}
                                     <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 14 }}>
                                         {s.label}
                                     </div>
-
-                                    {/* progress */}
                                     <div style={{ height: 2, background: 'var(--bg-sunken)', borderRadius: 2, overflow: 'hidden' }}>
                                         <motion.div
                                             initial={{ width: 0 }}
@@ -343,28 +321,25 @@ const Home = () => {
                             ))}
                         </section>
 
-                        {/* ── MAIN GRID ── */}
                         <section className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
-
-                            {/* ── ACTIVITY FEED ── */}
                             <motion.div
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ ...EASE, delay: 0.2 }}
                                 style={{
-                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--border-subtle)',
                                     borderRadius: 16,
-                                    background: 'rgba(255,255,255,0.015)',
+                                    background: 'var(--bg-surface)',
                                     overflow: 'hidden',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    height: 500,
+                                    height: isAuditExpanded ? 700 : 380,
+                                    transition: 'height 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
                                 }}
                             >
-                                {/* header */}
                                 <div style={{
                                     padding: '16px 20px',
-                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                    borderBottom: '1px solid var(--border-subtle)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
@@ -383,54 +358,44 @@ const Home = () => {
                                             <p style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', margin: '1px 0 0', textTransform: 'uppercase', letterSpacing: '.1em' }}>Audit log</p>
                                         </div>
                                     </div>
-                                    {canViewActivity && (
-                                        <Link
-                                            to="/admin/security"
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: 4,
-                                                fontSize: 11, fontWeight: 500,
-                                                color: 'var(--text-tertiary)',
-                                                textDecoration: 'none',
-                                                transition: 'color .15s',
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
-                                            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                                        >
-                                            View all
-                                            <ArrowUpRight style={{ width: 11, height: 11 }} />
-                                        </Link>
-                                    )}
+                                    <button
+                                        onClick={() => setIsAuditExpanded(!isAuditExpanded)}
+                                        style={{
+                                            background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 4,
+                                            fontSize: 11, fontWeight: 500, color: 'var(--text-tertiary)', cursor: 'pointer', outline: 'none', transition: 'color .15s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                                    >
+                                        {isAuditExpanded ? 'Show less' : 'View all'}
+                                        <ArrowUpRight style={{ width: 11, height: 11, transition: 'transform 0.3s', transform: isAuditExpanded ? 'rotate(180deg)' : 'none' }} />
+                                    </button>
                                 </div>
 
-                                {/* body */}
                                 <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="h-scroll">
                                     {!canViewActivity ? (
                                         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32, textAlign: 'center' }}>
                                             <div style={{
                                                 width: 38, height: 38, borderRadius: 11,
-                                                background: 'rgba(248,113,113,0.07)',
-                                                border: '1px solid rgba(248,113,113,0.12)',
+                                                background: 'var(--accent-bg)',
+                                                border: '1px solid var(--accent-border)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             }}>
-                                                <Lock style={{ width: 15, height: 15, color: '#f87171' }} />
+                                                <Lock style={{ width: 15, height: 15, color: 'var(--accent-500)' }} />
                                             </div>
                                             <div>
                                                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Access Restricted</p>
-                                                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0, maxWidth: 240, lineHeight: 1.6 }}>
-                                                    The audit log is available to Managers and Administrators only.
-                                                </p>
+                                                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0, maxWidth: 240, lineHeight: 1.6 }}>The audit log is available to Managers and Administrators only.</p>
                                             </div>
                                         </div>
                                     ) : actLoading ? (
-                                        <div style={{ padding: '14px 20px' }}>
-                                            {[0, .07, .14, .21, .28].map((d, i) => <ActivitySkeleton key={i} delay={d} />)}
-                                        </div>
+                                        <div style={{ padding: '14px 20px' }}>{[0, .07, .14, .21, .28].map((d, i) => <ActivitySkeleton key={i} delay={d} />)}</div>
                                     ) : activity.length === 0 ? (
                                         <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <p style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>No recent activity</p>
                                         </div>
                                     ) : (
-                                        <div ref={parentRef} style={{ height: '100%', overflowY: 'auto', padding: '6px 12px' }} className="h-scroll" aria-live="polite">
+                                        <div ref={parentRef} style={{ height: '100%', overflowY: 'auto', padding: '6px 12px' }} className="h-scroll">
                                             <div style={{ height: virt.getTotalSize(), position: 'relative' }}>
                                                 {virt.getVirtualItems().map(vi => {
                                                     const a = activity[vi.index];
@@ -438,31 +403,24 @@ const Home = () => {
                                                     const initial = a.user?.name?.charAt(0)?.toUpperCase() || '?';
                                                     return (
                                                         <div
-                                                            key={vi.key}
-                                                            className="act-row"
+                                                            key={vi.key} className="act-row"
                                                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: vi.size, transform: `translateY(${vi.start}px)` }}
                                                         >
                                                             <div style={{
-                                                                width: 30, height: 30, borderRadius: 8,
-                                                                background: 'rgba(255,255,255,0.04)',
-                                                                border: '1px solid rgba(255,255,255,0.06)',
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                fontSize: 11, fontWeight: 600, color: '#94a3b8', flexShrink: 0,
-                                                            }}>
-                                                                {initial}
-                                                            </div>
+                                                                width: 30, height: 30, borderRadius: 8, background: 'var(--bg-sunken)', border: '1px solid var(--border-subtle)',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', flexShrink: 0,
+                                                            }}>{initial}</div>
                                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                                <p style={{ margin: 0, fontSize: 12.5, color: '#94a3b8', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                    <span style={{ fontWeight: 600, color: '#cbd5e1' }}>{a.user?.name}</span>
-                                                                    {' '}
-                                                                    <span>{actionLabel(a.action)}</span>
+                                                                <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{a.user?.name}</span>
+                                                                    {' '}<span>{actionLabel(a.action)}</span>
                                                                     {a.details?.title && (
-                                                                        <> <span style={{ color: '#e1e4ed' }}>"{a.details.title}"</span></>
+                                                                        <> <span style={{ color: 'var(--text-primary)', opacity: 0.9 }}>"{a.details.title}"</span></>
                                                                     )}
                                                                 </p>
-                                                                <p style={{ margin: '2px 0 0', fontSize: 10, color: '#374151', fontFamily: 'var(--mono)' }}>{t}</p>
+                                                                <p style={{ margin: '2px 0 0', fontSize: 10, color: 'var(--border-strong)', fontFamily: 'var(--mono)' }}>{t}</p>
                                                             </div>
-                                                            <ChevronRight style={{ width: 12, height: 12, color: '#1e2130', flexShrink: 0 }} />
+                                                            <ChevronRight style={{ width: 12, height: 12, color: 'var(--border-strong)', flexShrink: 0 }} />
                                                         </div>
                                                     );
                                                 })}
@@ -472,30 +430,17 @@ const Home = () => {
                                 </div>
                             </motion.div>
 
-                            {/* ── RIGHT COLUMN ── */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-                                {/* APOD */}
                                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ ...EASE, delay: 0.28 }}>
                                     <ApodWidget />
                                 </motion.div>
 
-                                {/* Milestones */}
                                 <motion.div
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
+                                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: 0.34 }}
-                                    style={{
-                                        border: '1px solid var(--accent-border)',
-                                        borderRadius: 16,
-                                        background: 'var(--accent-bg)',
-                                        padding: '20px',
-                                    }}
+                                    style={{ border: '1px solid var(--accent-border)', borderRadius: 16, background: 'var(--accent-bg)', padding: '20px' }}
                                 >
-                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 14 }}>
-                                        Milestones
-                                    </p>
-
+                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 14 }}>Milestones</p>
                                     <div style={{ marginBottom: 8 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
                                             <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Overall Completion</span>
@@ -509,11 +454,7 @@ const Home = () => {
                                             />
                                         </div>
                                     </div>
-
-                                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.55, margin: '10px 0 14px' }}>
-                                        On track to reach the next milestone by end of week.
-                                    </p>
-
+                                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.55, margin: '10px 0 14px' }}>On track to reach the next milestone by end of week.</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                         {[
                                             { label: 'Design Review', pct: 100, done: true },
@@ -522,16 +463,16 @@ const Home = () => {
                                         ].map((m, i) => (
                                             <div key={i}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                                    <span style={{ fontSize: 11, color: m.done ? '#4a5568' : '#6b7280' }}>{m.label}</span>
-                                                    <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: m.done ? '#34d399' : '#4b5563' }}>
+                                                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{m.label}</span>
+                                                    <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: m.done ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
                                                         {m.done ? '✓ Done' : `${m.pct}%`}
                                                     </span>
                                                 </div>
-                                                <div style={{ height: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 1, overflow: 'hidden' }}>
+                                                <div style={{ height: 2, background: 'var(--bg-sunken)', borderRadius: 1, overflow: 'hidden' }}>
                                                     <motion.div
                                                         initial={{ width: 0 }} animate={{ width: `${m.pct}%` }}
                                                         transition={{ duration: 0.9, delay: 0.65 + i * 0.1, ease: 'easeOut' }}
-                                                        style={{ height: '100%', background: m.done ? '#34d399' : '#818cf8', borderRadius: 1 }}
+                                                        style={{ height: '100%', background: m.done ? 'var(--color-success)' : 'var(--accent-400)', borderRadius: 1 }}
                                                     />
                                                 </div>
                                             </div>
@@ -539,21 +480,12 @@ const Home = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* Quick Links */}
                                 <motion.div
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
+                                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: 0.42 }}
-                                    style={{
-                                        border: '1px solid rgba(255,255,255,0.05)',
-                                        borderRadius: 16,
-                                        background: 'rgba(255,255,255,0.015)',
-                                        padding: '16px 18px',
-                                    }}
+                                    style={{ border: '1px solid var(--border-subtle)', borderRadius: 16, background: 'var(--bg-surface)', padding: '16px 18px' }}
                                 >
-                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 10 }}>
-                                        Quick Links
-                                    </p>
+                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 10 }}>Quick Links</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                         {[
                                             { label: 'Projects', to: '/projects', icon: FolderKanban },
@@ -571,11 +503,8 @@ const Home = () => {
                             </div>
                         </section>
 
-                        {/* ── FOOTER ── */}
                         <motion.footer
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.55 }}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
                             className="mt-8 flex flex-wrap items-center gap-3 pb-2"
                         >
                             <div className="flex items-center gap-1.5">
@@ -587,7 +516,6 @@ const Home = () => {
                             <span style={{ fontSize: 10, color: 'var(--text-tertiary)', opacity: 0.4 }}>·</span>
                             <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)' }}>{user?.email}</span>
                         </motion.footer>
-
                     </DashboardErrorBoundary>
                 </div>
             </article>

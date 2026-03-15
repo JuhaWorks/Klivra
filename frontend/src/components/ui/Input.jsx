@@ -16,6 +16,7 @@ const Input = forwardRef(({
     rightIcon: RightIcon,
     label,
     id,
+    overlay,
     ...props
 }, ref) => {
     return (
@@ -46,10 +47,18 @@ const Input = forwardRef(({
                         LeftIcon && 'pl-11',
                         RightIcon && 'pr-11',
                         error && 'border-red-500/30 focus:border-red-500/50 focus:ring-red-500/5',
+                        overlay && 'text-transparent [-webkit-text-fill-color:transparent] selection:text-transparent caret-cyan-500 font-mono',
                         className
                     ))}
                     {...props}
                 />
+                {overlay && (
+                    <div className="absolute left-0 top-0 w-full h-full flex items-center pointer-events-none px-4 text-primary" style={{ paddingLeft: LeftIcon ? '2.75rem' : '1rem' }}>
+                        <div className="text-sm truncate w-full">
+                            {overlay}
+                        </div>
+                    </div>
+                )}
                 {RightIcon && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         {RightIcon}

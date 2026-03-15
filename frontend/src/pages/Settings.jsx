@@ -75,7 +75,7 @@ export default function Settings() {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-screen-2xl mx-auto w-full">
+            <div className="w-full">
                 <div className="flex flex-col lg:flex-row gap-16">
                     {/* Sidebar */}
                     <aside className="w-full lg:w-64 shrink-0 space-y-8">

@@ -25,13 +25,13 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
 
     return (
         <AnimatePresence>
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-6"
             >
-                <motion.div 
+                <motion.div
                     initial={{ scale: 0.9, y: 20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.9, y: 20, opacity: 0 }}
@@ -103,7 +103,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
 
                         <div className="flex gap-4">
                             <Button variant="outline" onClick={onClose} disabled={isLoading} className="flex-1 py-5 rounded-2xl">Cancel</Button>
-                            <Button 
+                            <Button
                                 onClick={onConfirm}
                                 isLoading={isLoading}
                                 disabled={(actionType === 'delete' && !isMatch) || isLoading}
@@ -214,7 +214,7 @@ export default function AccountStatusTab() {
                             <div className="w-16 h-16 rounded-[1.5rem] bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:scale-110 transition-transform">
                                 <LogOut className="w-8 h-8 text-amber-500" />
                             </div>
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <h3 className="text-sm font-black text-white uppercase tracking-widest">Deactivate Account</h3>
                                 <p className="text-[11px] text-gray-500 font-medium max-w-lg leading-relaxed">
                                     Temporarily disable your account. Your data will be preserved for when you decide to return.

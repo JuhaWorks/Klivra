@@ -78,9 +78,16 @@ const ApodWidget = () => {
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
                             <div>
                                 <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest block mb-1">Explanation</span>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed">
+                                <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
                                     {display.explanation}
                                 </p>
+                                <button 
+                                    className="text-[10px] font-bold text-cyan-500/80 hover:text-cyan-400 mt-1 transition-colors flex items-center gap-1 group/btn"
+                                    onClick={() => window.open(display.url, '_blank')}
+                                >
+                                    <span>Full Discovery</span>
+                                    <Rocket className="w-2.5 h-2.5 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
+                                </button>
                             </div>
 
                             {display.copyright && (

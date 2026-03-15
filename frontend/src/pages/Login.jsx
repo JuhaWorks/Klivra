@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import DecryptedText from '../components/ui/DecryptedText';
 
 const schema = z.object({
     email: z.string().min(1, 'Required').email('Invalid email'),
@@ -28,6 +29,7 @@ const Login = () => {
     const navigate = useNavigate();
     const { login, isLoading, error, clearError, user } = useAuthStore();
     const [showPw, setShowPw] = useState(false);
+    const [animatePw, setAnimatePw] = useState(false);
     
     const { register, handleSubmit, watch, formState: { errors } } = useForm({
         resolver: zodResolver(schema),
@@ -36,6 +38,7 @@ const Login = () => {
     });
 
     const remember = watch('remember');
+    const passwordValue = watch('password');
     const [optimisticRemember, setOptimisticRemember] = useOptimistic(remember);
 
     useEffect(() => {
@@ -130,10 +133,29 @@ const Login = () => {
                             leftIcon={Lock}
                             error={errors.password?.message}
                             {...register('password')}
+                            overlay={showPw && passwordValue ? (
+                                <DecryptedText
+                                    text={passwordValue}
+                                    animateOn="none"
+                                    trigger={animatePw}
+                                    speed={80}
+                                    sequential={true}
+                                    useOriginalCharsOnly={false}
+                                    className="font-mono"
+                                    encryptedClassName="font-mono opacity-70"
+                                />
+                            ) : null}
                             rightIcon={
                                 <button
                                     type="button"
-                                    onClick={() => setShowPw(!showPw)}
+                                    onClick={() => {
+                                        if (!showPw) {
+                                            setAnimatePw(true);
+                                            // Reset trigger after a short delay so it can be re-triggered
+                                            setTimeout(() => setAnimatePw(false), 100);
+                                        }
+                                        setShowPw(!showPw);
+                                    }}
                                     className="p-2 hover:bg-sunken rounded-lg transition-colors text-tertiary hover:text-primary"
                                 >
                                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

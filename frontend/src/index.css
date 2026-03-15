@@ -50,6 +50,22 @@
   initial-value: oklch(0 0 0 / 0.18);
 }
 
+/* Core Theme variable registration for smooth transitions */
+@property --accent-500 { syntax: "<color>"; inherits: true; initial-value: oklch(0.65 0.19 162); }
+@property --bg-base { syntax: "<color>"; inherits: true; initial-value: oklch(0.985 0.002 247); }
+@property --bg-surface { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.85); }
+@property --bg-elevated { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.98); }
+@property --bg-sunken { syntax: "<color>"; inherits: true; initial-value: oklch(0.94 0.003 247 / 0.60); }
+@property --text-primary { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247); }
+@property --text-secondary { syntax: "<color>"; inherits: true; initial-value: oklch(0.28 0.012 247); }
+@property --text-tertiary { syntax: "<color>"; inherits: true; initial-value: oklch(0.42 0.010 247); }
+@property --border-default { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.08); }
+@property --border-strong { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.15); }
+@property --border-subtle { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.04); }
+@property --accent-bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --accent-border { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --accent-glow { syntax: "<color>"; inherits: true; initial-value: transparent; }
+
 @theme {
   /* Typefaces */
   --font-display: "Cabinet Grotesk", system-ui, sans-serif;
@@ -68,7 +84,9 @@
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
   --text-6xl: 3.75rem;
-  --text-hero: clamp(2.75rem, 5.5vw, 5rem);
+  --text-hero: clamp(2.75rem, 8vw, 6rem);
+  --text-fluid-lg: clamp(1.125rem, 2.5vw, 1.5rem);
+  --text-fluid-base: clamp(0.875rem, 1.5vw, 1rem);
 
   /* OKLCH neutral scale */
   --color-neutral-50: oklch(0.985 0.002 247);
@@ -95,10 +113,13 @@
   --breakpoint-xs: 480px;
   --breakpoint-3xl: 1920px;
 
-  /* Spacing extras */
-  --spacing-18: 4.5rem;
-  --spacing-22: 5.5rem;
-  --spacing-26: 6.5rem;
+  /* Spacing extras with fluid scaling */
+  --spacing-18: clamp(3rem, 6vw, 4.5rem);
+  --spacing-22: clamp(4rem, 8vw, 5.5rem);
+  --spacing-26: clamp(5rem, 10vw, 6.5rem);
+  --spacing-fluid-sm: clamp(1rem, 2vw, 1.5rem);
+  --spacing-fluid-md: clamp(1.5rem, 4vw, 2.5rem);
+  --spacing-fluid-lg: clamp(2rem, 6vw, 4rem);
 
   /* Border radius */
   --radius-xs: 4px;
@@ -192,6 +213,7 @@
   --accent-bg: color-mix(in oklab, var(--accent-500) 8%, transparent);
   --accent-border: color-mix(in oklab, var(--accent-500) 18%, transparent);
   --accent-glow: color-mix(in oklab, var(--accent-500) 25%, transparent);
+  --theme-rgb: 0, 168, 120; /* emerald-500 approx for emerald-like init */
 
   --bg-base: oklch(0.985 0.002 247);
   --bg-surface: oklch(1 0 0 / 0.85);
@@ -209,6 +231,23 @@
   --bg-hue-3: oklch(0.65 0.18 300 / 0.03);
   --shadow-elevation: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   color-scheme: light;
+
+  /* Universal transition for theme variables */
+  transition: 
+    --bg-base 0.4s ease,
+    --bg-surface 0.4s ease,
+    --bg-elevated 0.4s ease,
+    --bg-sunken 0.4s ease,
+    --text-primary 0.4s ease,
+    --text-secondary 0.4s ease,
+    --text-tertiary 0.4s ease,
+    --border-default 0.4s ease,
+    --border-strong 0.4s ease,
+    --border-subtle 0.4s ease,
+    --accent-500 0.4s ease,
+    --accent-bg 0.4s ease,
+    --accent-border 0.4s ease,
+    --accent-glow 0.4s ease;
 }
 
 /* Dark mode overrides */
@@ -219,6 +258,7 @@
   --accent-bg: color-mix(in oklab, var(--accent-500) 12%, transparent);
   --accent-border: color-mix(in oklab, var(--accent-500) 25%, transparent);
   --accent-glow: color-mix(in oklab, var(--accent-500) 35%, transparent);
+  --theme-rgb: 52, 211, 153; /* emerald-400 approx for dark */
 
   --bg-base: oklch(0.06 0.002 247);
   --bg-surface: oklch(1 0 0 / 0.04);
@@ -252,20 +292,14 @@
 .fill-theme { fill: var(--accent-500) !important; }
 .stroke-theme { stroke: var(--accent-500) !important; }
 
-/* Performance: Disable transitions during theme/mode switches */
-.theme-transitioning,
-.theme-transitioning *,
-.theme-transitioning *::before,
-.theme-transitioning *::after {
-  transition: none !important;
-  animation: none !important;
-}
+/* Performance: Global baseline resets */
 
 /* Accent theme variants — redefine accent ramp only */
 [data-theme="violet"] {
   --accent-400: oklch(0.74 0.21 270); /* Light/Dark sensible L shift below */
   --accent-500: oklch(0.63 0.24 290);
   --accent-600: oklch(0.53 0.21 310);
+  --theme-rgb: 167, 139, 250;
 }
 .dark [data-theme="violet"] {
   --accent-400: oklch(0.78 0.21 270);
@@ -277,6 +311,7 @@
   --accent-400: oklch(0.82 0.20 85);
   --accent-500: oklch(0.74 0.22 75);
   --accent-600: oklch(0.63 0.19 65);
+  --theme-rgb: 245, 158, 11;
 }
 .dark [data-theme="amber"] {
   --accent-400: oklch(0.85 0.20 85);
@@ -288,6 +323,7 @@
   --accent-400: oklch(0.73 0.21 30);
   --accent-500: oklch(0.63 0.24 15);
   --accent-600: oklch(0.53 0.22 350);
+  --theme-rgb: 244, 63, 94;
 }
 .dark [data-theme="rose"] {
   --accent-400: oklch(0.78 0.21 30);
@@ -299,6 +335,7 @@
   --accent-400: oklch(0.73 0.19 200);
   --accent-500: oklch(0.63 0.22 220);
   --accent-600: oklch(0.52 0.19 240);
+  --theme-rgb: 14, 165, 233;
 }
 .dark [data-theme="sky"] {
   --accent-400: oklch(0.78 0.19 200);
@@ -310,6 +347,7 @@
   --accent-400: oklch(0.70 0.19 240);
   --accent-500: oklch(0.60 0.22 264);
   --accent-600: oklch(0.50 0.19 280);
+  --theme-rgb: 99, 102, 241;
 }
 .dark [data-theme="indigo"] {
   --accent-400: oklch(0.75 0.19 240);
@@ -321,6 +359,7 @@
   --accent-400: oklch(0.75 0.15 160);
   --accent-500: oklch(0.65 0.18 185);
   --accent-600: oklch(0.55 0.15 210);
+  --theme-rgb: 20, 184, 166;
 }
 .dark [data-theme="teal"] {
   --accent-400: oklch(0.80 0.15 160);
@@ -332,6 +371,7 @@
   --accent-400: oklch(0.78 0.18 65);
   --accent-500: oklch(0.68 0.21 45);
   --accent-600: oklch(0.58 0.18 25);
+  --theme-rgb: 249, 115, 22;
 }
 .dark [data-theme="orange"] {
   --accent-400: oklch(0.82 0.18 65);
@@ -343,6 +383,7 @@
   --accent-400: oklch(0.74 0.20 310);
   --accent-500: oklch(0.64 0.23 330);
   --accent-600: oklch(0.54 0.20 350);
+  --theme-rgb: 236, 72, 153;
 }
 .dark [data-theme="pink"] {
   --accent-400: oklch(0.78 0.20 310);
@@ -354,6 +395,7 @@
   --accent-400: oklch(0.70 0.02 247);
   --accent-500: oklch(0.60 0.03 247);
   --accent-600: oklch(0.50 0.02 247);
+  --theme-rgb: 100, 116, 139;
 }
 .dark [data-theme="slate"] {
   --accent-400: oklch(0.75 0.02 247);
@@ -682,6 +724,16 @@ video {
   interpolate-size: allow-keywords;
   transition: height var(--duration-base) var(--ease-fluid),
     width var(--duration-base) var(--ease-fluid);
+}
+
+@utility container-fluid {
+  width: 100%;
+  margin-inline: auto;
+  max-width: min(95vw, 1720px);
+
+  @media (min-width: 1920px) {
+    max-width: 1840px;
+  }
 }
 
 /* Auto-growing textarea (v4 field-sizing) */
