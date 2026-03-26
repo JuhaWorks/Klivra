@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SidebarComponent from './Sidebar';
 import TopBar from './TopBar';
+import MaintenanceNotice, { useMaintenanceStatus } from './MaintenanceNotice';
 import { useIdleTimer } from '../../hooks/useIdleTimer';
 import { useAuthStore } from '../../store/useAuthStore';
 import { RefreshCw } from 'lucide-react';
@@ -61,6 +62,10 @@ const Layout = () => {
     );
     const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('klivra-sidebar-collapsed') === 'true');
     const [isPending, startTransition] = useTransition();
+    const { isUnderMaintenance } = useMaintenanceStatus();
+    const { user } = useAuthStore();
+
+    const showNotice = isUnderMaintenance && user?.role === 'Admin';
 
     const toggleSidebar = () => {
         const next = !isSidebarExpanded;
@@ -81,35 +86,46 @@ const Layout = () => {
     return (
         <div className="flex min-h-screen bg-base relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
             {/* Ambient Background Node */}
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-[#030008]">
-                {/* Premium Abstract BG */}
-                <div className="absolute inset-0 z-0 opacity-[0.4] mix-blend-screen">
-                    <img 
-                      src="/bg-premium.png" 
-                      alt="" 
-                      className="w-full h-full object-cover scale-105"
-                      loading="eager"
-                    />
-                </div>
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-base">
+                {/* Tech Grid Background */}
+                <div 
+                    className="absolute inset-0 opacity-[0.8]" 
+                    style={{ 
+                        backgroundImage: `
+                            linear-gradient(var(--grid-line) 1px, transparent 1px),
+                            linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)
+                        `,
+                        backgroundSize: '32px 32px',
+                        maskImage: 'radial-gradient(ellipse at center, black, transparent 80%)',
+                        WebkitMaskImage: 'radial-gradient(ellipse at center, black, transparent 80%)'
+                    }} 
+                />
                 
-                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-theme/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[20%] left-[-5%] w-[30%] h-[30%] bg-theme/5 rounded-full blur-[100px]" />
-                <div className="absolute inset-0 bg-repeat bg-center opacity-[0.03] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("/noise.svg")' }} />
+                {/* High-Performance Animated Glows */}
+                <div className="absolute top-[-10%] right-[-10%] w-[45%] h-[45%] bg-theme/10 dark:bg-theme/15 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] bg-theme/5 dark:bg-theme/10 rounded-full blur-[100px]" />
                 
                 {/* Surface Gradient for Depth */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-transparent to-black/40 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-base/5 via-transparent to-base/5 pointer-events-none dark:from-black/80 dark:to-black/60" />
+                
+                {/* Fine Texture Noise */}
+                <div className="absolute inset-0 bg-repeat bg-center opacity-[0.03] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("/noise.svg")' }} />
             </div>
 
             {/* TopBar - Z Layout (Spans Full Width, Top Priority) */}
             <div className={twMerge(clsx(
-                "fixed top-0 right-0 z-50 transition-all duration-300",
+                "fixed right-0 z-50 transition-all duration-300",
+                showNotice ? "top-11" : "top-0",
                 isSidebarExpanded ? (isCollapsed ? "left-20" : "left-[280px]") : "left-0"
             ))}>
                 <TopBar onMenuToggle={toggleSidebar} />
             </div>
 
             {/* Desktop Sidebar */}
-            <div className="hidden lg:block fixed top-0 bottom-0 left-0 z-40">
+            <div className={twMerge(clsx(
+                "hidden lg:block fixed bottom-0 left-0 z-40 transition-all duration-300",
+                showNotice ? "top-11" : "top-0"
+            ))}>
                 <SidebarComponent
                     isOpen={isSidebarExpanded}
                     isCollapsed={isCollapsed}
@@ -119,7 +135,10 @@ const Layout = () => {
             </div>
 
             {/* Mobile Sidebar */}
-            <div className="lg:hidden fixed top-0 bottom-0 left-0 z-40">
+            <div className={twMerge(clsx(
+                "lg:hidden fixed bottom-0 left-0 z-40 transition-all duration-300",
+                showNotice ? "top-11" : "top-0"
+            ))}>
                 <SidebarComponent
                     isOpen={isSidebarExpanded}
                     isCollapsed={isCollapsed}
@@ -131,7 +150,8 @@ const Layout = () => {
             {/* Main Content Area */}
             <main 
                 className={twMerge(clsx(
-                    "flex-1 flex flex-col min-w-0 min-h-screen relative z-20 transition-all duration-300 ease-in-out pt-16",
+                    "flex-1 flex flex-col min-w-0 min-h-screen relative z-20 transition-all duration-300 ease-in-out",
+                    showNotice ? "pt-[108px]" : "pt-16",
                     isSidebarExpanded ? (isCollapsed ? "lg:pl-20" : "lg:pl-[280px]") : "pl-0"
                 ))} 
                 style={{ transform: 'translateZ(0)' }}

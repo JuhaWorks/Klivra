@@ -3,11 +3,9 @@ const router = express.Router();
 const { protect } = require('../middlewares/auth.middleware');
 const { isNotArchived, authorizeProjectAccess } = require('../middlewares/project.middleware');
 
-// Modular Controllers
-const core = require('../controllers/projectCore.controller');
-const members = require('../controllers/projectMembers.controller');
-const activity = require('../controllers/projectActivity.controller');
-const { getProjectInsights, getWorkspaceStats } = require('../controllers/projectAnalytics.controller');
+// Consolidated Controller
+const projectCtrl = require('../controllers/project.controller');
+const { cacheMiddleware } = require('../utils/redis');
 const validate = require('../middlewares/validate.middleware');
 const { addMemberSchema, updateMemberRoleSchema } = require('../validators/projectMember.validator');
 
@@ -20,33 +18,31 @@ router.use(protect);
 
 // ── CORE DOMAIN (CRUD & Soft-Delete) ─────────────────────────────────────────
 router.route('/')
-    .get(core.getProjects)
-    .post(core.createProject);
+    .get(cacheMiddleware('projects_list', 120), projectCtrl.getProjects)
+    .post(projectCtrl.createProject);
 
 const { uploadProjectImage } = require('../middlewares/upload.middleware');
 
 router.route('/:id')
-    .get(core.getProject)
-    .put(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), core.updateProject)
-    .delete(isNotArchived, authorizeProjectAccess(['Manager']), core.deleteProject);
+    .get(cacheMiddleware('project_detail', 60), projectCtrl.getProject)
+    .put(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), projectCtrl.updateProject)
+    .delete(isNotArchived, authorizeProjectAccess(['Manager']), projectCtrl.deleteProject);
 
-router.post('/:id/image', isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), uploadProjectImage, core.uploadProjectImage);
-router.post('/:id/restore', authorizeProjectAccess(['Manager']), core.restoreProject);
-router.post('/:id/dismiss-alert', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), core.dismissDeadlineAlert);
+router.post('/:id/image', isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), uploadProjectImage, projectCtrl.uploadProjectImage);
+router.post('/:id/restore', authorizeProjectAccess(['Manager']), projectCtrl.restoreProject);
+router.post('/:id/dismiss-alert', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), projectCtrl.dismissDeadlineAlert);
 
 // ── MEMBERS DOMAIN (RBAC & Teams) ───────────────────────────────────────────
 router.route('/:id/members')
-    .post(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), validate(addMemberSchema), members.addMember);
+    .post(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), validate(addMemberSchema), projectCtrl.addMember);
 
 router.route('/:id/members/:userId')
-    .put(isNotArchived, authorizeProjectAccess(['Manager']), validate(updateMemberRoleSchema), members.updateMemberRole)
-    .delete(isNotArchived, authorizeProjectAccess(['Manager']), members.removeMember);
+    .put(isNotArchived, authorizeProjectAccess(['Manager']), validate(updateMemberRoleSchema), projectCtrl.updateMemberRole)
+    .delete(isNotArchived, authorizeProjectAccess(['Manager']), projectCtrl.removeMember);
 
 // ── ACTIVITY & ANALYTICS DOMAIN ───────────────────────────────────────────────
-router.get('/:id/activity', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), activity.getProjectActivity);
-
-const analytics = require('../controllers/projectAnalytics.controller');
-router.get('/workspace/stats', analytics.getWorkspaceStats);
-router.get('/:id/insights', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), analytics.getProjectInsights);
+router.get('/workspace/stats', cacheMiddleware('workspace_stats', 300), projectCtrl.getWorkspaceStats);
+router.get('/:id/activity', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), cacheMiddleware('project_activity', 30), projectCtrl.getProjectActivity);
+router.get('/:id/insights', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), cacheMiddleware('project_insights', 60), projectCtrl.getProjectInsights);
 
 module.exports = router;

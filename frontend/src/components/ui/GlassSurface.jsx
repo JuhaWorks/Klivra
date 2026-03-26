@@ -7,7 +7,7 @@ const GlassSurface = ({
   height = 80,
   borderRadius = 20,
   borderWidth = 0.07,
-  brightness = 50,
+  brightness,
   opacity = 0.93,
   blur = 11,
   displace = 0,
@@ -25,6 +25,9 @@ const GlassSurface = ({
   className = '',
   style = {}
 }) => {
+  const isDark = document.documentElement.classList.contains('dark');
+  const defaultBrightness = isDark ? 10 : 95;
+  const effectiveBrightness = brightness !== undefined ? brightness : defaultBrightness;
   const uniqueId = useId().replace(/:/g, '-');
   const filterId = `glass-filter-${uniqueId}`;
   const redGradId = `red-grad-${uniqueId}`;
@@ -72,7 +75,7 @@ const GlassSurface = ({
         <rect x="0" y="0" width="${actualWidth}" height="${actualHeight}" fill="black"></rect>
         <rect x="0" y="0" width="${actualWidth}" height="${actualHeight}" rx="${rx}" fill="url(#${redGradId})" />
         <rect x="0" y="0" width="${actualWidth}" height="${actualHeight}" rx="${rx}" fill="url(#${blueGradId})" style="mix-blend-mode: ${mixBlendMode}" />
-        <rect x="${edgeSize}" y="${edgeSize}" width="${actualWidth - edgeSize * 2}" height="${actualHeight - edgeSize * 2}" rx="${rx}" fill="hsl(0 0% ${brightness}% / ${opacity})" filter="url(#inner-blur)" />
+        <rect x="${edgeSize}" y="${edgeSize}" width="${actualWidth - edgeSize * 2}" height="${actualHeight - edgeSize * 2}" rx="${rx}" fill="hsl(0 0% ${effectiveBrightness}% / ${opacity})" filter="url(#inner-blur)" />
       </svg>
     `;
 

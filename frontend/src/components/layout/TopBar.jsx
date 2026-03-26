@@ -50,9 +50,9 @@ const TopBar = ({ onMenuToggle }) => {
     }, []);
 
     return (
-        <header className="h-16 transition-all duration-300 relative overflow-hidden rounded-b-[2rem]">
+        <header className="h-16 transition-all duration-300 relative overflow-hidden rounded-b-[3.15rem]">
             <div className="absolute inset-0 z-0">
-                <GlassSurface width="100%" height="100%" borderRadius="0 0 2rem 2rem" displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
+                <GlassSurface width="100%" height="100%" borderRadius="0 0 3.15rem 3.15rem" displace={0.5} distortionScale={-20} backgroundOpacity={0.04} opacity={0.93} />
             </div>
             
             <div className="w-full h-full flex items-center justify-between px-6 lg:px-10 relative z-10">
@@ -124,7 +124,7 @@ const TopBar = ({ onMenuToggle }) => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[60] overflow-hidden rounded-[2rem] border border-white/10"
+                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[60] overflow-hidden rounded-[2.5rem] border border-white/10"
                                     style={{ isolation: 'isolate' }}
                                 >
                                     {/* Glass Backing */}
@@ -132,45 +132,45 @@ const TopBar = ({ onMenuToggle }) => {
                                         <GlassSurface 
                                             width="100%" 
                                             height="100%" 
-                                            borderRadius={32} 
+                                            borderRadius={40} 
                                             displace={0.4} 
-                                            distortionScale={-40} 
-                                            backgroundOpacity={0.15} 
-                                            opacity={0.88} 
-                                            blur={24}
+                                            distortionScale={-20} 
+                                            backgroundOpacity={0.08} 
+                                            opacity={0.95} 
+                                            blur={20}
                                         />
                                     </div>
 
                                     {/* Dropdown Content */}
                                     <div className="relative z-10">
-                                        <div className="p-5 border-b border-white/10 mb-2">
-                                            <p className="text-sm font-black text-white tracking-tight">{user?.name}</p>
-                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest truncate mt-0.5">{user?.email}</p>
+                                        <div className="p-5 border-b border-default mb-2">
+                                            <p className="text-sm font-black text-primary tracking-tight">{user?.name}</p>
+                                            <p className="text-[10px] font-bold text-tertiary uppercase tracking-widest truncate mt-0.5">{user?.email}</p>
                                         </div>
 
                                         <div className="space-y-1 p-1">
                                             <Link
                                                 to="/profile"
                                                 onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-all group"
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all group"
                                             >
-                                                <div className="w-8 h-8 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
-                                                    <User className="w-4 h-4 group-hover:text-cyan-400 transition-colors" />
+                                                <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
+                                                    <User className="w-4 h-4 group-hover:text-cyan-500 transition-colors" />
                                                 </div>
                                                 <span>My Profile</span>
                                             </Link>
                                             <Link
                                                 to="/settings"
                                                 onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-all group"
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all group"
                                             >
-                                                <div className="w-8 h-8 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-theme/20 transition-colors">
+                                                <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-theme/20 transition-colors">
                                                     <Settings className="w-4 h-4 group-hover:text-theme transition-colors" />
                                                 </div>
                                                 <span>Settings</span>
                                             </Link>
                                             
-                                            <div className="h-px bg-white/5 my-2 mx-3" />
+                                            <div className="h-px bg-default my-2 mx-3" />
 
                                             <button
                                                 onClick={() => { logout(); setDropdownOpen(false); }}
@@ -193,4 +193,4 @@ const TopBar = ({ onMenuToggle }) => {
     );
 };
 
-export default TopBar;
+export default React.memo(TopBar);

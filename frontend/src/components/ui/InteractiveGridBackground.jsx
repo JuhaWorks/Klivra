@@ -233,7 +233,7 @@ const InteractiveGridBackground = ({
         // One shadow pass for the head cell (most expensive — do once)
         if (glow) {
           ctx.shadowColor = EMERALD;
-          ctx.shadowBlur = 22;
+          ctx.shadowBlur = 8; // Reduced from 22
         }
 
         for (let i = 0; i < count; i++) {
@@ -242,8 +242,8 @@ const InteractiveGridBackground = ({
           const alpha = Math.pow(factor, 1.7) * 0.9;
 
           ctx.globalAlpha = alpha;
-          // Only apply shadow on first few cells
-          if (glow) ctx.shadowBlur = i < 3 ? 20 * factor : 0;
+          // Only apply shadow on first few cells (optimized)
+          if (glow) ctx.shadowBlur = i < 2 ? 8 * factor : 0;
 
           ctx.fillStyle = EMERALD;
           ctx.fillRect(
@@ -282,7 +282,7 @@ const InteractiveGridBackground = ({
     };
   }, [gridSize, trailLength, idleSpeed, glow, idleRandomCount, isDarkMode]);
 
-  const bg = isDarkMode ? "#09090b" : "var(--bg-base)";
+  const bg = "var(--bg-base)";
 
   return (
     <div
@@ -313,7 +313,7 @@ const InteractiveGridBackground = ({
         <div
           className="pointer-events-none absolute inset-0 z-20"
           style={{
-            background: `radial-gradient(circle at center, transparent ${fadeIntensity}%, ${bg} 95%)`,
+            background: `radial-gradient(circle at center, transparent ${fadeIntensity}%, var(--bg-base) 95%)`,
           }}
         />
       )}

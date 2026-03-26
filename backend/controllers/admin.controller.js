@@ -322,6 +322,46 @@ const getSystemStatus = async (req, res, next) => {
     }
 };
 
+const Audit = require('../models/audit.model');
+
+// ... (existing admin functions)
+
+// @desc    Get paginated audit/activity logs
+// @route   GET /api/audit
+// @access  Private (Admin/Manager)
+const getLogs = async (req, res, next) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 50;
+        const skip = (page - 1) * limit;
+        const entityId = req.query.entityId;
+
+        let logs, total;
+
+        if (entityId) {
+            // Unified query to Audit (Project logs)
+            total = await Audit.countDocuments({ entityId: entityId, entityType: 'Project' });
+            logs = await Audit.find({ entityId: entityId, entityType: 'Project' })
+                .populate('user', 'name email avatar')
+                .sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+        } else {
+            // General system audit logs
+            const query = req.query.type ? { entityType: req.query.type } : {};
+            total = await Audit.countDocuments(query);
+            logs = await Audit.find(query)
+                .populate('user', 'name email avatar')
+                .sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+        }
+
+        res.status(200).json({
+            status: 'success',
+            count: logs.length,
+            pagination: { total, page, pages: Math.ceil(total / limit) },
+            data: logs,
+        });
+    } catch (error) { next(error); }
+};
+
 module.exports = {
     getUsers,
     updateUserRole,
@@ -330,5 +370,6 @@ module.exports = {
     toggleMaintenance,
     updateBlockedIps,
     getBlockedIps,
-    getSystemStatus
+    getSystemStatus,
+    getLogs
 };

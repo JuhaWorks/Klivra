@@ -82,6 +82,8 @@ projectSchema.index({ 'members.userId': 1 });
 
 // Index for soft-delete filtering
 projectSchema.index({ deletedAt: 1 });
+projectSchema.index({ status: 1, createdAt: -1 });
+projectSchema.index({ 'members.userId': 1, status: 1 });
 
 // Add $text index for Global Search weighting
 projectSchema.index(

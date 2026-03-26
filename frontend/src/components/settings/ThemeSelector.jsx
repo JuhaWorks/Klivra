@@ -168,7 +168,7 @@ export default function ThemeSelector() {
                         </span>
                     </div>
                     <ChevronDown
-                        className={`w-3.5 h-3.5 text-zinc-600 transition-transform duration-250 ${isOpen ? 'rotate-180 !text-zinc-100' : ''}`}
+                        className={`w-3.5 h-3.5 text-tertiary transition-transform duration-250 ${isOpen ? 'rotate-180' : ''}`}
                     />
                 </button>
 
@@ -216,10 +216,10 @@ export default function ThemeSelector() {
             </div>
 
             {/* Status bar */}
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-surface border border-white/[0.05] rounded-[9px] relative z-10">
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-sunken border border-default rounded-[9px] relative z-10">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                <span className="text-[9px] font-medium font-mono text-zinc-600 uppercase tracking-[0.12em]">
-                    Theme · <em className="not-italic text-zinc-500">{activeTheme.name}</em> · Applied
+                <span className="text-[9px] font-medium font-mono text-tertiary uppercase tracking-[0.12em]">
+                    Theme · <em className="not-italic text-secondary">{activeTheme.name}</em> · Applied
                 </span>
             </div>
         </div>

@@ -172,7 +172,7 @@ const UserRow = ({ u, user, onRole, onBan, index }) => (
         <td style={{ padding: '14px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <img src={u.avatar} alt={u.name} style={{ width: 38, height: 38, borderRadius: 11, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.07)' }} />
+                    <img src={u.avatar} alt={u.name} loading="lazy" decoding="async" style={{ width: 38, height: 38, borderRadius: 11, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.07)' }} />
                     <div style={{ position: 'absolute', bottom: -2, right: -2, width: 9, height: 9, borderRadius: '50%', border: '2px solid #080812', background: u.isActive && !u.isBanned ? '#00e5a0' : '#374151' }} />
                 </div>
                 <div>
@@ -497,7 +497,7 @@ const AdminDashboard = () => {
             <div className="orb" style={{ width: 500, height: 500, top: -200, left: -150, background: 'rgba(0,229,160,.04)' }} />
             <div className="orb" style={{ width: 400, height: 400, bottom: -100, right: -100, background: 'rgba(56,189,248,.03)', animationDelay: '-6s' }} />
 
-            <div className="adm-root">
+            <div className="adm-root cv-auto">
                 <div className="adm-inner" style={{ padding: '36px 32px 80px', maxWidth: 1380, margin: '0 auto' }}>
 
                     {/* ── HEADER ── */}
@@ -570,10 +570,18 @@ const AdminDashboard = () => {
                                 onClick={() => isMaintenanceMode ? toggleMaintenanceMutation.mutate({ enabled: false }) : setIsModalOpen(true)}
                                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 12, border: `1px solid ${isMaintenanceMode ? 'var(--green)' : 'rgba(255,77,109,0.3)'}`, background: isMaintenanceMode ? 'var(--green)' : 'rgba(255,77,109,0.08)', color: isMaintenanceMode ? '#020810' : 'var(--red)', fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--sans)', transition: 'all .2s' }}
                             >
-                                <motion.span animate={isMaintenanceMode ? { rotate: 360 } : {}} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}>
-                                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
+                                <motion.span 
+                                    animate={toggleMaintenanceMutation.isPending ? { rotate: 360 } : {}} 
+                                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                    className="flex items-center justify-center"
+                                >
+                                    {toggleMaintenanceMutation.isPending ? (
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                                    ) : (
+                                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    )}
                                 </motion.span>
                                 {isMaintenanceMode ? 'Disable Maintenance' : 'Schedule Maintenance'}
                             </motion.button>
@@ -700,7 +708,7 @@ const AdminDashboard = () => {
                                                         <td style={{ padding: '14px 24px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                                                                    <img src={u.avatar} alt={u.name} style={{ width: 38, height: 38, borderRadius: 11, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.07)' }} />
+                                                                    <img src={u.avatar} alt={u.name} loading="lazy" decoding="async" style={{ width: 38, height: 38, borderRadius: 11, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.07)' }} />
                                                                     <div style={{ position: 'absolute', bottom: -1, right: -1, width: 9, height: 9, borderRadius: '50%', border: '2px solid #080812', background: u.isActive && !u.isBanned ? 'var(--green)' : '#374151' }} />
                                                                 </div>
                                                                 <div>

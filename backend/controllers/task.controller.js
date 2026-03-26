@@ -60,7 +60,7 @@ const createTask = async (req, res, next) => {
         const { title, description, status, priority, assignee } = req.body;
         req.body.project = req.params.projectId;
 
-        const project = await Project.findById(req.params.projectId);
+        const project = await Project.findById(req.params.projectId).lean();
 
         if (!project) {
             res.status(404);
@@ -107,7 +107,7 @@ const updateTask = async (req, res, next) => {
             throw new Error('Task not found');
         }
 
-        const project = await Project.findById(task.project);
+        const project = await Project.findById(task.project).lean();
 
         // Check if user is assigned to this task, or is a manager in the project
         const isAssignee = task.assignee && task.assignee.toString() === req.user._id.toString();
@@ -146,7 +146,7 @@ const deleteTask = async (req, res, next) => {
             throw new Error('Task not found');
         }
 
-        const project = await Project.findById(task.project);
+        const project = await Project.findById(task.project).lean();
         const isManager = project.members.some(
             (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager'
         );

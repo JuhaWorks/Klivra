@@ -62,8 +62,8 @@ const ActivityTab = ({ projectId }) => {
                                         >
                                             <div className="relative z-10 shrink-0">
                                                 <div className="w-12 h-12 rounded-2xl bg-[#09090b] border border-white/10 flex items-center justify-center overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10 transition-all duration-500">
-                                                    {log.actorId?.avatar ? (
-                                                        <img src={log.actorId.avatar} alt="" className="w-full h-full object-cover" />
+                                                    {log.user?.avatar ? (
+                                                        <img src={log.user.avatar} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <UserIcon className="w-5 h-5 text-gray-600" />
                                                     )}
@@ -76,7 +76,7 @@ const ActivityTab = ({ projectId }) => {
                                             <div className="flex-1 space-y-3 min-w-0">
                                                 <div className="flex flex-col md:flex-row md:items-center gap-3">
                                                     <span className="text-sm font-black text-white tracking-tight">
-                                                        {log.actorId?.name || 'System Sovereign'}
+                                                        {log.user?.name || 'System Sovereign'}
                                                     </span>
                                                     <div className="flex items-center gap-2">
                                                         <ChevronRight className="w-3 h-3 text-gray-800" />
@@ -87,14 +87,14 @@ const ActivityTab = ({ projectId }) => {
                                                 </div>
 
                                                 {/* Semantic Metadata Card */}
-                                                {log.metadata && Object.keys(log.metadata).length > 0 && (
+                                                {log.details && Object.keys(log.details).length > 0 && (
                                                     <div className="glass-2 bg-white/[0.01] p-4 rounded-2xl border border-white/5 font-medium leading-relaxed max-w-2xl group-hover:border-white/10 transition-colors">
                                                         <div className="flex items-center gap-3 mb-2">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/40" />
                                                             <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">Delta Payload</span>
                                                         </div>
                                                         <p className="text-xs text-gray-400 font-medium">
-                                                            {log.metadata.name || log.metadata.title || log.metadata.description || 'Metadata update successful.'}
+                                                            {log.details.name || log.details.title || log.details.description || 'Metadata update successful.'}
                                                         </p>
                                                     </div>
                                                 )}

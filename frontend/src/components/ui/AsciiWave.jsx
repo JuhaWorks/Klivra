@@ -82,9 +82,9 @@ const AsciiWave = ({
     color = "#06b6d4",
     palette = null,       // string[] → multi-colour gradient across width
     speed = 1,
-    layers = 3,
+    layers = 2,           // Optimized from 3
     fontSize = 12,
-    columnWidth = 9,
+    columnWidth = 12,     // Optimized from 9 to reduce columns by 25%
     splitPx = 1.4,        // chromatic aberration spread (px)
     scanlines = true,       // CRT line overlay
     interactive = true,       // mouse/touch distortion
@@ -260,17 +260,22 @@ const AsciiWave = ({
                         const posY = row * fontSize + yOff;
                         const cellAlpha = clamp(baseAlpha * fade, 0.02, 1.0);
 
-                        // Chromatic aberration on crest (layer 0 only)
+                        // PERFORMANCE: Only draw if alpha is meaningful
+                        if (cellAlpha < 0.05) continue;
+
+                        const alphaStr = cellAlpha.toFixed(2);
+
+                        // Chromatic aberration on crest (layer 0 only, very sparingly)
                         if (isCrest && layer === 0 && splitPx > 0) {
-                            const sa = Math.min(cellAlpha * 0.85, 0.9);
-                            ctx.fillStyle = `rgba(${r},${Math.round(g * 0.25)},${Math.round(b * 0.12)},${sa.toFixed(3)})`;
+                            const sa = Math.min(cellAlpha * 0.7, 0.8);
+                            ctx.fillStyle = `rgba(${r},${Math.round(g * 0.2)},${Math.round(b * 0.1)},${sa})`;
                             ctx.fillText(char, posX - splitPx, posY);
-                            ctx.fillStyle = `rgba(${Math.round(r * 0.12)},${Math.round(g * 0.25)},${b},${sa.toFixed(3)})`;
+                            ctx.fillStyle = `rgba(${Math.round(r * 0.1)},${Math.round(g * 0.2)},${b},${sa})`;
                             ctx.fillText(char, posX + splitPx, posY);
                         }
 
                         // Main pass
-                        ctx.fillStyle = `rgba(${r},${g},${b},${cellAlpha.toFixed(3)})`;
+                        ctx.fillStyle = `rgba(${r},${g},${b},${alphaStr})`;
                         ctx.fillText(char, posX, posY);
                     }
                 }

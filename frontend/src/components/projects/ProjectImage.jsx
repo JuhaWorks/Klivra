@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageIcon } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -31,6 +31,8 @@ const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
                         <motion.img
                             src={project.coverImageUrl}
                             alt={project.name}
+                            loading="lazy"
+                            decoding="async"
                             onLoad={() => setImageLoaded(true)}
                             onError={() => setImageError(true)}
                             className={twMerge(clsx(
@@ -81,4 +83,4 @@ const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
     );
 };
 
-export default ProjectImage;
+export default memo(ProjectImage);

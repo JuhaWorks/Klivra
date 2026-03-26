@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 // bcrypt, multer and schema validation are no longer needed here; they live in user.controller
-const { protect } = require('../middlewares/auth.middleware');
+const { protect, optionalProtect } = require('../middlewares/auth.middleware');
 const { registerUser, loginUser, logoutUser, refreshTokenUser, oauthCallback, verifyEmail, resendVerification, getMe, updateStatus } = require('../controllers/auth.controller');
 const { authLimiter } = require('../middlewares/rateLimiter.middleware');
 const passport = require('passport');
@@ -24,10 +24,13 @@ router.post('/refresh', refreshTokenUser);
 router.get('/logout', logoutUser);
 router.get('/verify-email/:token', verifyEmail);
 router.post('/resend-verification', resendVerification);
-router.get('/me', protect, getMe);
+router.get('/me', optionalProtect, getMe);
 
 // ── OAuth Routes ───────────────────────────────────────────────────────────────
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    prompt: 'select_account' 
+}));
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), oauthCallback);
 
 router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));

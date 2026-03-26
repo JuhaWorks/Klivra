@@ -45,5 +45,7 @@ const auditSchema = new mongoose.Schema(
 // Explicit indexing for fast fetching of logs by Entity or by User
 auditSchema.index({ entityId: 1, createdAt: -1 });
 auditSchema.index({ user: 1, createdAt: -1 });
+auditSchema.index({ createdAt: -1 }); // Fast sorting for latest logs and history
+auditSchema.index({ entityType: 1, action: 1, createdAt: -1 }); // Fast security feed filtering
 
 module.exports = mongoose.model('Audit', auditSchema);

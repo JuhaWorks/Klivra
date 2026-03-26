@@ -44,6 +44,8 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                                 <img
                                     src={viewer.avatar}
                                     alt={viewer.name}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="w-full h-full object-cover"
                                 />
                             ) : (

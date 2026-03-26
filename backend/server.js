@@ -1,4 +1,11 @@
 require('dotenv').config({ override: true });
+const dns = require('dns');
+try {
+  dns.setServers(['1.1.1.1', '8.8.8.8']);
+} catch (e) {
+  console.error('DNS Setup Warning:', e.message);
+}
+
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
@@ -6,27 +13,27 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
-const dns = require('dns');
-const mongoSanitize = require('express-mongo-sanitize');
 const morganMiddleware = require('./middlewares/morgan.middleware');
 const { securityMiddleware } = require('./middlewares/security.middleware');
+const { sanitizationMiddleware } = require('./middlewares/sanitization.middleware');
 const logger = require('./utils/logger');
-const session = require('express-session');
 const passport = require('./config/passport');
 const seedAdminUser = require('./config/seed');
 const startGarbageCollection = require('./cron/gc');
 const startDeadlineChecker = require('./cron/deadlineCheck');
 
-// 1. Optimize DNS resolution for faster external APIs/MongoDB
-try {
-  dns.setServers(["1.1.1.1", "8.8.8.8", "8.8.4.4"]);
-  logger.info("✅ DNS servers set to Cloudflare and Google");
-} catch (err) {
-  logger.error(`❌ Failed to set DNS servers: ${err.message}`);
+// 1. Redis Initialization (Optional performance enhancement)
+const { initRedis } = require('./utils/redis');
+const app = express();
+
+// Initialize Redis if configured, but don't let it block startup
+if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
+  initRedis().catch(err => logger.warn(`⚠️ Redis not available: ${err.message}`));
+} else {
+  logger.info('ℹ️ Redis URL not found, skipping cache initialization (Optional for Dev)');
 }
 
-const app = express();
-app.set('trust proxy', 1); // Trust Render's load balancer to correctly read `https` protocol headers
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // 2. Initialize Socket.io with JWT Security
@@ -50,50 +57,47 @@ if (process.env.NODE_ENV !== 'production') {
   logger.info(`🔓 CORS internal allowance: ${Array.from(allowedOrigins).join(', ')}`);
 }
 
-// 4. Middlewares
-app.use(helmet());
+// 4. Global Middlewares
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://cdn-icons-png.flaticon.com"],
+      connectSrc: ["'self'", "http://localhost:5000", "ws://localhost:5000", "https://syncforge-io.onrender.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://api.fontshare.com"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
 app.use(compression({ threshold: 1024 }));
+
 app.use(cors({
   origin: (origin, cb) => {
+    // In production, force strict matching
+    if (!origin && process.env.NODE_ENV === 'production') return cb(new Error('Not allowed by CORS'));
     if (!origin || allowedOrigins.has(origin)) cb(null, true);
     else cb(new Error('Not allowed by CORS'));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['set-cookie']
 }));
+
 app.use(cookieParser());
+app.use(sanitizationMiddleware);
 
-// Required for Passport OAuth flow state (nonce, etc)
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'syncforge_super_secure_fallback_secret_7389',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Must be none for cross-site OAuth redirects
-    maxAge: 1000 * 60 * 5 // Short lived, only needed for the auth handshake
-  }
-}));
-
-// Initialize Passport and restore authentication state, if any, from the session
+// Initialize Passport (Passport session not needed for JWT/Stateless OAuth)
 app.use(passport.initialize());
-app.use(passport.session());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Data sanitization against NoSQL query injection
-// Express v5 makes req.query a getter, so we cannot reassign it. We mutate in place instead.
-app.use((req, res, next) => {
-  ['body', 'params', 'headers'].forEach((k) => {
-    if (req[k]) {
-      req[k] = mongoSanitize.sanitize(req[k]);
-    }
-  });
-  if (req.query) {
-    mongoSanitize.sanitize(req.query); // Mutates in place
-  }
-  next();
-});
 
 // HTTP Request Logging
 app.use(morganMiddleware);
@@ -107,19 +111,6 @@ app.use((req, res, next) => {
 // Global Security & Maintenance Check
 app.use(securityMiddleware);
 
-// Diagnostic Middleware for Auth (Commented out for production cleanliness)
-/*
-app.use((req, res, next) => {
-  if (req.originalUrl.includes('/api/auth')) {
-    const authHeader = req.headers.authorization;
-    const hasToken = !!authHeader;
-    const isBearer = authHeader?.startsWith('Bearer');
-    console.log(`[AUTH] ${req.method} ${req.originalUrl} - Header Token: ${hasToken}, IsBearer: ${isBearer}`);
-  }
-  next();
-});
-*/
-
 // 5. Routes
 app.get('/', (req, res) => res.status(200).json({ status: 'success', message: 'API is running successfully.' }));
 
@@ -128,6 +119,7 @@ app.use('/api/projects', require('./routes/project.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/settings', require('./routes/settings.routes'));
+app.use('/api/search', require('./routes/search.routes'));
 app.use('/api/audit', require('./routes/audit.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 
@@ -137,7 +129,8 @@ mongoose.connect(process.env.MONGO_URI, {
   connectTimeoutMS: 10000,
   socketTimeoutMS: 45000,
   maxPoolSize: 50,
-  family: 4
+  family: 4,
+  compressors: ['zlib'] // Enable network compression
 }).then(async () => {
   logger.info("✅ MongoDB Connected Successfully!");
   await seedAdminUser();

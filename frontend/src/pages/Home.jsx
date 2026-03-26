@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -79,9 +79,10 @@ const StatusDot = ({ active }) => (
 );
 
 const Home = () => {
-    const { user } = useAuthStore();
+    const { logout, user } = useAuthStore();
     const { onlineUsers } = useSocketStore();
-    const canViewActivity = user && ['Admin', 'Manager'].includes(user.role);
+    const queryClient = useQueryClient();
+    const canViewActivity = !!(user && ['Admin', 'Manager'].includes(user.role));
     const parentRef = useRef(null);
 
     const [greeting, setGreeting] = useState('');
@@ -137,7 +138,24 @@ const Home = () => {
         }
         : statsRes?.data || { activeProjects: 0, totalTasks: 0, completedTasks: 0, pendingTasks: 0, completionPct: 0 };
 
-    const STATS = [
+    const handlePrefetch = (path) => {
+        if (path === '/projects') {
+            queryClient.prefetchQuery({
+                queryKey: ['projects'],
+                queryFn: async () => (await api.get('/projects')).data,
+                staleTime: 1000 * 60 * 5
+            });
+        }
+        if (path === '/tasks') {
+             queryClient.prefetchQuery({
+                queryKey: ['tasks', 'all'],
+                queryFn: async () => (await api.get('/tasks/all')).data, // Assuming a global task fetch exists or adjust to your route
+                staleTime: 1000 * 60 * 5
+            });
+        }
+    };
+
+    const STATS = useMemo(() => [
         {
             label: 'Active Projects',
             value: statsData.activeProjects,
@@ -170,7 +188,7 @@ const Home = () => {
             accent: 'var(--accent-500)',
             glow: 'var(--accent-bg)',
         },
-    ];
+    ], [statsData, onlineUsers]);
 
     const virt = useVirtualizer({
         count: activity.length,
@@ -208,41 +226,45 @@ const Home = () => {
 
                 .stat-card {
                     border: none;
-                    border-radius: 2rem;
-                    padding: 24px;
+                    border-radius: 3.15rem;
+                    padding: 32px;
                     background: var(--bg-surface);
                     transition: border-color 0.2s, transform 0.2s;
                     cursor: default;
                 }
                 .stat-card:hover {
-                    transform: translateY(-2px);
+                    transform: translateY(-4px);
                     border-color: var(--border-strong);
                 }
 
                 .act-row {
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    padding: 10px 8px;
-                    border-radius: 1rem;
-                    transition: background 0.12s;
+                    gap: 14px;
+                    padding: 12px 10px;
+                    border-radius: 1.25rem;
+                    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
                     cursor: default;
                 }
-                .act-row:hover { background: var(--bg-sunken); }
+                .act-row:hover { 
+                    background: var(--bg-sunken);
+                    transform: translateX(4px);
+                }
 
                 .nav-link {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    padding: 9px 10px;
-                    border-radius: 1rem;
+                    gap: 12px;
+                    padding: 10px 12px;
+                    border-radius: 1.25rem;
                     text-decoration: none;
-                    transition: background 0.12s, color 0.12s;
+                    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
                     color: var(--text-secondary);
                 }
                 .nav-link:hover {
                     background: var(--bg-sunken);
                     color: var(--text-primary);
+                    transform: translateX(4px);
                 }
             `}</style>
 
@@ -269,7 +291,7 @@ const Home = () => {
                                             {dateString}
                                         </span>
                                     </div>
-                                    <h1 className="text-3xl md:text-4xl font-semibold text-primary tracking-tight leading-tight m-0">
+                                    <h1 className="text-4xl md:text-5xl font-bold text-primary tracking-tight leading-tight m-0 mb-2">
                                         {greeting}, <DecryptedText
                                             text={firstName}
                                             animateOn="inViewHover"
@@ -282,14 +304,23 @@ const Home = () => {
                                             sequential={false}
                                         />
                                     </h1>
-                                    <p className="mt-2 text-sm text-secondary max-w-md leading-relaxed">
+                                    <p className="text-base text-secondary max-w-lg leading-relaxed opacity-80">
                                         {user?.role === 'Admin'
-                                            ? 'Here\'s an overview of platform activity and current project status.'
-                                            : 'Your workspace is ready. Here\'s what\'s happening across your projects.'}
+                                            ? 'Platform oversight and operational metrics are live. Control center ready.'
+                                            : 'Your creative workspace is operational. Explore your active projects.'}
                                     </p>
                                 </div>
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...EASE, delay: 0.15 }}>
-                                    <Button variant="primary" size="md" leftIcon={Plus} as={Link} to="/projects">New Project</Button>
+                                    <Button 
+                                        variant="primary" 
+                                        size="md" 
+                                        leftIcon={Plus} 
+                                        as={Link} 
+                                        to="/projects"
+                                        onMouseEnter={() => handlePrefetch('/projects')}
+                                    >
+                                        New Project
+                                    </Button>
                                 </motion.div>
                             </div>
                         </motion.header>
@@ -508,7 +539,12 @@ const Home = () => {
                                             { label: 'Tasks', to: '/tasks', icon: CheckSquare },
                                             ...(canViewActivity ? [{ label: 'Admin & Security', to: '/admin', icon: Shield }] : []),
                                         ].map((link, i) => (
-                                            <Link key={i} to={link.to} className="nav-link">
+                                            <Link 
+                                                key={i} 
+                                                to={link.to} 
+                                                className="nav-link"
+                                                onMouseEnter={() => handlePrefetch(link.to)}
+                                            >
                                                 <link.icon style={{ width: 13, height: 13, flexShrink: 0 }} />
                                                 <span style={{ fontSize: 13, fontWeight: 500 }}>{link.label}</span>
                                                 <ChevronRight style={{ width: 11, height: 11, marginLeft: 'auto', opacity: 0.4 }} />

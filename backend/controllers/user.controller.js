@@ -3,6 +3,7 @@ const { z } = require('zod');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { getFrontendUrl, formatUserResponse, sendStandardEmail } = require('../utils/helpers');
+const { logSecurityEvent } = require('../utils/activityLogger');
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 
@@ -148,6 +149,10 @@ const changePassword = async (req, res, next) => {
         user.password = newPassword;
         await user.save();
 
+        await logSecurityEvent(user._id, 'PASSWORD_CHANGE', {
+            ipAddress: req.ip
+        });
+
         res.status(200).json({
             status: 'success',
             message: 'Password updated successfully',
@@ -284,12 +289,17 @@ const confirmEmailChange = async (req, res, next) => {
         user.email = user.pendingNewEmail;
         user.isEmailVerified = true;
 
-        // Corner Case 2: Garbage Collection
         user.pendingNewEmail = undefined;
         user.emailChangeToken = undefined;
         user.emailChangeTokenExpires = undefined;
 
         await user.save();
+
+        await logSecurityEvent(user._id, 'EMAIL_CHANGE_SUCCESS', {
+            oldEmail,
+            newEmail: user.email,
+            ipAddress: req.ip
+        });
 
         // Corner Case 3: The Stale JWT Issue
         // Generate a new access token for the updated email to maintain the session

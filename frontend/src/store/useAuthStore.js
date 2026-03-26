@@ -112,8 +112,17 @@ api.interceptors.response.use(
                 originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
-                console.error(`[AUTH] Refresh failed:`, refreshError.response?.status || refreshError.message);
+                const status = refreshError.response?.status;
+                const message = refreshError.response?.data?.message;
+                
+                console.error(`[AUTH] Refresh failed:`, status || refreshError.message);
                 processQueue(refreshError, null);
+
+                // If it's a security alert (token reuse), make sure the user sees why they were logged out
+                if (message && (message.includes('Security alert') || message.includes('Token reuse'))) {
+                    useAuthStore.setState({ error: message });
+                }
+
                 // If it's a 401 during refresh, it means the refresh token is also invalid/expired
                 useAuthStore.getState().logout(true);
                 return Promise.reject(refreshError);
@@ -162,12 +171,18 @@ export const useAuthStore = create((set, get) => ({
             console.log('[AUTH] Checking session status...');
             const response = await Promise.race([authCheckPromise, timeoutPromise]);
             
+            const isAuth = response.data.authenticated === true;
+            
             set({
-                user: response.data.data,
-                isAuthenticated: true,
+                user: isAuth ? response.data.data : null,
+                isAuthenticated: isAuth,
                 isCheckingAuth: false
             });
-            console.log('[AUTH] Session verified successfully.');
+            if (isAuth) {
+                console.log('[AUTH] Session verified successfully.');
+            } else {
+                console.log('[AUTH] No active session found.');
+            }
         } catch (error) {
             if (error.message === 'AUTH_TIMEOUT') {
                 console.warn('[AUTH] Session check timed out. Proceeding as guest.');

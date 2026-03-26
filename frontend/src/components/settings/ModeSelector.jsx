@@ -84,14 +84,14 @@ export default function ModeSelector() {
                         transition={{ duration: 0.3 }}
                         style={{
                             width: 7, height: 7, borderRadius: '50%', flexShrink: 0, display: 'block',
-                            background: systemSync ? '#1D9E75' : 'var(--border-default)',
-                            boxShadow: systemSync ? '0 0 6px rgba(29,158,117,0.6)' : 'none',
+                            background: systemSync ? 'var(--accent-500)' : 'var(--border-default)',
+                            boxShadow: systemSync ? '0 0 6px var(--accent-glow)' : 'none',
                             transition: 'background .2s, box-shadow .2s'
                         }}
                     />
                     <span style={{
                         fontSize: 11, fontWeight: 500,
-                        color: systemSync ? '#1D9E75' : 'var(--text-secondary)',
+                        color: systemSync ? 'var(--accent-500)' : 'var(--text-secondary)',
                         transition: 'color .2s'
                     }}>
                         Sync with system
@@ -167,8 +167,8 @@ export default function ModeSelector() {
                                                 transition={{ type: 'spring', stiffness: 500, damping: 25 }}
                                                 style={{
                                                     width: 18, height: 18, borderRadius: '50%',
-                                                    background: '#1D9E75',
-                                                    boxShadow: '0 0 8px rgba(29,158,117,0.5)',
+                                                    background: 'var(--accent-500)',
+                                                    boxShadow: '0 0 8px var(--accent-glow)',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                                 }}
                                             >

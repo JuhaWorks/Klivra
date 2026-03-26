@@ -129,7 +129,7 @@ const SecurityFeed = () => {
     };
 
     return (
-        <div className="p-8 lg:p-12 max-w-5xl mx-auto space-y-12">
+        <div className="p-8 lg:p-12 max-w-5xl mx-auto space-y-12 cv-auto">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">

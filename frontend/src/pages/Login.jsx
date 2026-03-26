@@ -118,14 +118,14 @@ const Login = () => {
             <div className="w-full flex flex-col items-center justify-center max-w-[480px] mx-auto pt-10">
                 <BorderGlow
                     edgeSensitivity={30}
-                    glowColor="40 80 80"
-                    backgroundColor="rgba(6, 0, 16, 0.85)"
+                    glowColor="40 140 100"
+                    backgroundColor="transparent"
                     borderRadius={40}
                     glowRadius={40}
-                    glowIntensity={1}
+                    glowIntensity={0.6}
                     coneSpread={25}
                     animated={false}
-                    colors={['#c084fc', '#f472b6', '#38bdf8']}
+                    colors={['var(--accent-500)', 'var(--accent-400)', 'var(--accent-600)']}
                     fillOpacity={0}
                     className="w-full"
                 >
@@ -139,7 +139,6 @@ const Login = () => {
                             distortionScale={-60} 
                             backgroundOpacity={0.06}
                             opacity={0.93} 
-                            mixBlendMode="screen"
                         />
                     </div>
                     
@@ -154,8 +153,8 @@ const Login = () => {
                                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                 className="form-container login active overflow-hidden"
                             >
-                                <h3 className="text-4xl font-black tracking-tighter text-white mb-2">Login</h3>
-                                <p className="text-white/50 text-sm mb-10 font-medium tracking-tight">Access your workspace and continue building.</p>
+                                <h3 className="text-4xl font-black tracking-tighter text-primary mb-2">Login</h3>
+                                <p className="text-secondary text-sm mb-10 font-medium tracking-tight">Access your workspace and continue building.</p>
                                 
                                 <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
                                     <Input
@@ -182,7 +181,7 @@ const Login = () => {
                                                 speed={80}
                                                 sequential={true}
                                                 useOriginalCharsOnly={false}
-                                                className="font-mono text-white"
+                                                className="font-mono text-primary"
                                                 parentClassName="font-mono"
                                                 encryptedClassName="font-mono opacity-70"
                                             />
@@ -197,7 +196,7 @@ const Login = () => {
                                                     }
                                                     setShowPw(!showPw);
                                                 }}
-                                                className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/50 hover:text-white"
+                                                className="p-2 hover:bg-surface rounded-lg transition-all text-tertiary hover:text-primary"
                                             >
                                                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                             </button>
@@ -214,15 +213,15 @@ const Login = () => {
                                                 />
                                                 <div className={twMerge(clsx(
                                                     "absolute inset-0 rounded-md border transition-all duration-300",
-                                                    "border-white/20 bg-white/5 peer-checked:bg-theme peer-checked:border-theme",
+                                                    "border-default bg-sunken peer-checked:bg-theme peer-checked:border-theme",
                                                 ))} />
                                                 <Check className="absolute inset-0 m-auto w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
                                             </div>
-                                            <span className="text-sm font-medium text-white/60 group-hover:text-white transition-colors">
+                                            <span className="text-sm font-medium text-secondary group-hover:text-primary transition-colors">
                                                 Remember me
                                             </span>
                                         </label>
-                                        <button type="button" className="text-sm font-medium text-white/60 hover:text-white transition-colors">
+                                        <button type="button" className="text-sm font-medium text-tertiary hover:text-primary transition-colors">
                                             Reset Password
                                         </button>
                                     </div>
@@ -244,11 +243,11 @@ const Login = () => {
                                         Sign In
                                     </Button>
                                 </form>
-                                <p className="form-switch mt-10 text-center text-white/40 text-sm font-medium">
+                                <p className="form-switch mt-10 text-center text-tertiary text-sm font-medium">
                                     Don't have an account?{' '}
                                     <button 
                                         onClick={(e) => { e.preventDefault(); setIsLogin(false); }}
-                                        className="text-white hover:underline transition-all font-bold"
+                                        className="text-primary hover:underline transition-all font-bold"
                                     >
                                         Register
                                     </button>
@@ -263,8 +262,8 @@ const Login = () => {
                                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                 className="form-container register active overflow-hidden"
                             >
-                                <h3 className="text-4xl font-black tracking-tighter text-white mb-2">Register</h3>
-                                <p className="text-white/50 text-sm mb-10 font-medium tracking-tight">Join our workspace and start managing projects like a pro.</p>
+                                <h3 className="text-4xl font-black tracking-tighter text-primary mb-2">Register</h3>
+                                <p className="text-secondary text-sm mb-10 font-medium tracking-tight">Join our workspace and start managing projects like a pro.</p>
                                 
                                 <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                                     <Input
@@ -300,7 +299,7 @@ const Login = () => {
                                                 speed={80}
                                                 sequential={true}
                                                 useOriginalCharsOnly={false}
-                                                className="font-mono text-white"
+                                                className="font-mono text-primary"
                                                 parentClassName="font-mono"
                                                 encryptedClassName="font-mono opacity-70"
                                             />
@@ -315,7 +314,7 @@ const Login = () => {
                                                     }
                                                     setShowPw(!showPw);
                                                 }}
-                                                className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/50 hover:text-white"
+                                                className="p-2 hover:bg-surface rounded-lg transition-all text-tertiary hover:text-primary"
                                             >
                                                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                             </button>
@@ -361,11 +360,11 @@ const Login = () => {
                                         Create Account
                                     </Button>
                                 </form>
-                                <p className="form-switch mt-10 text-center text-white/40 text-sm font-medium">
+                                <p className="form-switch mt-10 text-center text-tertiary text-sm font-medium">
                                     Already have an account?{' '}
                                     <button 
                                         onClick={(e) => { e.preventDefault(); setIsLogin(true); }}
-                                        className="text-white hover:underline transition-all font-bold"
+                                        className="text-primary hover:underline transition-all font-bold"
                                     >
                                         Login
                                     </button>

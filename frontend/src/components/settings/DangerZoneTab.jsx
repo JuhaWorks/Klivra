@@ -109,8 +109,8 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
                                 isLoading={isLoading}
                                 disabled={(actionType === 'delete' && !isMatch) || isLoading}
                                 className={twMerge(clsx(
-                                    "flex-1 py-5 rounded-2xl shadow-2xl",
-                                    isDeactivate ? "bg-amber-600 hover:bg-amber-500" : "bg-rose-600 hover:bg-rose-500 shadow-rose-500/20"
+                                    "flex-1 py-5 rounded-2xl shadow-2xl text-white",
+                                    isDeactivate ? "bg-amber-600 hover:bg-amber-500 shadow-amber-500/20" : "bg-rose-600 hover:bg-rose-500 shadow-rose-500/20"
                                 ))}
                             >
                                 {isDeactivate ? 'Deactivate Account' : 'Delete Account'}
@@ -227,7 +227,7 @@ export default function AccountStatusTab() {
                         </div>
                         <Button
                             onClick={() => setModalConfig({ isOpen: true, actionType: 'deactivate' })}
-                            className="bg-amber-600 hover:bg-amber-500 px-8 py-4 rounded-xl shadow-xl shadow-amber-500/10"
+                            className="bg-amber-600 hover:bg-amber-500 px-8 py-4 rounded-xl shadow-xl shadow-amber-500/10 text-white"
                         >
                             Deactivate Account
                         </Button>
@@ -253,7 +253,7 @@ export default function AccountStatusTab() {
                         </div>
                         <Button
                             onClick={() => setModalConfig({ isOpen: true, actionType: 'delete' })}
-                            className="bg-rose-600 hover:bg-rose-500 px-8 py-4 rounded-xl shadow-xl shadow-rose-500/10"
+                            className="bg-rose-600 hover:bg-rose-500 px-8 py-4 rounded-xl shadow-xl shadow-rose-500/10 text-white"
                         >
                             Delete Account
                         </Button>

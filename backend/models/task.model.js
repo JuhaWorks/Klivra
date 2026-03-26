@@ -41,6 +41,10 @@ const taskSchema = new mongoose.Schema(
 
 // Optimize queries for finding tasks inside a project or assigned to a specific user
 taskSchema.index({ project: 1, assignee: 1 });
+taskSchema.index({ status: 1, priority: 1 });
+taskSchema.index({ project: 1, status: 1 });
+taskSchema.index({ project: 1, priority: 1 });
+taskSchema.index({ createdAt: -1 });
 
 // Add $text index for Global Search weighting
 taskSchema.index(

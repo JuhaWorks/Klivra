@@ -16,9 +16,22 @@ const generateRefreshToken = (id) => {
 };
 
 // Utility function to send JWT inside an HttpOnly Cookie
-const sendTokenResponse = (user, statusCode, res, rememberMe = false) => {
+const sendTokenResponse = async (user, statusCode, res, rememberMe = false) => {
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    // Hash refresh token for DB storage (Security Hardening)
+    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    // Save refresh token to user (support multi-device and rotation detection)
+    user.refreshTokens.push({ token: hashedToken });
+
+    // Limit active sessions per user (e.g., 10)
+    if (user.refreshTokens.length > 10) {
+        user.refreshTokens.shift();
+    }
+
+    await user.save({ validateBeforeSave: false });
 
     res
         .status(statusCode)
@@ -187,7 +200,13 @@ const loginUser = async (req, res, next) => {
             user.status = 'Online';
             await user.save();
 
-            sendTokenResponse(user, 200, res, rememberMe);
+            await logSecurityEvent(user._id, 'LOGIN_SUCCESS', {
+                email,
+                ipAddress: req.ip,
+                method: 'local'
+            });
+
+            await sendTokenResponse(user, 200, res, rememberMe);
         } else {
             await logSecurityEvent(null, 'FAILED_LOGIN', {
                 email,
@@ -217,6 +236,10 @@ const logoutUser = async (req, res, next) => {
             if (user) {
                 user.status = 'Offline';
                 await user.save();
+                
+                await logSecurityEvent(user._id, 'LOGOUT', {
+                    ipAddress: req.ip
+                });
             }
         }
 
@@ -243,21 +266,48 @@ const refreshTokenUser = async (req, res, next) => {
         const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
         const decoded = jwt.verify(refreshToken, secret);
 
-        // Ensure user actually exists and is active
-        const user = await User.findById(decoded.id).select('-password');
+        // Find user and their tokens
+        const user = await User.findById(decoded.id);
         if (!user || user.isActive === false) {
             res.clearCookie('refreshToken', getCookieOptions());
             res.status(401);
             return next(new Error('Not authorized, user not found or deactivated'));
         }
 
-        // Issue new short-lived access token
-        const accessToken = generateAccessToken(user._id);
+        // --- Refresh Token Rotation Logic (Security Hardening) ---
+        const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        
+        // Find if the token exists in the user's active tokens
+        const tokenIndex = user.refreshTokens.findIndex(t => t.token === hashedToken);
 
-        res.status(200).json({
-            status: 'success',
-            accessToken
+        if (tokenIndex === -1) {
+            // DETECTED: Token reuse attempt (possible theft!)
+            // Strategy: Revoke ALL active sessions for this user as a precaution
+            user.refreshTokens = [];
+            user.status = 'Offline';
+            await user.save();
+
+            await logSecurityEvent(user._id, 'TOKEN_REUSE_DETECTED', {
+                ipAddress: req.ip,
+                action: 'Automatic session revocation triggered'
+            });
+            
+            res.clearCookie('refreshToken', getCookieOptions());
+            res.status(401);
+            return next(new Error('Security alert: Token reuse detected. Please log in again.'));
+        }
+
+        // Valid token found! Rotate it.
+        // Remove the old token from the list
+        user.refreshTokens.splice(tokenIndex, 1);
+
+        // Issue new tokens (sendTokenResponse handles hashing/saving the new one)
+        await logSecurityEvent(user._id, 'TOKEN_REFRESH', {
+            ipAddress: req.ip
         });
+
+        await sendTokenResponse(user, 200, res, false);
+
     } catch (error) {
         res.clearCookie('refreshToken', getCookieOptions());
         res.status(401);
@@ -272,16 +322,23 @@ const oauthCallback = async (req, res) => {
     // req.user is populated by passport
     const user = req.user;
 
-    // We cannot use sendTokenResponse directly because that sends JSON.
-    // OAuth requires a browser redirect back to the frontend SPA.
-    // We will set the HttpOnly cookie manually, then redirect with the short-lived access token in the URL.
-
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-
     // Set status to Online on OAuth login
     user.status = 'Online';
+    
+    // Support Token Rotation for OAuth users too
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    user.refreshTokens.push({ token: hashedToken });
+    if (user.refreshTokens.length > 10) user.refreshTokens.shift();
+    
     await user.save();
+
+    await logSecurityEvent(user._id, 'LOGIN_SUCCESS', {
+        method: 'oauth',
+        ipAddress: req.ip
+    });
 
     const options = getCookieOptions(true);
     options.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -323,11 +380,13 @@ const verifyEmail = async (req, res, next) => {
             return next(new Error('Token has expired. Please request a new one.'));
         }
 
-        // We mark them as verified, but we DO NOT instantly delete the token from the DB.
-        // If we delete the token, the next click (by the real user) will yield "Invalid Token" (!user).
         // The token will just sit harmlessly until the Garbage Collector wipes it, or it expires.
         user.isEmailVerified = true;
         await user.save();
+
+        await logSecurityEvent(user._id, 'EMAIL_VERIFIED', {
+            ipAddress: req.ip
+        });
 
         res.status(200).json({
             status: 'success',
@@ -362,12 +421,11 @@ const updateStatus = async (req, res, next) => {
     }
 };
 
-// @desc    Get current user (session check for page reloads)
-// @route   GET /api/auth/me
-// @access  Private (Protected by JWT middleware)
 const getMe = async (req, res) => {
-    // req.user is already populated by the protect middleware (excluding password)
-    res.status(200).json({ status: 'success', data: req.user });
+    if (!req.user) {
+        return res.status(401).json({ status: 'fail', message: 'Not authenticated', authenticated: false });
+    }
+    res.status(200).json({ status: 'success', data: req.user, authenticated: true });
 };
 
 // @desc    Resend verification email

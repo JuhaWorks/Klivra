@@ -35,7 +35,7 @@ const MemberRow = ({
                     <div className="relative">
                         <div className="w-12 h-12 rounded-2xl bg-[#09090b] border border-white/10 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105 shadow-xl">
                             {member.userId?.avatar ? (
-                                <img src={member.userId.avatar} alt="" className="w-full h-full object-cover" />
+                                <img src={member.userId.avatar} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500/10 to-cyan-500/10 text-gray-400 font-black text-xs">
                                     {member.userId?.name?.charAt(0)}

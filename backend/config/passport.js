@@ -72,8 +72,13 @@ const linkOrCreateUser = async (profile, provider, providerIdKey, done) => {
         }
 
         // 3. If no user exists, create a brand new one
+        const fullName = profile.displayName || 
+                         (profile.name && (profile.name.givenName + ' ' + profile.name.familyName)) || 
+                         profile.username || 
+                         'Klivra User';
+
         const newUser = await User.create({
-            name: profile.displayName || profile.username || 'OAuth User',
+            name: fullName.trim(),
             email: email,
             // No password needed
             [providerIdKey]: profile.id,

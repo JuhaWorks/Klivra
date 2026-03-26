@@ -5,22 +5,32 @@ const logger = require('../utils/logger');
 // Run every night at 3:00 AM
 const startGarbageCollection = () => {
     cron.schedule('0 3 * * *', async () => {
-        logger.info('🗑️ Starting Database Garbage Collection for Unverified Users...');
+        logger.info('🗑️ Starting Database Garbage Collection...');
         try {
-            // Find users who have not verified their email AND whose account is older than 24 hours
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-            const result = await User.deleteMany({
+            // 1. Purge Unverified Users
+            const userResult = await User.deleteMany({
                 isEmailVerified: false,
                 role: { $ne: 'Admin' },
                 createdAt: { $lt: twentyFourHoursAgo }
             });
 
-            if (result.deletedCount > 0) {
-                logger.info(`✅ Garbage Collection Complete: Purged ${result.deletedCount} unverified zombie accounts.`);
-            } else {
-                logger.info('✅ Garbage Collection Complete: No stale accounts found.');
+            if (userResult.deletedCount > 0) {
+                logger.info(`✅ GC: Purged ${userResult.deletedCount} unverified zombie accounts.`);
             }
+
+            // 2. Purge Stale Audit Logs (Security Hardening: Clear logs older than 24 hours as requested)
+            const Audit = require('../models/audit.model');
+            const auditResult = await Audit.deleteMany({
+                createdAt: { $lt: twentyFourHoursAgo }
+            });
+
+            if (auditResult.deletedCount > 0) {
+                logger.info(`✅ GC: Purged ${auditResult.deletedCount} stale audit log entries.`);
+            }
+
+            logger.info('✨ Garbage Collection Cycle Complete.');
         } catch (error) {
             logger.error(`❌ Garbage Collection Failed: ${error.message}`);
         }

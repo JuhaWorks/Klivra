@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useTheme } from '../store/useTheme';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 // Import real components
 import GeneralTab from '../components/settings/GeneralTab';
@@ -30,7 +32,7 @@ const TabButton = ({ tab, active, onClick }) => {
             onClick={() => onClick(tab.id)}
             className={`w-full relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden ${
                 active 
-                ? 'shadow-sm border border-zinc-200 dark:border-strong' 
+                ? 'shadow-sm border border-strong' 
                 : 'hover:border-default border border-transparent'
             }`}
         >
@@ -39,20 +41,24 @@ const TabButton = ({ tab, active, onClick }) => {
             </div>
 
             <div className="relative z-10 flex items-center gap-3 w-full">
-            <div className={`p-1.5 rounded-lg transition-colors ${
-                active ? 'bg-zinc-900 dark:bg-elevated text-primary dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-primary'
-            }`}>
+            <div className={twMerge(clsx(
+                "p-2 rounded-lg transition-all duration-300",
+                active 
+                    ? "bg-theme text-primary shadow-lg shadow-theme/20" 
+                    : "bg-surface group-hover:bg-sunken text-tertiary group-hover:text-primary"
+            ))}>
                 <Icon className="w-3.5 h-3.5" />
             </div>
-            <span className={`text-xs font-semibold uppercase tracking-widest ${
-                active ? 'text-zinc-900 dark:text-primary' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200'
-            }`}>
+            <span className={twMerge(clsx(
+                "text-[10px] font-black uppercase tracking-[0.2em] transition-all",
+                active ? "text-primary" : "text-tertiary group-hover:text-primary"
+            ))}>
                 {tab.label}
             </span>
             {active && (
                 <motion.div 
                     layoutId="active-pill"
-                    className="ml-auto w-1 h-1 rounded-full bg-zinc-900 dark:bg-elevated"
+                    className="ml-auto w-1 h-1 rounded-full bg-primary"
                 />
             )}
             </div>
@@ -91,7 +97,7 @@ export default function Settings() {
                     {/* Sidebar */}
                     <aside className="w-full lg:w-64 shrink-0 space-y-8">
                         <div className="space-y-1.5">
-                            <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.3em] px-4 mb-4">Configuration</p>
+                            <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] px-4 mb-4">Configuration</p>
                             {TABS.map(tab => (
                                 <TabButton 
                                     key={tab.id} 
@@ -103,18 +109,18 @@ export default function Settings() {
                         </div>
 
                         {/* Additional Info */}
-                        <div className="px-4 py-6 rounded-3xl border border-zinc-200 dark:border-default relative overflow-hidden lg:mb-0 mb-8">
+                        <div className="px-4 py-6 rounded-3xl border border-default relative overflow-hidden lg:mb-0 mb-8">
                             <div className="absolute inset-0 z-0">
                                 <GlassSurface width="100%" height="100%" borderRadius={24} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
                             </div>
                             
                             <div className="flex items-center gap-2 mb-3 relative z-10">
-                                <Globe className="w-3.5 h-3.5 text-zinc-400" />
-                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Platform Status</span>
+                                <Globe className="w-3.5 h-3.5 text-tertiary" />
+                                <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest">Platform Status</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">v4.2.1 Stable</span>
+                                <span className="text-[11px] font-medium text-secondary">v4.2.1 Stable</span>
                             </div>
                         </div>
                     </aside>

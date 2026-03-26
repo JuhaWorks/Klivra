@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const sendEmail = require('./sendEmail');
 
 /**
@@ -40,27 +42,94 @@ const formatUserResponse = (user) => {
  * @param {string} [options.customHtml] - Optional custom HTML to inject into the body.
  */
 const sendStandardEmail = async ({ to, subject, title, body, ctaText, ctaUrl, footer, customHtml }) => {
+    const frontendUrl = getFrontendUrl();
+    // Fallback to a stable public URL if on localhost, as email clients can't reach localhost
+    const isLocal = frontendUrl.includes('localhost');
+    const publicLogoFallback = 'https://ui-avatars.com/api/?name=K&background=008c64&color=fff&size=128&bold=true&format=png';
+    const logoUrl = process.env.PUBLIC_LOGO_URL || (isLocal ? publicLogoFallback : `${frontendUrl}/logo.png`);
+    const accentColor = '#008c64'; // Klivra Emerald
+
     let ctaHtml = '';
     if (ctaText && ctaUrl) {
-        ctaHtml = `<a href="${ctaUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">${ctaText}</a>`;
+        ctaHtml = `
+            <div style="margin-top: 30px;">
+                <a href="${ctaUrl}" style="display: inline-block; padding: 14px 32px; background-color: ${accentColor}; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(0, 140, 100, 0.2); transition: all 0.2s ease;">
+                    ${ctaText}
+                </a>
+            </div>`;
     }
 
     let footerHtml = '';
     if (footer) {
-        footerHtml = `<p style="color: #8888aa; font-size: 13px; margin-top: 25px;">${footer}</p>`;
+        footerHtml = `<p style="color: #9ca3af; font-size: 12px; margin-top: 35px; line-height: 1.5; border-top: 1px solid #f3f4f6; padding-top: 20px;">${footer}</p>`;
+    }
+
+    // Attach logo as CID for offline/local reliability
+    const attachments = [];
+    let finalLogoUrl = logoUrl;
+
+    try {
+        const logoPath = path.join(__dirname, '..', 'public', 'logo.png');
+        if (fs.existsSync(logoPath)) {
+            const logoBase64 = fs.readFileSync(logoPath, { encoding: 'base64' });
+            attachments.push({
+                content: logoBase64,
+                name: 'logo.png',
+                contentId: 'logo_img'
+            });
+            finalLogoUrl = 'cid:logo_img';
+        }
+    } catch (error) {
+        console.error('[EMAIL] ❌ Failed to attach logo CID:', error.message);
     }
 
     const html = `
-        <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
-            <h2 style="color: #060612;">${title}</h2>
-            <p style="color: #44445a; line-height: 1.6;">${body}</p>
-            ${customHtml || ''}
-            ${ctaHtml}
-            ${footerHtml}
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                body { margin: 0; padding: 0; background-color: #f9fafb; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+            </style>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+                <tr>
+                    <td align="center" style="padding: 40px 20px;">
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+                            <!-- Header / Logo -->
+                            <tr>
+                                <td align="center" style="padding: 40px 40px 20px 40px;">
+                                    <img src="${finalLogoUrl}" alt="Klivra Logo" width="64" height="64" style="display: block; border-radius: 16px; background-color: ${accentColor};">
+                                    <h1 style="margin: 20px 0 0 0; color: #111827; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">klvira</h1>
+                                </td>
+                            </tr>
+                            <!-- Content -->
+                            <tr>
+                                <td style="padding: 20px 40px 40px 40px;">
+                                    <h2 style="color: #111827; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">${title}</h2>
+                                    <div style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+                                        ${body}
+                                    </div>
+                                    ${customHtml || ''}
+                                    ${ctaHtml}
+                                    ${footerHtml}
+                                    <p style="color: #9ca3af; font-size: 12px; margin-top: 20px;">
+                                        &copy; ${new Date().getFullYear()} Klivra. All rights reserved.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
     `;
 
-    return sendEmail({ to, subject, html });
+    return sendEmail({ to, subject, html, attachments });
 };
 
 /**

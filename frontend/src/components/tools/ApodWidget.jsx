@@ -54,9 +54,20 @@ const ApodWidget = () => {
                     {/* Image Section */}
                     <div className="relative h-[220px] shrink-0 overflow-hidden">
                         <img
-                            src={imgSrc}
+                            src={(() => {
+                                // Adaptive Loading: Check for Data Saver or Slow Connection
+                                if (navigator.connection) {
+                                  const { saveData, effectiveType } = navigator.connection;
+                                  if (saveData || effectiveType === 'slow-2g' || effectiveType === '2g') {
+                                    // Load lower quality version if available, or just keep it minimal
+                                    return imgSrc + '&w=400&q=60'; // Mocking a quality param if the API supported it
+                                  }
+                                }
+                                return imgSrc;
+                            })()}
                             alt={display.title}
-                            loading="eager"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             onError={(e) => { 
                                 if (e.target.src !== FALLBACK.url) e.target.src = FALLBACK.url;

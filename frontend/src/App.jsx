@@ -70,8 +70,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
-          <Route path="/verify-email" element={<Suspense fallback={<PageLoader />}><VerifyEmail /></Suspense>} />
-          <Route path="/verify-email-change/:token" element={<Suspense fallback={<PageLoader />}><VerifyEmailChangePage /></Suspense>} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify-email-change/:token" element={<VerifyEmailChangePage />} />
 
           {/* Secure Layout Routes */}
           <Route
@@ -86,17 +86,17 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* Suspense inside layout so the shell renders instantly */}
+            {/* Nested routes are already wrapped in the global Suspense at line 67 */}
             <Route index element={<Home />} />
-            <Route path="projects" element={<Suspense fallback={<PageLoader />}><Projects /></Suspense>} />
-            <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
-            <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
-            <Route path="projects/:id/settings" element={<Suspense fallback={<PageLoader />}><ProjectSettings /></Suspense>} />
-            <Route path="tasks" element={<Suspense fallback={<PageLoader />}><Tasks /></Suspense>} />
-            <Route path="admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
-            <Route path="admin/security" element={<Suspense fallback={<PageLoader />}><SecurityFeed /></Suspense>} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="projects/:id/settings" element={<ProjectSettings />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="admin" element={<AdminDashboard />} />
+            <Route path="admin/security" element={<SecurityFeed />} />
 
-            <Route path="whiteboard/:roomId" element={<Suspense fallback={<PageLoader />}><WhiteboardWrapper /></Suspense>} />
+            <Route path="whiteboard/:roomId" element={<WhiteboardWrapper />} />
           </Route>
 
           {/* Catch all unmatched routes */}

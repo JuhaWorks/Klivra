@@ -144,8 +144,8 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     mass: 0.8
                 }}
                 className={cn(
-                    "fixed inset-y-0 left-0 z-40 border-r border-default shadow-2xl",
-                    "flex flex-col rounded-none rounded-br-[2rem] overflow-hidden"
+                    "fixed inset-y-0 left-0 z-40 border-r border-default shadow-2xl transition-all",
+                    "flex flex-col rounded-r-[2rem] overflow-hidden"
                 )}
                 style={{ borderRightColor: 'var(--border-glass)' }}
             >
@@ -168,7 +168,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 {/* Brand */}
                 <div className={cn(
                     "h-20 flex items-center relative z-10 shrink-0",
-                    isCollapsed ? "justify-center px-0" : "gap-4 px-6"
+                    isCollapsed ? "justify-center px-0" : "gap-4 px-6" 
                 )}>
                     <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform overflow-hidden">
                         <img src="/logo.png?v=2" alt="klvira logo" className="w-full h-full object-cover" />
@@ -193,7 +193,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     {!isCollapsed && (
                         <button 
                             onClick={onClose} 
-                            className="p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5 lg:hidden"
+                            className="p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5 lg:hidden ml-auto"
                             title="Hide Sidebar"
                         >
                             <X className="w-5 h-5" />
@@ -309,7 +309,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
 
                     {/* Part 2: Identity & Session */}
                     <div className={cn(
-                        "rounded-[2rem] bg-white/5 border border-white/5 transition-all p-1.5",
+                        "rounded-[2.5rem] bg-white/5 border border-white/5 transition-all p-1.5",
                         isCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-3 pr-3"
                     )}>
                         <Link 
@@ -318,7 +318,13 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                             className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-accent-500/10 to-accent-500/20 border border-white/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform"
                         >
                             {user?.avatar ? (
-                                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                                <img 
+                                    src={user.avatar} 
+                                    alt={user.name} 
+                                    loading="lazy" 
+                                    decoding="async" 
+                                    className="w-full h-full object-cover" 
+                                />
                             ) : (
                                 <UserCircle className="w-6 h-6 text-theme" />
                             )}

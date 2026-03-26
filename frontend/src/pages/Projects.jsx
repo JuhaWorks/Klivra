@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useTransition, useMemo, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { 
@@ -36,6 +36,7 @@ const Projects = () => {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [view, setView] = useState('active');
+    const [isPending, startTransition] = useTransition();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -113,7 +114,7 @@ const Projects = () => {
                             ].map(tab => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setView(tab.id)}
+                                    onClick={() => startTransition(() => setView(tab.id))}
                                     className={twMerge(clsx(
                                         "flex items-center gap-3 px-6 py-2.5 rounded-xl text-xs font-black transition-all relative overflow-hidden",
                                         view === tab.id ? "text-theme" : "text-tertiary hover:text-secondary"
@@ -166,7 +167,7 @@ const Projects = () => {
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {[1, 2, 3, 4, 5, 6].map(i => (
-                        <Skeleton key={i} className="h-80 w-full rounded-[2.5rem]" />
+                        <Skeleton key={i} className="h-80 w-full rounded-[3.15rem]" />
                     ))}
                 </div>
             ) : filteredProjects.length > 0 ? (
@@ -229,7 +230,7 @@ const Projects = () => {
                                             {project.members?.slice(0, 4).map((m, i) => (
                                                 <div key={i} className="w-8 h-8 rounded-xl border-2 border-base bg-sunken flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
                                                     {m.userId?.avatar ? (
-                                                        <img src={m.userId.avatar} alt="" className="w-full h-full object-cover" />
+                                                        <img src={m.userId.avatar} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <span className="text-[10px] font-black text-gray-600">{m.userId?.name?.charAt(0)}</span>
                                                     )}
@@ -281,7 +282,7 @@ const Projects = () => {
                     </AnimatePresence>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-40 text-center glass-2 border-dashed border-subtle rounded-[4rem]">
+                <div className="flex flex-col items-center justify-center py-40 text-center glass-2 border-dashed border-subtle rounded-[5rem]">
                     <div className="w-24 h-24 rounded-[2.5rem] bg-sunken border border-subtle flex items-center justify-center mb-8">
                         <SearchX className="w-10 h-10 text-tertiary" />
                     </div>

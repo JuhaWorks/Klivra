@@ -232,6 +232,7 @@
   --bg-hue-2: oklch(0.72 0.15 240 / 0.04);
   --bg-hue-3: oklch(0.65 0.18 300 / 0.03);
   --shadow-elevation: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --grid-line: oklch(0 0 0 / 0.05);
   color-scheme: light;
 
   /* Universal transition for theme variables */
@@ -282,6 +283,7 @@
   --bg-hue-2: oklch(0.72 0.15 240 / 0.03);
   --bg-hue-3: oklch(0.65 0.18 300 / 0.02);
   --shadow-elevation: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --grid-line: oklch(1 0 0 / 0.07);
   color-scheme: dark;
 }
 
@@ -1545,6 +1547,24 @@ html:not(.dark) {
   .skeleton {
     animation: none !important;
   }
+}
+
+/* Performance Utilities */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px; /* Base placeholder height to prevent layout shift */
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-display: swap;
+  src: local('Bricolage Grotesque');
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-display: swap;
+  src: local('IBM Plex Mono');
 }
 
 

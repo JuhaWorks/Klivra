@@ -286,8 +286,8 @@ const ProjectSettings = () => {
                                         <div key={a._id} className="flex gap-4 group">
                                             <div className="relative z-10">
                                                 <div className="w-8 h-8 rounded-full bg-zinc-900 border border-strong flex items-center justify-center overflow-hidden">
-                                                    {a.actorId?.avatar ? (
-                                                        <img src={a.actorId.avatar} alt="" className="w-full h-full object-cover" />
+                                                    {a.user?.avatar ? (
+                                                        <img src={a.user.avatar} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <UserIcon className="w-4 h-4 text-zinc-500" />
                                                     )}
@@ -295,12 +295,12 @@ const ProjectSettings = () => {
                                             </div>
                                             <div className="flex-1 space-y-1">
                                                 <p className="text-sm text-zinc-300">
-                                                    <span className="font-bold text-primary">{a.actorId?.name || 'Unknown'}</span>
+                                                    <span className="font-bold text-primary">{a.user?.name || 'Unknown'}</span>
                                                     {' '}
                                                     <span className="text-zinc-500">{a.action.replace(/_/g, ' ').toLowerCase()}</span>
                                                 </p>
                                                 {/* Meta Preview */}
-                                                {a.metadata?.name && <p className="text-xs text-zinc-500 italic">"{a.metadata.name}"</p>}
+                                                {a.details?.name && <p className="text-xs text-zinc-500 italic">"{a.details.name}"</p>}
                                                 <p className="text-[11px] text-zinc-600 flex items-center gap-1">
                                                     <Calendar className="w-3 h-3" />
                                                     {new Date(a.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

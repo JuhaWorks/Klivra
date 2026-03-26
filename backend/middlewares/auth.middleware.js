@@ -12,10 +12,7 @@ const protect = async (req, res, next) => {
         token = req.headers.authorization.split(' ')[1];
     }
 
-    console.log(`[AUTH] ${req.method} ${req.originalUrl} - Token Present: ${!!token}`);
-
     if (!token) {
-        console.log(`[AUTH DEBUG] No token found in header for ${req.originalUrl}. Header: ${req.headers.authorization}`);
         res.status(401);
         return next(new Error('Not authorized, no access token provided'));
     }
@@ -66,4 +63,30 @@ const verifyAdmin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, authorizeRoles, verifyAdmin };
+// Middleware to optionally protect routes (populates req.user if token valid, but doesn't 401 if missing)
+const optionalProtect = async (req, res, next) => {
+    let token;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+        req.user = null;
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = await User.findById(decoded.id).select('-password');
+        next();
+    } catch (error) {
+        req.user = null;
+        next();
+    }
+};
+
+module.exports = { protect, optionalProtect, authorizeRoles, verifyAdmin };

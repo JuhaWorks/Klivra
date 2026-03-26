@@ -3,26 +3,36 @@ const redis = require('redis');
 let redisClient;
 
 const initRedis = async () => {
-    // Determine Redis Connection String
-    const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-
-    redisClient = redis.createClient({ url: REDIS_URL });
-
-    redisClient.on('error', (error) => console.error(`❌ Redis Error: ${error}`));
-    redisClient.on('connect', () => console.log('✅ Redis Connected Successfully!'));
-
     try {
+        const REDIS_URL = process.env.REDIS_URL || (process.env.NODE_ENV === 'production' ? null : 'redis://localhost:6379');
+        
+        if (!REDIS_URL) {
+            console.warn('⚠️ No REDIS_URL provided, Redis caching disabled.');
+            return;
+        }
+
+        redisClient = redis.createClient({ 
+            url: REDIS_URL,
+            socket: {
+                reconnectStrategy: (retries) => {
+                    if (retries > 3) return new Error('Max retries reached');
+                    return Math.min(retries * 100, 3000);
+                }
+            }
+        });
+
+        redisClient.on('error', (error) => {}); // Silent error for non-critical cache
+        redisClient.on('connect', () => console.log('✅ Redis Connected Successfully!'));
+
         await redisClient.connect();
     } catch (err) {
-        console.error('Failed to connect to Redis', err);
+        console.warn('⚠️ Failed to connect to Redis (Optional):', err.message);
+        redisClient = null; // Ensure we don't try to use a broken client
     }
 };
 
 const getRedisClient = () => {
-    if (!redisClient) {
-        throw new Error('Redis Client not initialized');
-    }
-    return redisClient;
+    return redisClient || null;
 };
 
 // Middleware to check cache before hitting DB

@@ -1,195 +1,340 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldAlert, Zap, Cpu, Lock } from 'lucide-react';
+import { ShieldCheck, Lock, Calendar, Clock } from 'lucide-react';
 import { api, useAuthStore } from '../../store/useAuthStore';
 import { useSocketStore } from '../../store/useSocketStore';
 
 /**
- * Hook: Manages high-precision system status and clock synchronization
+ * Hook: Fetches and tracks system maintenance state with server clock correction.
+ *
+ * Expected API shape (response.data):
+ *   isUnderMaintenance  boolean
+ *   scheduledEndTime    ISO 8601 string | null
+ *   startedAt           ISO 8601 string | null
+ *   message             string | null   ← admin-authored notice shown to users
+ *   incidentId          string | null
  */
-const useSystemStability = () => {
+export const useMaintenanceStatus = () => {
     const queryClient = useQueryClient();
     const { socket } = useSocketStore();
-    const [timeLeft, setTimeLeft] = useState(0);
-    const [serverOffset, setServerOffset] = useState(0);
+    const [timeRemaining, setTimeRemaining] = useState(0);
+    const [serverClockOffset, setServerClockOffset] = useState(0);
 
-    const { data: statusRes } = useQuery({
-        queryKey: ['systemStatus'],
+    const { data: statusResponse } = useQuery({
+        queryKey: ['system.maintenance'],
         queryFn: async () => {
-            const start = Date.now();
+            const requestTime = Date.now();
             const response = (await api.get('/admin/system/status')).data;
-            // Calculate latency and clock skew
-            const serverTime = new Date(response.timestamp || Date.now()).getTime();
-            setServerOffset(serverTime - (start + (Date.now() - start) / 2));
+            const serverTime = new Date(response.timestamp ?? Date.now()).getTime();
+            const rtt = Date.now() - requestTime;
+            setServerClockOffset(serverTime - (requestTime + rtt / 2));
             return response;
         },
-        refetchInterval: (query) => (query.state.data?.data?.isMaintenance ? 15000 : 60000),
-        staleTime: 5000,
+        refetchInterval: (query) =>
+            query.state.data?.data?.isUnderMaintenance ? 15_000 : 60_000,
+        staleTime: 5_000,
     });
 
-    const status = statusRes?.data;
-    const isMaintenance = !!status?.isMaintenance;
-    const endTime = status?.endTime ? new Date(status.endTime).getTime() : null;
+    const status = statusResponse?.data ?? {};
+    const isUnderMaintenance = !!status.isUnderMaintenance;
+    const scheduledEndTime = status.scheduledEndTime ? new Date(status.scheduledEndTime).getTime() : null;
+    const startedAt = status.startedAt ? new Date(status.startedAt) : null;
+    const adminMessage = status.message ?? null;
+    const incidentId = status.incidentId ?? null;
 
-    // Real-time synchronization via WebSockets
     useEffect(() => {
         if (!socket) return;
-        const sync = () => queryClient.invalidateQueries({ queryKey: ['systemStatus'] });
-
-        socket.on('maintenance:start', sync);
-        socket.on('maintenance:end', () => {
-            sync();
-            setTimeout(() => window.location.reload(), 1000);
-        });
-
+        const invalidate = () => queryClient.invalidateQueries({ queryKey: ['system.maintenance'] });
+        const onEnd = () => { invalidate(); setTimeout(() => window.location.reload(), 2_000); };
+        socket.on('maintenance:started', invalidate);
+        socket.on('maintenance:updated', invalidate);
+        socket.on('maintenance:ended', onEnd);
         return () => {
-            socket.off('maintenance:start');
-            socket.off('maintenance:end');
+            socket.off('maintenance:started', invalidate);
+            socket.off('maintenance:updated', invalidate);
+            socket.off('maintenance:ended', onEnd);
         };
     }, [socket, queryClient]);
 
-    // High-precision ticker
     useEffect(() => {
-        if (!endTime || !isMaintenance) return;
-
-        const updateTimer = () => {
-            const adjustedNow = Date.now() + serverOffset;
-            const diff = endTime - adjustedNow;
-
-            if (diff <= 0) {
-                setTimeLeft(0);
-                queryClient.invalidateQueries({ queryKey: ['systemStatus'] });
-            } else {
-                setTimeLeft(diff);
-            }
+        if (!scheduledEndTime || !isUnderMaintenance) return;
+        const tick = () => {
+            const delta = scheduledEndTime - (Date.now() + serverClockOffset);
+            setTimeRemaining(delta > 0 ? delta : 0);
+            if (delta <= 0) queryClient.invalidateQueries({ queryKey: ['system.maintenance'] });
         };
+        const id = setInterval(tick, 1_000);
+        tick();
+        return () => clearInterval(id);
+    }, [scheduledEndTime, isUnderMaintenance, serverClockOffset, queryClient]);
 
-        const timer = setInterval(updateTimer, 1000);
-        updateTimer();
-        return () => clearInterval(timer);
-    }, [endTime, isMaintenance, serverOffset, queryClient]);
-
-    return { isMaintenance, timeLeft, status };
+    return { isUnderMaintenance, timeRemaining, startedAt, scheduledEndTime, adminMessage, incidentId };
 };
 
+const pad = (n) => String(Math.max(0, n)).padStart(2, '0');
+
+const formatCountdown = (ms) => {
+    if (ms <= 0) return null;
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    const s = Math.floor((ms % 60_000) / 1_000);
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+};
+
+const formatCountdownUnit = (ms) => {
+    if (ms <= 0) return null;
+    return Math.floor(ms / 3_600_000) > 0 ? 'hr  ·  min  ·  sec' : 'min  ·  sec';
+};
+
+const formatEndTime = (ts) => {
+    if (!ts) return null;
+    return new Date(ts).toLocaleString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short',
+    });
+};
+
+/**
+ * MaintenanceBanner
+ *
+ * Admin  → slim top banner: live countdown, scheduled end time, admin message.
+ * User   → full-screen overlay: admin message, large countdown, scheduled end time.
+ * Exempt paths (login, register, verify-email) are never affected.
+ */
 const MaintenanceNotice = () => {
     const { user } = useAuthStore();
     const location = useLocation();
-    const { isMaintenance, timeLeft } = useSystemStability();
+    const {
+        isUnderMaintenance,
+        timeRemaining,
+        scheduledEndTime,
+        adminMessage,
+        incidentId,
+    } = useMaintenanceStatus();
 
     const isAdmin = user?.role === 'Admin';
-    const isAuthPath = useMemo(() =>
-        ['/login', '/register', '/verify-email'].some(p => location.pathname.startsWith(p)),
-        [location.pathname]);
+    const isExemptPath = useMemo(
+        () => ['/login', '/register', '/verify-email'].some((p) => location.pathname.startsWith(p)),
+        [location.pathname]
+    );
 
-    // Prevent scrolling when maintenance is active for users
     useEffect(() => {
-        if (isMaintenance && !isAdmin && !isAuthPath) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-    }, [isMaintenance, isAdmin, isAuthPath]);
+        const lock = isUnderMaintenance && !isAdmin && !isExemptPath;
+        document.body.style.overflow = lock ? 'hidden' : '';
+        return () => { document.body.style.overflow = ''; };
+    }, [isUnderMaintenance, isAdmin, isExemptPath]);
 
-    if (!isMaintenance || isAuthPath) return null;
+    if (!isUnderMaintenance || isExemptPath) return null;
 
-    const formatCountdown = (ms) => {
-        const h = Math.floor(ms / 3600000);
-        const m = Math.floor((ms % 3600000) / 60000);
-        const s = Math.floor((ms % 60000) / 1000);
-        return `${h > 0 ? `${h}h ` : ''}${m}m ${s}s`;
-    };
+    const countdown = formatCountdown(timeRemaining);
+    const countdownUnit = formatCountdownUnit(timeRemaining);
+    const endTimeStr = formatEndTime(scheduledEndTime);
+    const displayMsg = adminMessage ?? 'Scheduled system maintenance is currently underway.';
 
     return (
         <AnimatePresence>
             {isAdmin ? (
-                /* ADVANDED ADMIN BANNER */
+                /* ── Admin slim banner ───────────────────────────── */
                 <motion.div
-                    initial={{ y: -100 }}
-                    animate={{ y: 0 }}
-                    exit={{ y: -100 }}
-                    className="fixed top-0 left-0 right-0 z-[10001] h-12 bg-black border-b border-emerald-500/30 backdrop-blur-md flex items-center px-6"
+                    key="admin-banner"
+                    initial={{ y: -52, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -52, opacity: 0 }}
+                    transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    className="fixed top-0 left-0 right-0 z-[10001] h-11
+                               flex items-center px-6
+                               bg-black/75 backdrop-blur-xl
+                               border-b border-white/[0.06]"
                 >
-                    <div className="flex items-center gap-6 w-full max-w-7xl mx-auto">
-                        <div className="flex items-center gap-2 text-emerald-500">
-                            <Cpu size={16} className="animate-spin-slow" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Maintenance Mode Enabled</span>
+                    <div className="flex items-center gap-4 w-full">
+                        {/* Pulse dot */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <span className="relative flex h-[7px] w-[7px]">
+                                <span className="animate-ping absolute inset-0 rounded-full bg-emerald-400/50" />
+                                <span className="relative block w-[7px] h-[7px] rounded-full bg-emerald-500" />
+                            </span>
+                            <span className="text-[11px] font-semibold tracking-[0.1em] uppercase text-white/80">
+                                Maintenance active
+                            </span>
                         </div>
-                        <div className="h-4 w-px bg-white/10" />
-                        <span className="text-[9px] text-gray-400 font-bold uppercase italic">Global Restricted Access</span>
-                        <div className="ml-auto flex items-center gap-4">
-                            {timeLeft > 0 && (
-                                <div className="text-[10px] font-mono text-emerald-500/80 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">
-                                    EST: {formatCountdown(timeLeft)}
+
+                        <div className="w-px h-4 bg-white/[0.08] shrink-0" />
+
+                        {/* Admin message */}
+                        <span className="text-[12px] text-white/35 truncate flex-1 min-w-0">
+                            {displayMsg}
+                        </span>
+
+                        {/* Right */}
+                        <div className="flex items-center gap-3 ml-auto shrink-0">
+                            {endTimeStr && (
+                                <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-white/28">
+                                    <Calendar className="w-[11px] h-[11px]" />
+                                    <span>Ends {endTimeStr}</span>
                                 </div>
                             )}
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500 text-black text-[9px] font-black uppercase">
-                                <Lock size={10} /> Admin Session
+
+                            <div className="w-px h-4 bg-white/[0.07]" />
+
+                            {countdown && (
+                                <div className="flex items-center gap-1.5 px-3 py-[3px] rounded-full
+                                                font-mono text-[12px] font-semibold text-emerald-400
+                                                bg-emerald-500/[0.08] border border-emerald-500/[0.15]">
+                                    <Clock className="w-[10px] h-[10px] opacity-60" />
+                                    {countdown}
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-[5px] px-2.5 py-[3px] rounded-full
+                                            bg-white/[0.04] border border-white/[0.08]
+                                            text-white/30 text-[10px] font-semibold uppercase tracking-[0.08em]">
+                                <Lock className="w-[9px] h-[9px]" />
+                                Admin
                             </div>
                         </div>
                     </div>
+
+                    <div className="absolute bottom-0 left-0 right-0 h-px
+                                    bg-gradient-to-r from-transparent via-emerald-500/25 to-transparent" />
                 </motion.div>
+
             ) : (
-                /* ADVANCED USER OVERLAY */
+                /* ── User full-screen overlay ───────────────────── */
                 <motion.div
+                    key="user-overlay"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[10000] bg-[#020202] flex items-center justify-center p-8 overflow-hidden"
+                    transition={{ duration: 0.5 }}
+                    className="fixed inset-0 z-[10000] bg-[#080808]
+                               flex items-center justify-center
+                               p-8 overflow-hidden"
                 >
-                    {/* Animated Grid Background */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+                    {/* Fine grid texture */}
+                    <div
+                        className="absolute inset-0 opacity-[0.15]"
+                        style={{
+                            backgroundImage:
+                                'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px),' +
+                                'linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)',
+                            backgroundSize: '48px 48px',
+                            maskImage:
+                                'radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)',
+                            WebkitMaskImage:
+                                'radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%)',
+                        }}
+                    />
 
-                    <div className="relative flex flex-col items-center max-w-2xl w-full">
+                    <div className="relative z-10 w-full max-w-[480px] flex flex-col items-center">
+
+                        {/* Icon */}
                         <motion.div
-                            animate={{
-                                scale: [1, 1.05, 1],
-                                opacity: [0.5, 1, 0.5]
-                            }}
-                            transition={{ duration: 4, repeat: Infinity }}
-                            className="absolute -top-24 w-64 h-64 bg-emerald-500/20 blur-[100px] rounded-full"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.1, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+                            className="mb-8"
+                        >
+                            <div className="w-16 h-16 rounded-[18px]
+                                            bg-emerald-500/[0.07] border border-emerald-500/[0.13]
+                                            flex items-center justify-center">
+                                <ShieldCheck className="w-7 h-7 text-emerald-500" strokeWidth={1.5} />
+                            </div>
+                        </motion.div>
+
+                        {/* Heading */}
+                        <motion.h1
+                            initial={{ y: 16, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.16, duration: 0.45 }}
+                            className="text-center font-extrabold text-white tracking-[-0.035em] leading-[1.05] mb-4"
+                            style={{ fontSize: 'clamp(32px, 7vw, 50px)' }}
+                        >
+                            System Maintenance
+                        </motion.h1>
+
+                        {/* Admin message */}
+                        <motion.p
+                            initial={{ y: 12, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.22, duration: 0.4 }}
+                            className="text-[15px] text-center leading-[1.7] text-white/38
+                                       max-w-[380px] mb-11"
+                        >
+                            {displayMsg}
+                        </motion.p>
+
+                        {/* Hairline */}
+                        <motion.div
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ delay: 0.28, duration: 0.55 }}
+                            className="w-full h-px bg-white/[0.06] mb-11"
                         />
 
-                        <div className="relative z-10 space-y-12 text-center">
-                            <div className="flex flex-col items-center space-y-4">
-                                <div className="p-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
-                                    <ShieldAlert size={48} className="text-emerald-500" />
-                                </div>
-                                <h1 className="text-6xl md:text-8xl font-black text-white tracking-[calc(-0.05em)]">
-                                    CORE<span className="text-emerald-500">.</span>UPDATE
-                                </h1>
-                            </div>
+                        {/* Countdown */}
+                        {countdown && (
+                            <motion.div
+                                initial={{ y: 10, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.32, duration: 0.4 }}
+                                className="flex flex-col items-center gap-2.5 mb-8"
+                            >
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-500/40">
+                                    Estimated time remaining
+                                </span>
+                                <span
+                                    className="font-mono font-bold text-white leading-none tracking-[-0.02em] tabular-nums"
+                                    style={{ fontSize: 'clamp(52px, 13vw, 76px)' }}
+                                >
+                                    {countdown}
+                                </span>
+                                {countdownUnit && (
+                                    <span className="font-mono text-[10px] text-white/12 tracking-[0.28em] uppercase">
+                                        {countdownUnit}
+                                    </span>
+                                )}
+                            </motion.div>
+                        )}
 
-                            <p className="text-gray-400 text-lg md:text-xl font-medium max-w-md mx-auto leading-relaxed opacity-80">
-                                Infrastructure maintenance in progress. We are hardening the core systems for better performance.
-                            </p>
+                        {/* Scheduled end time pill */}
+                        {endTimeStr && (
+                            <motion.div
+                                initial={{ y: 8, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.38, duration: 0.4 }}
+                                className="flex items-center gap-2.5 px-5 py-2.5 mb-11 rounded-xl
+                                           bg-white/[0.025] border border-white/[0.07]"
+                            >
+                                <Calendar className="w-[13px] h-[13px] text-emerald-500/50 shrink-0" />
+                                <span className="text-[13px] text-white/35 tracking-[0.01em]">
+                                    Scheduled to resume
+                                </span>
+                                <span className="text-[13px] text-white/72 font-medium tracking-[0.01em]">
+                                    {endTimeStr}
+                                </span>
+                            </motion.div>
+                        )}
 
-                            {timeLeft > 0 && (
-                                <div className="grid grid-cols-1 gap-2 pt-4">
-                                    <span className="text-[10px] font-black text-emerald-500/40 uppercase tracking-[0.4em]">Expected Restoration</span>
-                                    <div className="text-5xl md:text-6xl font-mono font-bold text-white tabular-nums tracking-tighter">
-                                        {formatCountdown(timeLeft)}
-                                    </div>
-                                </div>
-                            )}
+                        {/* Hairline */}
+                        <div className="w-full h-px bg-white/[0.05] mb-6" />
 
-                            <div className="flex flex-col items-center gap-8 pt-12">
-                                <div className="w-48 h-1 bg-white/[0.03] rounded-full overflow-hidden relative">
-                                    <motion.div
-                                        animate={{ x: [-200, 200] }}
-                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                        className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-emerald-500 to-transparent"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-4 text-[9px] font-bold text-gray-600 uppercase tracking-[0.3em]">
-                                    <span className="p-1 rounded bg-gray-800">Node_01</span>
-                                    <span className="p-1 rounded bg-gray-800">Primary_DB</span>
-                                    <span className="p-1 rounded bg-emerald-500/20 text-emerald-500">Synchronizing</span>
-                                </div>
-                            </div>
-                        </div>
+                        {/* Incident ID */}
+                        {incidentId && (
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.5 }}
+                                className="font-mono text-[11px] text-white/14 tracking-[0.06em]"
+                            >
+                                Incident · {incidentId}
+                            </motion.p>
+                        )}
                     </div>
                 </motion.div>
             )}

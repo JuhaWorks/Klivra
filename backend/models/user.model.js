@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
             required: [true, 'Please add an email'],
             unique: true,
             match: [
-                /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                 'Please add a valid email',
             ],
         },
@@ -92,6 +92,14 @@ const userSchema = new mongoose.Schema(
         pendingNewEmail: String,
         emailChangeToken: String,
         emailChangeTokenExpires: Date,
+
+        // --- Multi-device Session Management ---
+        refreshTokens: [
+            {
+                token: { type: String, required: true }, // Hashed token
+                createdAt: { type: Date, default: Date.now }
+            }
+        ],
     },
     {
         timestamps: true, // Automatically add createdAt and updatedAt fields
@@ -164,5 +172,10 @@ userSchema.statics.deleteAndCleanUp = async function (userId) {
         throw error;
     }
 };
+
+// Optimize lookups for Admin Dashboard filtering
+userSchema.index({ role: 1, status: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('User', userSchema);

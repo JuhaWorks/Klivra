@@ -14,12 +14,7 @@
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-/**
- * Send an email via Brevo's transactional email HTTP API.
- * @param {Object} options - { to, subject, html }
- * @returns {Promise<Object>} Brevo response data
- */
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, attachments }) => {
     if (!process.env.BREVO_API_KEY) {
         throw new Error('BREVO_API_KEY is not set in environment variables!');
     }
@@ -33,6 +28,7 @@ const sendEmail = async ({ to, subject, html }) => {
         to: [{ email: to }],
         subject,
         htmlContent: html,
+        attachment: attachments, // Brevo API expects 'attachment' (array of { name, content, contentId })
     });
 
     const response = await fetch(BREVO_API_URL, {

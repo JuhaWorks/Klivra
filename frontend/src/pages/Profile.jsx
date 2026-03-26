@@ -170,6 +170,8 @@ export default function Profile() {
                                     <img
                                         src={user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
                                         alt={user?.name}
+                                        loading="lazy"
+                                        decoding="async"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>

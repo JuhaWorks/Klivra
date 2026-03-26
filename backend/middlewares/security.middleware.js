@@ -4,18 +4,35 @@ const User = require('../models/user.model');
 const logger = require('../utils/logger');
 const { checkMaintenanceStatus } = require('../utils/helpers');
 
+const { getRedisClient } = require('../utils/redis');
+
 const securityMiddleware = async (req, res, next) => {
     try {
-        // 0. Bypass for specific health/auth routes if necessary
-        // Allow all auth routes so admins can authenticate and users can register/verify
+        // 0. Bypass for specific health/auth routes
         const bypassRoutes = ['/api/auth', '/api/admin/system/status'];
         if (bypassRoutes.some(route => req.originalUrl.startsWith(route))) {
             return next();
         }
 
+        const redis = getRedisClient();
+        let blockedIps, maintenanceConfig;
+
+        // Try Cache-First approach for better performance
+        if (redis && redis.isReady) {
+            const [cachedIps, cachedMaintenance] = await Promise.all([
+                redis.get('config:blocked_ips'),
+                redis.get('config:maintenance_mode')
+            ]);
+            blockedIps = cachedIps ? JSON.parse(cachedIps) : null;
+            maintenanceConfig = cachedMaintenance ? JSON.parse(cachedMaintenance) : null;
+        }
+
         // 1. IP Blacklist Check
-        const blockedIpsConfig = await SystemConfig.findOne({ key: 'blocked_ips' }).lean();
-        const blockedIps = blockedIpsConfig ? blockedIpsConfig.value : [];
+        if (!blockedIps) {
+            const config = await SystemConfig.findOne({ key: 'blocked_ips' }).lean();
+            blockedIps = config ? config.value : [];
+            if (redis && redis.isReady) redis.setEx('config:blocked_ips', 300, JSON.stringify(blockedIps));
+        }
 
         if (blockedIps.includes(req.ip)) {
             return res.status(403).json({
@@ -25,8 +42,13 @@ const securityMiddleware = async (req, res, next) => {
         }
 
         // 2. Maintenance Mode Check
-        const maintenanceConfig = await SystemConfig.findOne({ key: 'maintenance_mode' }).lean();
-        const { isMaintenance, endTime, autoRepairNeeded } = checkMaintenanceStatus(maintenanceConfig?.value);
+        if (!maintenanceConfig) {
+            const config = await SystemConfig.findOne({ key: 'maintenance_mode' }).lean();
+            maintenanceConfig = config ? config.value : null;
+            if (redis && redis.isReady) redis.setEx('config:maintenance_mode', 60, JSON.stringify(maintenanceConfig));
+        }
+
+        const { isMaintenance, endTime, autoRepairNeeded } = checkMaintenanceStatus(maintenanceConfig);
         
         // Auto-Repair in the background if system thinks it's in maintenance but time is up
         if (autoRepairNeeded) {

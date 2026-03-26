@@ -1,22 +1,13 @@
-const ProjectActivity = require('../models/projectActivity.model');
 const Audit = require('../models/audit.model');
 const logger = require('./logger');
 
 /**
  * Global Activity Logger Helper
- * Logs to general Audit collection, and optionally to ProjectActivity if projectId is provided
+ * Logs to general Audit collection
  */
 const logActivity = async (projectId, actorId, action, metadata = {}, entityType = 'Project', entityId = null) => {
     try {
-        // 1. Log to Project-Specific Activity (only if projectId exists)
-        if (projectId) {
-            await ProjectActivity.create({
-                projectId,
-                actorId,
-                action,
-                metadata
-            });
-        }
+        // 1. Log to Global Audit Trail (Unified)
 
         // 2. Log to Global Audit Trail
         const finalEntityType = entityType !== 'Project' ? entityType : (projectId ? 'Project' : 'User');

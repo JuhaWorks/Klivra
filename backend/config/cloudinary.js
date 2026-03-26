@@ -12,7 +12,9 @@ const avatarStorage = new CloudinaryStorage({
     params: {
         folder: 'klivra/avatars',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 200, height: 200, crop: 'fill' }], // Circle crops often handled on frontend
+        fetch_format: 'auto',
+        quality: 'auto',
+        transformation: [{ width: 200, height: 200, crop: 'fill' }],
     },
 });
 
@@ -21,7 +23,9 @@ const projectStorage = new CloudinaryStorage({
     params: {
         folder: 'klivra/projects',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 1200, height: 630, crop: 'fill' }], // Optimized for social sharing / banners
+        fetch_format: 'auto',
+        quality: 'auto',
+        transformation: [{ width: 1200, height: 630, crop: 'fill' }],
     },
 });
 
