@@ -64,24 +64,10 @@ const sendStandardEmail = async ({ to, subject, title, body, ctaText, ctaUrl, fo
         footerHtml = `<p style="color: #9ca3af; font-size: 12px; margin-top: 35px; line-height: 1.5; border-top: 1px solid #f3f4f6; padding-top: 20px;">${footer}</p>`;
     }
 
-    // Attach logo as CID for offline/local reliability
-    const attachments = [];
-    let finalLogoUrl = logoUrl;
-
-    try {
-        const logoPath = path.join(__dirname, '..', 'public', 'logo.png');
-        if (fs.existsSync(logoPath)) {
-            const logoBase64 = fs.readFileSync(logoPath, { encoding: 'base64' });
-            attachments.push({
-                content: logoBase64,
-                name: 'logo.png',
-                contentId: 'logo_img'
-            });
-            finalLogoUrl = 'cid:logo_img';
-        }
-    } catch (error) {
-        console.error('[EMAIL] ❌ Failed to attach logo CID:', error.message);
-    }
+    // Use a Public URL for the logo for maximum reliability across all email clients
+    // CID (cid:logo_img) often shows up as an attachment or breaks in Gmail/Outlook.
+    const finalLogoUrl = logoUrl;
+    const attachments = []; // No longer need CID attachments for the logo
 
     const html = `
         <!DOCTYPE html>
@@ -103,7 +89,7 @@ const sendStandardEmail = async ({ to, subject, title, body, ctaText, ctaUrl, fo
                             <tr>
                                 <td align="center" style="padding: 40px 40px 20px 40px;">
                                     <img src="${finalLogoUrl}" alt="Klivra Logo" width="64" height="64" style="display: block; border-radius: 16px; background-color: ${accentColor};">
-                                    <h1 style="margin: 20px 0 0 0; color: #111827; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">klvira</h1>
+                                    <h1 style="margin: 20px 0 0 0; color: #111827; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">klivra</h1>
                                 </td>
                             </tr>
                             <!-- Content -->

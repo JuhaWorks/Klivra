@@ -108,6 +108,7 @@ app.use(passport.initialize());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 // HTTP Request Logging
 app.use(morganMiddleware);
