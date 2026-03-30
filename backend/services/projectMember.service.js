@@ -31,25 +31,37 @@ class ProjectMemberService {
             }
 
             // Idempotency check
-            if (project.isMember(userToAdd._id)) {
-                result = { status: 'success', message: 'User is already a member.', data: project.members };
-                return;
+            const existingMember = project.members.find(m => m.userId.toString() === userToAdd._id.toString());
+            if (existingMember) {
+                if (existingMember.status === 'rejected') {
+                    // Re-invite
+                    existingMember.status = 'pending';
+                    existingMember.role = role || 'Viewer';
+                    await project.save({ session });
+                    result = { status: 'success', message: 'User re-invited successfully.', data: project.members };
+                    return;
+                } else {
+                    result = { status: 'success', message: 'User is already a member or pending.', data: project.members };
+                    return;
+                }
             }
 
             const finalRole = role || 'Viewer';
-            project.members.push({ userId: userToAdd._id, role: finalRole });
+            project.members.push({ userId: userToAdd._id, role: finalRole, status: 'pending' });
             await project.save({ session });
 
             // Activity Log (within transaction)
             await logActivity(project._id, actorId, 'MEMBER_ADDED', {
                 memberName: userToAdd.name,
                 projectName: project.name,
-                role: finalRole
+                role: finalRole,
+                status: 'pending'
             }, 'Security', { session });
 
             // Prepare socket update (don't emit inside transaction, but prepare data)
             result = {
                 status: 'success',
+                message: 'Invitation sent to user',
                 data: project.members,
                 socketUpdate: {
                     room: `project_${project._id}`,
@@ -57,7 +69,7 @@ class ProjectMemberService {
                     payload: {
                         id: project._id,
                         type: 'MEMBER_ADDED',
-                        member: { userId: userToAdd._id, role: finalRole }
+                        member: { userId: userToAdd._id, role: finalRole, status: 'pending' }
                     }
                 }
             };
@@ -66,6 +78,61 @@ class ProjectMemberService {
         session.endSession();
 
         // Broadcast if successful
+        if (result?.socketUpdate && io) {
+            io.to(result.socketUpdate.room).emit(result.socketUpdate.event, result.socketUpdate.payload);
+        }
+
+        return result;
+    }
+
+    /**
+     * Respond to a project invite
+     */
+    static async respondToInvite({ projectId, userId, responseStatus, io }) {
+        const session = await mongoose.startSession();
+        let result;
+
+        await session.withTransaction(async () => {
+            const project = await Project.findById(projectId).session(session);
+            if (!project) {
+                const error = new Error('Project not found');
+                error.statusCode = 404;
+                throw error;
+            }
+
+            const memberIndex = project.members.findIndex(m => m.userId.toString() === userId.toString());
+            if (memberIndex === -1) {
+                const error = new Error('Invite not found');
+                error.statusCode = 404;
+                throw error;
+            }
+
+            project.members[memberIndex].status = responseStatus; // 'active' or 'rejected'
+            await project.save({ session });
+
+            await logActivity(project._id, userId, 'INVITE_RESPONDED', {
+                response: responseStatus
+            }, 'Security', { session });
+
+            result = {
+                status: 'success',
+                message: `Invite ${responseStatus}`,
+                data: project.members,
+                socketUpdate: {
+                    room: `project_${project._id}`,
+                    event: 'projectUpdated',
+                    payload: {
+                        id: project._id,
+                        type: 'INVITE_RESPONDED',
+                        userId,
+                        status: responseStatus
+                    }
+                }
+            };
+        });
+
+        session.endSession();
+
         if (result?.socketUpdate && io) {
             io.to(result.socketUpdate.room).emit(result.socketUpdate.event, result.socketUpdate.payload);
         }

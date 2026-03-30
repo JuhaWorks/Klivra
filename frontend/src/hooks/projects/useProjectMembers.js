@@ -49,9 +49,13 @@ export const useProjectMembers = (project, currentUser) => {
         removeMemberMutation.mutate({ projectId: project._id, userId });
     }, [removeMemberMutation, project._id]);
 
+    const handleFastTrack = useCallback((email, role = 'Editor') => {
+        addMemberMutation.mutate({ id: project._id, email, role });
+    }, [addMemberMutation, project._id]);
+
     return {
         state: { inviteEmail, inviteRole, isInviteOpen },
-        actions: { setInviteEmail, setInviteRole, setIsInviteOpen, handleInvite, handleUpdateRole, handleRemoveMember },
+        actions: { setInviteEmail, setInviteRole, setIsInviteOpen, handleInvite, handleUpdateRole, handleRemoveMember, handleFastTrack },
         status: {
             isAdding: addMemberMutation.isPending,
             isUpdating: updateRoleMutation.isPending,

@@ -13,16 +13,29 @@ const catchAsync = require('../utils/catchAsync');
 const getProjects = async (req, res, next) => {
     try {
         const showArchived = req.query.archived === 'true';
-        const query = { 'members.userId': req.user._id };
+        const query = { 
+            members: { 
+                $elemMatch: { 
+                    userId: req.user._id, 
+                    status: { $nin: ['pending', 'rejected'] } 
+                } 
+            } 
+        };
         if (showArchived) query.deletedAt = { $ne: null };
         else query.deletedAt = null;
 
         const projects = await Project.find(query)
-            .select('name description status category startDate endDate coverImageUrl members.userId')
+            .select('name description status category startDate endDate coverImageUrl members.userId members.status')
             .sort('-createdAt')
             .lean();
 
-        res.status(200).json({ status: 'success', results: projects.length, data: projects });
+        // Filter out pending/rejected members so the frontend team count is accurate
+        const formattedProjects = projects.map(p => ({
+            ...p,
+            members: (p.members || []).filter(m => m.status !== 'pending' && m.status !== 'rejected')
+        }));
+
+        res.status(200).json({ status: 'success', results: formattedProjects.length, data: formattedProjects });
     } catch (error) { next(error); }
 };
 
@@ -37,10 +50,12 @@ const getProject = async (req, res, next) => {
             throw new Error('Project not found or has been deleted.');
         }
 
-        const isMember = project.members.some(m => m.userId?._id.toString() === req.user._id.toString());
+        const memberData = project.members.find(m => m.userId?._id.toString() === req.user._id.toString());
+        const isMember = memberData && memberData.status !== 'pending' && memberData.status !== 'rejected';
+        
         if (!isMember && req.user.role !== 'Admin') {
             res.status(403);
-            throw new Error('Access denied. You are not a member of this project.');
+            throw new Error('Access denied. You are not an active member of this project.');
         }
 
         res.status(200).json({ status: 'success', data: project });
@@ -272,8 +287,59 @@ const globalSearch = async (req, res, next) => {
     } catch (err) { next(err); }
 };
 
+// --- Invitations ---
+
+const getProjectInvitations = async (req, res, next) => {
+    try {
+        // Find projects where user is in members array with status 'pending'
+        const projects = await Project.find({
+            members: { 
+                $elemMatch: { userId: req.user._id, status: 'pending' } 
+            },
+            deletedAt: null
+        })
+        .select('name description status category coverImageUrl members startDate endDate')
+        .sort('-createdAt')
+        .lean();
+
+        // Map to get the role offered
+        const formatted = projects.map(p => {
+            const memberDoc = p.members.find(m => m.userId.toString() === req.user._id.toString());
+            return {
+                _id: p._id,
+                name: p.name,
+                description: p.description,
+                coverImageUrl: p.coverImageUrl,
+                status: p.status,
+                startDate: p.startDate,
+                endDate: p.endDate,
+                members: (p.members || []).filter(m => m.status !== 'pending' && m.status !== 'rejected'),
+                offeredRole: memberDoc?.role,
+                invitedAt: memberDoc?.joinedAt
+            };
+        });
+
+        res.status(200).json({ status: 'success', results: formatted.length, data: formatted });
+    } catch (error) { next(error); }
+};
+
+const respondToProjectInvite = catchAsync(async (req, res) => {
+    const { status } = req.body;
+    if (!['active', 'rejected'].includes(status)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid response status' });
+    }
+    const result = await ProjectMemberService.respondToInvite({
+        projectId: req.params.id,
+        userId: req.user._id,
+        responseStatus: status,
+        io: req.io
+    });
+    res.status(200).json(result);
+});
+
 module.exports = {
     getProjects, getProject, createProject, updateProject, deleteProject, restoreProject,
     uploadProjectImage, dismissDeadlineAlert, getProjectActivity, getProjectInsights,
-    getWorkspaceStats, addMember, updateMemberRole, removeMember, globalSearch
+    getWorkspaceStats, addMember, updateMemberRole, removeMember, globalSearch,
+    getProjectInvitations, respondToProjectInvite
 };

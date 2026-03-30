@@ -50,8 +50,8 @@ const TopBar = ({ onMenuToggle }) => {
     }, []);
 
     return (
-        <header className="h-16 transition-all duration-300 relative overflow-hidden rounded-b-[3.15rem]">
-            <div className="absolute inset-0 z-0">
+        <header className="h-16 transition-all duration-300 relative z-50 rounded-b-[3.15rem]">
+            <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[3.15rem] backdrop-blur-2xl bg-black/40">
                 <GlassSurface width="100%" height="100%" borderRadius="0 0 3.15rem 3.15rem" displace={0.5} distortionScale={-20} backgroundOpacity={0.04} opacity={0.93} />
             </div>
             
@@ -124,7 +124,7 @@ const TopBar = ({ onMenuToggle }) => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[60] overflow-hidden rounded-[2.5rem] border border-white/10"
+                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[60] overflow-hidden rounded-[2.5rem] border border-white/10 backdrop-blur-3xl bg-black/60"
                                     style={{ isolation: 'isolate' }}
                                 >
                                     {/* Glass Backing */}

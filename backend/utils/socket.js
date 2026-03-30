@@ -1,4 +1,5 @@
 const { Server } = require('socket.io');
+const { createAdapter } = require('@socket.io/redis-adapter');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const logger = require('./logger');
@@ -27,6 +28,28 @@ module.exports = {
                 credentials: true
             }
         });
+
+        // Setup Redis Adapter for Clustering (if Redis is configured)
+        const REDIS_URL = process.env.REDIS_URL || (process.env.NODE_ENV === 'production' ? null : 'redis://localhost:6379');
+        if (REDIS_URL) {
+            const { createClient } = require('redis');
+            const pubClient = createClient({ url: REDIS_URL });
+            const subClient = pubClient.duplicate();
+
+            // Suppress background connection errors when Redis is not available
+            pubClient.on('error', () => {});
+            subClient.on('error', () => {});
+            
+            Promise.all([pubClient.connect(), subClient.connect()])
+                .then(() => {
+                    io.adapter(createAdapter(pubClient, subClient));
+                    logger.info('🔗 Socket.IO configured with Redis Adapter for multi-worker sync.');
+                })
+                .catch(err => {
+                    const errMsg = err?.message || 'Connection refused';
+                    logger.warn(`⚠️ Failed to connect Redis Adapter (${errMsg}). Running in standalone mode.`);
+                });
+        }
 
         // JWT Authentication Middleware
         io.use(async (socket, next) => {
@@ -333,6 +356,21 @@ module.exports = {
                     }
                 }
                 logger.info(`🔌 Socket Disconnected: ${socket.id}`);
+            });
+
+            // 7. Whiteboard Orchestration (Clustered Pass-through)
+            socket.on('join-whiteboard', (roomId) => {
+                socket.join(`whiteboard_${roomId}`);
+                logger.info(`🖌️ User ${socket.user.name} joined whiteboard: ${roomId}`);
+            });
+
+            socket.on('draw-line', ({ roomId, lineData }) => {
+                // Emits to all other clients in the room (across all clusters via Redis)
+                socket.to(`whiteboard_${roomId}`).emit('draw-line', lineData);
+            });
+
+            socket.on('clear-board', (roomId) => {
+                socket.to(`whiteboard_${roomId}`).emit('clear-board');
             });
         });
 

@@ -53,6 +53,20 @@ const ProjectSettingsDashboard = () => {
     const isValidId = useMemo(() => /^[0-9a-fA-F]{24}$/.test(id), [id]);
     const { data: project, isLoading, error } = useProject(isValidId ? id : null);
 
+    const presenceMembers = useMemo(() => {
+        if (!project?.members) return [];
+        const activeMembers = project.members.filter(m => !m.status || m.status === 'active');
+        return activeMembers.map(m => {
+            const isViewing = activeViewers.some(v => v.userId === (m.userId?._id || m.userId));
+            return {
+                userId: m.userId?._id || m.userId,
+                name: m.userId?.name || 'Unknown',
+                avatar: m.userId?.avatar,
+                status: isViewing ? 'active' : 'away'
+            };
+        });
+    }, [project?.members, activeViewers]);
+
     if (!isValidId) {
         return <ProjectSettingsError
             icon={AlertCircle}
@@ -142,7 +156,7 @@ const ProjectSettingsDashboard = () => {
                         <div className="flex items-center gap-6 glass-2 bg-black/40 p-2.5 pl-6 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
                             <div className="flex items-center gap-6">
                                 <AvatarGroup
-                                    viewers={activeViewers}
+                                    viewers={presenceMembers}
                                     onClick={() => useSocketStore.getState().toggleGlobalPresence(true, project.members)}
                                 />
                                 <div className="w-px h-8 bg-white/10" />

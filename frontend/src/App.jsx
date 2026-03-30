@@ -8,6 +8,7 @@ import CommandPalette from './components/ui/CommandPalette';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './pages/Login';
 import RequireVerification from './components/auth/RequireVerification';
+import { Toaster } from 'react-hot-toast';
 
 // Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
@@ -24,6 +25,7 @@ const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
 const Home = lazy(() => import('./pages/Home'));
+const Networking = lazy(() => import('./pages/Networking'));
 
 import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
 
@@ -62,6 +64,7 @@ function App() {
 
   return (
     <Router>
+      <Toaster position="top-right" toastOptions={{ style: { background: '#09090b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
       <CommandPalette />
       <MaintenanceNotice />
       <Suspense fallback={<PageLoader />}>
@@ -93,6 +96,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="projects/:id/settings" element={<ProjectSettings />} />
             <Route path="tasks" element={<Tasks />} />
+            <Route path="networking" element={<Networking />} />
             <Route path="admin" element={<AdminDashboard />} />
             <Route path="admin/security" element={<SecurityFeed />} />
 

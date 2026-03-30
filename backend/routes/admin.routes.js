@@ -4,7 +4,7 @@ const {
   getUsers, updateUserRole, toggleBanUser, getPlatformStats, 
   toggleMaintenance, updateBlockedIps, getBlockedIps, getSystemStatus, getLogs 
 } = require('../controllers/admin.controller');
-const { protect, verifyAdmin } = require('../middlewares/auth.middleware');
+const { protect, verifyAdmin } = require('../middlewares/access.middleware');
 
 // Public route for maintenance status check
 router.get('/system/status', getSystemStatus);

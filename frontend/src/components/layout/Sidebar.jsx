@@ -14,7 +14,8 @@ import {
     ChevronRight,
     Sun,
     Moon,
-    UserCircle
+    UserCircle,
+    Users2
 } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,6 +27,7 @@ const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Projects', path: '/projects', icon: FolderKanban },
     { label: 'Tasks', path: '/tasks', icon: CheckSquare },
+    { label: 'Network', path: '/networking', icon: Users2, hideForAdmin: true },
     { label: 'Whiteboard', path: '/whiteboard/main-workspace', icon: Presentation },
 ];
 

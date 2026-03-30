@@ -150,7 +150,7 @@ const KanbanBoard = ({ projectId, searchQuery = '' }) => {
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             filtered = rawTasks.filter(t => 
-                t.title.toLowerCase().includes(q) || 
+                t.title?.toLowerCase().includes(q) || 
                 t.description?.toLowerCase().includes(q)
             );
         }

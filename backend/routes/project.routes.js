@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middlewares/auth.middleware');
-const { isNotArchived, authorizeProjectAccess } = require('../middlewares/project.middleware');
+const { protect, isNotArchived, authorizeProjectAccess } = require('../middlewares/access.middleware');
 
 // Consolidated Controller
 const projectCtrl = require('../controllers/project.controller');
 const { cacheMiddleware } = require('../utils/redis');
-const validate = require('../middlewares/validate.middleware');
+const { validate } = require('../middlewares/common.middleware');
 const { addMemberSchema, updateMemberRoleSchema } = require('../validators/projectMember.validator');
 
 // Relations
@@ -22,6 +21,10 @@ router.route('/')
     .post(projectCtrl.createProject);
 
 const { uploadProjectImage } = require('../middlewares/upload.middleware');
+
+// ── INVITATIONS ───────────────────────────────────────────────────────────────
+router.get('/invitations', projectCtrl.getProjectInvitations);
+router.post('/:id/invitations/respond', isNotArchived, projectCtrl.respondToProjectInvite);
 
 router.route('/:id')
     .get(cacheMiddleware('project_detail', 60), projectCtrl.getProject)

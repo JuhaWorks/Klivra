@@ -170,6 +170,7 @@ const InsightsTab = ({ projectId }) => {
                     <AnimatePresence>
                         {insights.healthScore === 'At Risk' && (
                             <motion.div 
+                                key="health-warning"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="flex items-start gap-5 p-8 glass-2 bg-amber-500/5 border border-amber-500/10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group"
@@ -187,6 +188,7 @@ const InsightsTab = ({ projectId }) => {
                         )}
                         {insights.activityVelocity === 0 && (
                             <motion.div 
+                                key="stagnation-warning"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="flex items-start gap-5 p-8 glass-2 bg-rose-500/5 border border-rose-500/10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group"
@@ -203,6 +205,7 @@ const InsightsTab = ({ projectId }) => {
                             </motion.div>
                         )}
                         <motion.div 
+                            key="maintenance-directive"
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="flex items-start gap-5 p-8 glass-2 bg-white/5 border border-white/5 rounded-[2.5rem] shadow-2xl relative overflow-hidden group"

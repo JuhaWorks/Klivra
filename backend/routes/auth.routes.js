@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 // bcrypt, multer and schema validation are no longer needed here; they live in user.controller
-const { protect, optionalProtect } = require('../middlewares/auth.middleware');
+const { protect, optionalProtect } = require('../middlewares/access.middleware');
 const { registerUser, loginUser, logoutUser, refreshTokenUser, oauthCallback, verifyEmail, resendVerification, getMe, updateStatus } = require('../controllers/auth.controller');
-const { authLimiter } = require('../middlewares/rateLimiter.middleware');
+const { authLimiter } = require('../middlewares/security.middleware');
 const passport = require('passport');
 // reuse the helpers from user.controller to keep validation/upload logic in one place
 const { uploadAvatar, updateProfile, changePassword, removeAvatar } = require('../controllers/user.controller');
@@ -20,10 +20,10 @@ const { uploadAvatar, updateProfile, changePassword, removeAvatar } = require('.
 // ── Public Auth Routes ─────────────────────────────────────────────────────────
 router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, loginUser);
-router.post('/refresh', refreshTokenUser);
+router.post('/refresh', authLimiter, refreshTokenUser);
 router.get('/logout', logoutUser);
-router.get('/verify-email/:token', verifyEmail);
-router.post('/resend-verification', resendVerification);
+router.get('/verify-email/:token', authLimiter, verifyEmail);
+router.post('/resend-verification', authLimiter, resendVerification);
 router.get('/me', optionalProtect, getMe);
 
 // ── OAuth Routes ───────────────────────────────────────────────────────────────

@@ -3,12 +3,15 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const logger = require('../utils/logger');
 const { checkMaintenanceStatus } = require('../utils/helpers');
-
 const { getRedisClient } = require('../utils/redis');
+const rateLimit = require('express-rate-limit');
 
+/**
+ * 1. Global Security Middleware
+ * Handles IP Blacklisting and Maintenance Mode gating.
+ */
 const securityMiddleware = async (req, res, next) => {
     try {
-        // 0. Bypass for specific health/auth routes
         const bypassRoutes = ['/api/auth', '/api/admin/system/status'];
         if (bypassRoutes.some(route => req.originalUrl.startsWith(route))) {
             return next();
@@ -17,7 +20,6 @@ const securityMiddleware = async (req, res, next) => {
         const redis = getRedisClient();
         let blockedIps, maintenanceConfig;
 
-        // Try Cache-First approach for better performance
         if (redis && redis.isReady) {
             const [cachedIps, cachedMaintenance] = await Promise.all([
                 redis.get('config:blocked_ips'),
@@ -27,7 +29,6 @@ const securityMiddleware = async (req, res, next) => {
             maintenanceConfig = cachedMaintenance ? JSON.parse(cachedMaintenance) : null;
         }
 
-        // 1. IP Blacklist Check
         if (!blockedIps) {
             const config = await SystemConfig.findOne({ key: 'blocked_ips' }).lean();
             blockedIps = config ? config.value : [];
@@ -35,13 +36,9 @@ const securityMiddleware = async (req, res, next) => {
         }
 
         if (blockedIps.includes(req.ip)) {
-            return res.status(403).json({
-                status: 'fail',
-                message: 'Your IP address has been blacklisted for security reasons.'
-            });
+            return res.status(403).json({ status: 'fail', message: 'Your IP address has been blacklisted for security reasons.' });
         }
 
-        // 2. Maintenance Mode Check
         if (!maintenanceConfig) {
             const config = await SystemConfig.findOne({ key: 'maintenance_mode' }).lean();
             maintenanceConfig = config ? config.value : null;
@@ -49,73 +46,85 @@ const securityMiddleware = async (req, res, next) => {
         }
 
         const { isMaintenance, endTime, autoRepairNeeded } = checkMaintenanceStatus(maintenanceConfig);
-        
-        // Auto-Repair in the background if system thinks it's in maintenance but time is up
         if (autoRepairNeeded) {
-            SystemConfig.findOneAndUpdate(
-                { key: 'maintenance_mode' },
-                { $set: { "value.enabled": false } }
-            ).exec().catch(err => logger.error(`[MAINTENANCE REPAIR FAIL] ${err.message}`));
+            SystemConfig.findOneAndUpdate({ key: 'maintenance_mode' }, { $set: { "value.enabled": false } }).exec().catch(() => {});
         }
 
         if (isMaintenance) {
-            // Check for admin role
             let isAdmin = req.user && req.user.role === 'Admin';
-
-            // If req.user isn't set yet (early global middleware), try to peek at the JWT
             if (!isAdmin) {
-                const authHeader = req.headers.authorization;
-                const cookieToken = req.cookies ? req.cookies.token : null;
-                const token = (authHeader && authHeader.startsWith('Bearer')) ? authHeader.split(' ')[1] : cookieToken;
-
+                const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
                 if (token) {
                     try {
                         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                        
                         const user = await User.findById(decoded.id).select('role').lean();
-                        if (user && user.role === 'Admin') {
-                            isAdmin = true;
-                            // console.log(`[MAINTENANCE BYPASS] Admin identified via token: ${user._id}`);
-                        } else {
-                           // console.log(`[MAINTENANCE BLOCK] User identified but is not Admin. Role: ${user?.role}`);
-                        }
+                        if (user?.role === 'Admin') isAdmin = true;
                     } catch (err) {
                         if (err.name === 'TokenExpiredError') {
-                            // High Priority: If token is expired during maintenance, return 401
-                            // so the frontend can trigger a refresh and get back in.
-                            return res.status(401).json({
-                                status: 'fail',
-                                message: 'Session expired. Please refresh to continue admin access.',
-                                isMaintenance: true
-                            });
+                            return res.status(401).json({ status: 'fail', message: 'Session expired. Please refresh to continue admin access.', isMaintenance: true });
                         }
-                        console.log(`[MAINTENANCE BYPASS FAIL] Token verification error: ${err.message}`);
                     }
-                } else {
-                    // console.log(`[MAINTENANCE BLOCK] No token found in header or cookie: ${req.originalUrl}`);
                 }
             }
-
-            if (isAdmin) {
-                return next();
-            }
-
-            // Special check: If it's an admin accessing the admin API, allow it
-            if (req.originalUrl.startsWith('/api/admin')) {
-                return next();
-            }
-
-            return res.status(503).json({
-                status: 'fail',
-                message: 'System is currently under maintenance. Please try again later.',
-                endTime: endTime
-            });
+            if (isAdmin || req.originalUrl.startsWith('/api/admin')) return next();
+            return res.status(503).json({ status: 'fail', message: 'System is currently under maintenance. Please try again later.', endTime });
         }
 
         next();
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
 };
 
-module.exports = { securityMiddleware };
+/**
+ * 2. NoSQL Injection Protection
+ */
+const sanitize = (obj) => {
+    if (obj instanceof Object) {
+        for (const key in obj) {
+            if (key.startsWith('$') || key.includes('.')) delete obj[key];
+            else if (obj[key] instanceof Object) sanitize(obj[key]);
+        }
+    }
+    return obj;
+};
+
+const sanitizationMiddleware = (req, res, next) => {
+    if (req.body) sanitize(req.body);
+    if (req.params) sanitize(req.params);
+    if (req.query) {
+        try {
+            req.query = sanitize({ ...req.query });
+        } catch (e) {
+            for (const key in req.query) {
+                if (key.startsWith('$') || key.includes('.')) delete req.query[key];
+                else if (req.query[key] instanceof Object) sanitize(req.query[key]);
+            }
+        }
+    }
+    next();
+};
+
+/**
+ * 3. Rate Limiters
+ */
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { status: 'error', message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { status: 'error', message: 'Too many login attempts from this IP, please try again after 15 minutes' }
+});
+
+module.exports = {
+    securityMiddleware,
+    sanitizationMiddleware,
+    apiLimiter,
+    authLimiter
+};

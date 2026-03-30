@@ -297,7 +297,7 @@ const ProjectSettings = () => {
                                                 <p className="text-sm text-zinc-300">
                                                     <span className="font-bold text-primary">{a.user?.name || 'Unknown'}</span>
                                                     {' '}
-                                                    <span className="text-zinc-500">{a.action.replace(/_/g, ' ').toLowerCase()}</span>
+                                                    <span className="text-zinc-500">{a.action?.replace(/_/g, ' ').toLowerCase()}</span>
                                                 </p>
                                                 {/* Meta Preview */}
                                                 {a.details?.name && <p className="text-xs text-zinc-500 italic">"{a.details.name}"</p>}

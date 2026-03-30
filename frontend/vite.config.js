@@ -11,6 +11,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000, // Increase warning limit since we are letting Vite bundle naturally
   },
 
+  esbuild: {
+    drop: ['console', 'debugger'], // Zero-leak production logs
+  },
+
   // Speed up local dev by pre-bundling heavy deps
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand', '@tanstack/react-query', 'framer-motion'],

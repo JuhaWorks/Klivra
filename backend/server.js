@@ -8,17 +8,16 @@ try {
 
 const express = require('express');
 const http = require('http');
+const logger = require('./utils/logger');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
-const morganMiddleware = require('./middlewares/morgan.middleware');
-const { securityMiddleware } = require('./middlewares/security.middleware');
-const { sanitizationMiddleware } = require('./middlewares/sanitization.middleware');
-const logger = require('./utils/logger');
+const { morganMiddleware, globalErrorHandler } = require('./middlewares/common.middleware');
+const { securityMiddleware, sanitizationMiddleware, apiLimiter } = require('./middlewares/security.middleware');
+
 const passport = require('./config/passport');
-const seedAdminUser = require('./config/seed');
 const startGarbageCollection = require('./cron/gc');
 const startDeadlineChecker = require('./cron/deadlineCheck');
 
@@ -59,18 +58,20 @@ if (process.env.NODE_ENV !== 'production') {
   logger.info(`🔓 CORS internal allowance: ${Array.from(allowedOrigins).join(', ')}`);
 }
 
-// 4. Global Middlewares
+// Apply global rate limit to API routes
+app.use('/api', apiLimiter);
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://cdn-icons-png.flaticon.com"],
-      connectSrc: ["'self'", "http://localhost:5000", "ws://localhost:5000", "https://syncforge-io.onrender.com", "*.vercel.app"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://api.fontshare.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com", "https://cdn.fontshare.com", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://cdn-icons-png.flaticon.com", "https://ui-avatars.com", "https://lh3.googleusercontent.com", "https://images.unsplash.com"],
+      connectSrc: ["'self'", "http://localhost:5000", "ws://localhost:5000", "http://127.0.0.1:*", "http://localhost:*", "ws://localhost:*", "wss://localhost:*", "wss://syncforge-io.onrender.com", "https://syncforge-io.onrender.com", "*.vercel.app", "https://*.sentry.io", "https://sentry.io", "https://api.nasa.gov"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://api.fontshare.com", "https://cdn.fontshare.com", "https://cdnjs.cloudflare.com"],
       objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
+      mediaSrc: ["'none'"],
       frameSrc: ["'none'"],
     },
   },
@@ -106,8 +107,11 @@ app.use(sanitizationMiddleware);
 // Initialize Passport (Passport session not needed for JWT/Stateless OAuth)
 app.use(passport.initialize());
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Strict Payload Limit to prevent Buffer Exhaustion DoS
+app.use(express.json({ limit: 32768 }));
+app.use(express.urlencoded({ extended: true, limit: 32768 }));
+
+
 app.use(express.static('public'));
 
 // HTTP Request Logging
@@ -133,46 +137,69 @@ app.use('/api/settings', require('./routes/settings.routes'));
 app.use('/api/search', require('./routes/search.routes'));
 app.use('/api/audit', require('./routes/audit.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/connections', require('./routes/connection.routes'));
 
-// 6. DB Connection
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 5000,
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  maxPoolSize: 50,
-  family: 4,
-  compressors: ['zlib'] // Enable network compression
-}).then(async () => {
-  logger.info("✅ MongoDB Connected Successfully!");
-  await seedAdminUser();
-  startGarbageCollection();
-  startDeadlineChecker();
+const cluster = require('cluster');
+const os = require('os');
+const enableCluster = process.env.NODE_ENV === 'production' || process.env.ENABLE_CLUSTER === 'true';
 
-  // Verify Brevo email service at startup
-  if (process.env.BREVO_API_KEY) {
-    logger.info('✅ Brevo Email Service: API key configured (HTTP API, 300 emails/day free)');
-  } else {
-    logger.error('❌ BREVO_API_KEY not set! Email service disabled. Get one at https://app.brevo.com/settings/keys/api');
+if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
+  const numCPUs = os.cpus().length;
+  logger.info(`🔥 Global Cluster Manager (PID ${process.pid}) initializing...`);
+  logger.info(`Spawning ${numCPUs} background workers to handle traffic load.`);
+  
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
   }
-})
-  .catch(err => {
-    logger.error(`❌ MongoDB Connection Error: ${err.message}`);
-    process.exit(1);
+  
+  cluster.on('exit', (worker, code, signal) => {
+    logger.error(`Worker ${worker.process.pid} died. Automatically respawning to maintain capacity.`);
+    cluster.fork();
+  });
+} else {
+  // 6. DB Connection (Workers only)
+  mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 100, // Increased for clustered environment
+    family: 4,
+    compressors: ['zlib'] // Enable network compression
+  }).then(async () => {
+    logger.info(`✅ MongoDB Connected in Worker ${process.pid}!`);
+    
+    // Only run Cron Jobs on the first worker to avoid duplication
+    if (!enableCluster || cluster.worker.id === 1) {
+      startGarbageCollection();
+      startDeadlineChecker();
+    }
+
+    // Verify Brevo email service at startup
+    if (process.env.BREVO_API_KEY) {
+      logger.info(`✅ Brevo Email Service: Configured in Worker ${process.pid}`);
+    } else {
+      logger.error('❌ BREVO_API_KEY not set! Email service disabled.');
+    }
+  })
+    .catch(err => {
+      logger.error(`❌ MongoDB Connection Error properties in worker ${process.pid}: ${err.message}`);
+      process.exit(1);
+    });
+
+  // 7. Error Handling
+  app.use((req, res, next) => {
+    res.status(404);
+    next(new Error(`Not Found - ${req.originalUrl}`));
   });
 
-// 7. Error Handling
-app.use((req, res, next) => {
-  res.status(404);
-  next(new Error(`Not Found - ${req.originalUrl}`));
-});
+  app.use(globalErrorHandler);
 
-app.use(require('./middlewares/error.middleware'));
+  // 8. Server Initialization
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => logger.info(`🚀 Worker ${process.pid} listening to HTTP & WebSockets on port ${PORT}`));
 
-// 8. Server Initialization
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => logger.info(`🚀 Server running on port ${PORT}`));
-
-process.on('unhandledRejection', (err) => {
-  logger.error(`Unhandled Rejection Error: ${err.message}`);
-  server.close(() => process.exit(1));
-});
+  process.on('unhandledRejection', (err) => {
+    logger.error(`Unhandled Rejection Error in Worker ${process.pid}: ${err.message}`);
+    server.close(() => process.exit(1));
+  });
+}

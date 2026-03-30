@@ -28,7 +28,10 @@ const MemberRow = ({
         <motion.tr 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="group hover:bg-white/[0.02] transition-colors"
+            className={twMerge(clsx(
+                "group hover:bg-white/[0.02] transition-colors",
+                member.status === 'rejected' && "opacity-50 grayscale"
+            ))}
         >
             <td className="px-10 py-6">
                 <div className="flex items-center gap-4">
@@ -49,9 +52,21 @@ const MemberRow = ({
                         )}
                     </div>
                     <div>
-                        <p className="text-sm font-black text-white tracking-tight group-hover:text-cyan-400 transition-colors">
-                            {member.userId?.name}
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm font-black text-white tracking-tight group-hover:text-cyan-400 transition-colors">
+                                {member.userId?.name}
+                            </p>
+                            {member.status === 'pending' && (
+                                <span className="px-1.5 py-0.5 rounded bg-yellow-400/10 border border-yellow-500/20 text-yellow-500 text-[8px] font-black uppercase tracking-widest animate-pulse">
+                                    Pending
+                                </span>
+                            )}
+                            {member.status === 'rejected' && (
+                                <span className="px-1.5 py-0.5 rounded bg-red-400/10 border border-red-500/20 text-red-400 text-[8px] font-black uppercase tracking-widest">
+                                    Declined
+                                </span>
+                            )}
+                        </div>
                         <p className="text-[10px] font-medium text-gray-500 mt-1 uppercase tracking-widest">{member.userId?.email}</p>
                     </div>
                 </div>
@@ -59,7 +74,7 @@ const MemberRow = ({
             <td className="px-10 py-6">
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger
-                        disabled={isViewer || (isSelf && isOnlyManager) || isUpdating}
+                        disabled={isViewer || (isSelf && isOnlyManager) || isUpdating || member.status === 'rejected'}
                         className={twMerge(clsx(
                             "flex items-center gap-3 px-4 py-2 rounded-xl border border-white/5 bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-gray-300 transition-all outline-none",
                             "hover:border-cyan-500/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed group/trigger"

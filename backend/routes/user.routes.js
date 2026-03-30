@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { protect } = require('../middlewares/auth.middleware');
+const { protect } = require('../middlewares/access.middleware');
 const { uploadSingle } = require('../middlewares/upload.middleware');
 const { uploadAvatar, updateProfile, changePassword, removeAvatar, requestEmailChangeOTP, verifyEmailChangeOTP, confirmEmailChange } = require('../controllers/user.controller');
 

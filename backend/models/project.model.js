@@ -48,6 +48,11 @@ const projectSchema = new mongoose.Schema(
                     enum: ['Manager', 'Editor', 'Viewer'],
                     default: 'Editor',
                 },
+                status: {
+                    type: String,
+                    enum: ['active', 'pending', 'rejected'],
+                    default: 'active',
+                },
                 joinedAt: {
                     type: Date,
                     default: Date.now,

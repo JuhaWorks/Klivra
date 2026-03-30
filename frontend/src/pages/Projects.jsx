@@ -50,6 +50,11 @@ const Projects = () => {
         queryFn: async () => (await api.get('/projects?archived=true')).data
     });
 
+    const { data: invitesRes, isLoading: loadingInvites } = useQuery({
+        queryKey: ['projects', 'invitations'],
+        queryFn: async () => (await api.get('/projects/invitations')).data
+    });
+
     const restoreMutation = useMutation({
         mutationFn: async (id) => {
             await api.post(`/projects/${id}/restore`);
@@ -61,14 +66,26 @@ const Projects = () => {
         onError: () => toast.error('Restoration failed.')
     });
 
+    const respondMutation = useMutation({
+        mutationFn: async ({ id, status }) => {
+            await api.post(`/projects/${id}/invitations/respond`, { status });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            toast.success('Project invitation processed.');
+        },
+        onError: (err) => toast.error(err.response?.data?.message || 'Failed to process invitation.')
+    });
+
     const activeProjects = activeRes?.data || [];
     const archivedProjects = archivedRes?.data || [];
+    const invitedProjects = invitesRes?.data || [];
 
-    const currentList = view === 'active' ? activeProjects : archivedProjects;
-    const isLoading = view === 'active' ? loadingActive : loadingArchived;
+    const currentList = view === 'active' ? activeProjects : (view === 'archived' ? archivedProjects : invitedProjects);
+    const isLoading = view === 'active' ? loadingActive : (view === 'archived' ? loadingArchived : loadingInvites);
 
     const filteredProjects = currentList.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.category?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -110,7 +127,8 @@ const Projects = () => {
                         <div className="flex p-1.5 glass-2 bg-sunken/50 border-subtle rounded-2xl">
                             {[
                                 { id: 'active', label: 'Active', count: activeProjects.length, icon: Box },
-                                { id: 'archived', label: 'Archived', count: archivedProjects.length, icon: Trash2 }
+                                { id: 'archived', label: 'Archived', count: archivedProjects.length, icon: Trash2 },
+                                { id: 'invitations', label: 'Invites', count: invitedProjects.length, icon: Target }
                             ].map(tab => (
                                 <button
                                     key={tab.id}
@@ -244,7 +262,16 @@ const Projects = () => {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {project.status === 'Archived' ? (
+                                            {view === 'invitations' ? (
+                                                <>
+                                                    <Button size="sm" variant="secondary" onClick={() => respondMutation.mutate({ id: project._id, status: 'rejected' })} disabled={respondMutation.isPending} className="px-3">
+                                                        Decline
+                                                    </Button>
+                                                    <Button size="sm" onClick={() => respondMutation.mutate({ id: project._id, status: 'active' })} rightIcon={ChevronRight} disabled={respondMutation.isPending}>
+                                                        Accept
+                                                    </Button>
+                                                </>
+                                            ) : project.status === 'Archived' ? (
                                                 <Button
                                                     size="sm"
                                                     variant="secondary"
