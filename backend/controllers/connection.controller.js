@@ -116,6 +116,10 @@ const sendRequest = async (req, res, next) => {
             note: note || '',
         });
 
+        // Invalidate stats cache for pending count
+        statsCache.delete(requesterId.toString());
+        statsCache.delete(recipientId.toString());
+
         // Notify recipient in real-time
         try {
             getIO().to(recipientId).emit('connection:received', {
@@ -151,6 +155,7 @@ const respondToRequest = async (req, res, next) => {
         }
 
         const { connectionId, action } = parsed.data;
+        const userId = req.user._id.toString();
 
         const connection = await Connection.findById(connectionId);
         if (!connection) {
@@ -159,7 +164,7 @@ const respondToRequest = async (req, res, next) => {
         }
 
         // Only the recipient can respond
-        if (connection.recipient.toString() !== req.user._id.toString()) {
+        if (connection.recipient.toString() !== userId) {
             res.status(403);
             return next(new Error('You are not authorized to respond to this request'));
         }
@@ -169,29 +174,44 @@ const respondToRequest = async (req, res, next) => {
             return next(new Error('This request has already been responded to'));
         }
 
-        connection.status = action === 'accept' ? 'accepted' : 'declined';
-        connection.respondedAt = new Date();
-        await connection.save();
+        // Atomic update to ensure single execution of status change and counter increment
+        const updatedConnection = await Connection.findOneAndUpdate(
+            { _id: connectionId, status: 'pending' },
+            { 
+                status: action === 'accept' ? 'accepted' : 'declined',
+                respondedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!updatedConnection) {
+            res.status(400);
+            return next(new Error('This request has already been responded to or is no longer pending'));
+        }
+
+        // Invalidate memory cache for networking stats immediately
+        statsCache.delete(updatedConnection.requester.toString());
+        statsCache.delete(updatedConnection.recipient.toString());
 
         if (action === 'accept') {
             await User.updateMany(
-                { _id: { $in: [connection.requester, connection.recipient] } },
+                { _id: { $in: [updatedConnection.requester, updatedConnection.recipient] } },
                 { $inc: { totalConnections: 1 } }
             );
 
-            // Pre-calculate mutual connections hint for both users
-            // (Invalidate suggestions cache for both parties to trigger re-calc on next view)
+            // Invalidate suggestions cache for both parties to trigger re-calc on next view
+            const redisClient = getRedisClient();
             if (redisClient && redisClient.isReady) {
-                await redisClient.del(`suggestions:${connection.requester}`);
-                await redisClient.del(`suggestions:${connection.recipient}`);
+                await redisClient.del(`suggestions:${updatedConnection.requester}`);
+                await redisClient.del(`suggestions:${updatedConnection.recipient}`);
             }
         }
 
         // Notify requester in real-time
         try {
-            getIO().to(connection.requester.toString()).emit('connection:status_updated', {
-                connectionId: connection._id,
-                status: connection.status,
+            getIO().to(updatedConnection.requester.toString()).emit('connection:status_updated', {
+                connectionId: updatedConnection._id,
+                status: updatedConnection.status,
                 responderName: req.user.name,
                 message: action === 'accept' ? `${req.user.name} accepted your connection request!` : `${req.user.name} declined your connection request.`
             });
@@ -200,7 +220,7 @@ const respondToRequest = async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             message: action === 'accept' ? 'Connection accepted' : 'Connection declined',
-            data: connection,
+            data: updatedConnection,
         });
     } catch (error) {
         next(error);
@@ -232,6 +252,10 @@ const withdrawRequest = async (req, res, next) => {
         }
 
         await Connection.findByIdAndDelete(connectionId);
+
+        // Invalidate stats cache
+        statsCache.delete(connection.requester.toString());
+        statsCache.delete(connection.recipient.toString());
 
         // Notify recipient that request was withdrawn
         try {
@@ -268,12 +292,18 @@ const removeConnection = async (req, res, next) => {
         }
 
         await Connection.findByIdAndDelete(connectionId);
+        
+        // Only decrement counts if it was an active connection
+        if (connection.status === 'accepted') {
+            await User.updateMany(
+                { _id: { $in: [connection.requester, connection.recipient] } },
+                { $inc: { totalConnections: -1 } }
+            );
+        }
 
-        // Decrement counts
-        await User.updateMany(
-            { _id: { $in: [connection.requester, connection.recipient] } },
-            { $inc: { totalConnections: -1 } }
-        );
+        // Invalidate stats cache
+        statsCache.delete(connection.requester.toString());
+        statsCache.delete(connection.recipient.toString());
 
         // Notify the other party that connection was removed
         try {
@@ -472,18 +502,25 @@ const getStats = async (req, res, next) => {
             }
         }
 
-        // Layer 2: User model denormalized count + pending counts
-        const [user, pendingCount, sentCount] = await Promise.all([
-            User.findById(userId).select('totalConnections'),
+        // Layer 2: Real-time counts (Zero-drift strategy)
+        const [acceptedCount, pendingCount, sentCount] = await Promise.all([
+            Connection.countDocuments({ 
+                $or: [{ requester: userId }, { recipient: userId }], 
+                status: 'accepted' 
+            }),
             Connection.countDocuments({ recipient: userId, status: 'pending' }),
             Connection.countDocuments({ requester: userId, status: 'pending' }),
         ]);
 
         const stats = {
-            connectionCount: user?.totalConnections || 0,
+            connectionCount: acceptedCount,
             pendingCount,
             sentCount,
         };
+
+        // Silently sync the User model's denormalized totalConnections in the background
+        // to ensure other components (like profile pages) are eventually consistent.
+        User.findByIdAndUpdate(userId, { totalConnections: acceptedCount }).catch(() => {});
 
         // Update Layer 1 (Memory Cache)
         statsCache.set(userId.toString(), { data: stats, expires: now + STATS_TTL });

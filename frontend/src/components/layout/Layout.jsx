@@ -15,10 +15,10 @@ import { twMerge } from 'tailwind-merge';
 // ── Vanguard 2026: Physics Configuration ──
 const LIQUID_SPRING = { 
     type: "spring", 
-    stiffness: 300, 
-    damping: 30, 
-    mass: 0.8,
-    restDelta: 0.001
+    stiffness: 280, 
+    damping: 32, 
+    mass: 0.5,
+    restDelta: 0.01
 };
 
 // ── Vanguard 2026: Global Error Boundary ──
@@ -59,7 +59,7 @@ const PageSkeleton = () => (
  * Layout Component (Extreme Performance Refactor)
  * Decouples Global State from the Content Outlet to prevent redundant re-renders.
  */
-const Layout = () => {
+const Layout = ({ checkingAuth }) => {
     useIdleTimer();
     const location = useLocation();
     const { isSidebarExpanded, isCollapsed, isPending, setSidebarExpanded } = useUIStore();
@@ -70,6 +70,7 @@ const Layout = () => {
     const isMobile = useMediaQuery('(max-width: 1024px)');
 
     const showNotice = isUnderMaintenance && user?.role === 'Admin';
+    const isActuallyCheckingAuth = checkingAuth && !user;
 
     // ── GPU-DRIVEN LAYOUT: System Variables ──────────────────────────
     useEffect(() => {
@@ -78,20 +79,22 @@ const Layout = () => {
         const width = isMobile ? 0 : (isSidebarExpanded ? (isCollapsed ? 80 : 280) : 0);
         root.style.setProperty('--sb-width', `${width}px`);
         root.style.setProperty('--sb-offset', `${width}px`);
-        
-        // Auto-collapse sidebar on mobile transition
+    }, [isSidebarExpanded, isCollapsed, isMobile]);
+
+    // Handle mobile transition separately to avoid breaking the toggle button
+    useEffect(() => {
         if (isMobile && isSidebarExpanded) {
             setSidebarExpanded(false);
         }
-    }, [isSidebarExpanded, isCollapsed, isMobile]);
+    }, [isMobile]); // Only run when window crosses the breakpoint
 
     // Memoize the content area to prevent re-renders when sidebar state changes in useUIStore
     const ContentArea = useMemo(() => (
         <section className="flex-1 relative perspective-1000 pb-4" aria-live="polite">
             <GlobalErrorBoundary>
-                <AnimatePresence mode="wait" initial={false}>
+                <AnimatePresence mode="popLayout" initial={false}>
                     <motion.div
-                        key={location.pathname}
+                        key={isActuallyCheckingAuth ? 'skeleton' : location.pathname}
                         initial={{ opacity: 0, scale: 0.99, y: 8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.99, y: -8 }}
@@ -99,34 +102,38 @@ const Layout = () => {
                         style={{ willChange: 'transform, opacity' }}
                         className={twMerge(clsx(
                             "px-4 sm:px-6 lg:px-10 h-full transition-opacity duration-300",
-                            isPending && "opacity-50 blur-sm pointer-events-none"
+                            (isPending || isActuallyCheckingAuth) && "opacity-50 blur-sm pointer-events-none"
                         ))}
                     >
-                        <Suspense fallback={<PageSkeleton />}>
-                            <Outlet />
-                        </Suspense>
+                        {isActuallyCheckingAuth ? (
+                            <PageSkeleton />
+                        ) : (
+                            <Suspense fallback={<PageSkeleton />}>
+                                <Outlet />
+                            </Suspense>
+                        )}
                     </motion.div>
                 </AnimatePresence>
             </GlobalErrorBoundary>
         </section>
-    ), [location.pathname, isPending]);
+    ), [location.pathname, isPending, isActuallyCheckingAuth]);
 
     return (
-        <div className="flex min-h-screen bg-base relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
+        <div className="flex min-h-screen bg-[#09090b] relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
             {/* ── AMBIENT NODES ────────────────────────────────────────── */}
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-base">
-                <div className="absolute inset-0 opacity-[0.8]" 
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-[#09090b]">
+                {/* Simplified Grid */}
+                <div className="absolute inset-0 opacity-[0.03]" 
                     style={{ 
                         backgroundImage: `linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)`,
-                        backgroundSize: '32px 32px',
-                        maskImage: 'radial-gradient(ellipse at center, black, transparent 80%)',
-                        WebkitMaskImage: 'radial-gradient(ellipse at center, black, transparent 80%)'
+                        backgroundSize: '48px 48px',
                     }} 
                 />
                 
-                <div className="absolute top-[-10%] right-[-10%] w-[45%] h-[45%] bg-theme/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[10%] left-[-5%] w-[35%] h-[35%] bg-theme/5 rounded-full blur-[100px]" />
-                <div className="absolute inset-0 bg-repeat bg-center opacity-[0.03] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("/noise.svg")' }} />
+                {/* Reduced Blur nodes for better INP */}
+                <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] bg-theme/5 rounded-full blur-[80px]" />
+                <div className="absolute bottom-[5%] left-[-2%] w-[30%] h-[30%] bg-theme/3 rounded-full blur-[60px]" />
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'url("/noise.svg")' }} />
             </div>
 
             {/* ── LAYOUT SHELL ─────────────────────────────────────────── */}
@@ -138,10 +145,12 @@ const Layout = () => {
             </div>
 
             <div className={twMerge(clsx(
-                "fixed bottom-0 left-0 z-[60] lg:z-40 transition-all duration-300",
+                "fixed bottom-0 left-0 z-[60] lg:z-40 transition-all duration-300 pointer-events-none",
                 showNotice ? "top-11" : "top-0"
             ))}>
-                <SidebarComponent />
+                <div className="h-full pointer-events-auto">
+                    <SidebarComponent />
+                </div>
             </div>
 
             <main 

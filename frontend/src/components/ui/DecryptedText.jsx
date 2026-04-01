@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 /**
  * High-Performance DecryptedText Component
  * Optimized for LCP (Largest Contentful Paint) and INP (Interaction to Next Paint)
+ * Refactored to use direct DOM manipulation for animation to eliminate React overhead.
  */
 const DecryptedText = memo(({
   text,
@@ -21,23 +22,16 @@ const DecryptedText = memo(({
   trigger = false,
   ...props
 }) => {
-  const [displayText, setDisplayText] = useState(text);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isDecrypted, setIsDecrypted] = useState(animateOn !== 'click');
-  const [revealedIndices, setRevealedIndices] = useState(new Set());
   const [hasAnimated, setHasAnimated] = useState(false);
 
-  // Sync displayText with text prop when not animating
-  useEffect(() => {
-    if (!isAnimating) {
-      setDisplayText(text);
-    }
-  }, [text, isAnimating]);
-
   const containerRef = useRef(null);
+  const textContentRef = useRef(null);
   const animationRef = useRef(null);
   const lastTimestamp = useRef(0);
   const iterationCount = useRef(0);
+  const revealedIndices = useRef(new Set());
 
   const availableChars = useMemo(() => {
     return useOriginalCharsOnly
@@ -78,19 +72,15 @@ const DecryptedText = memo(({
     return available[Math.floor(Math.random() * available.length)];
   }, [text, revealDirection]);
 
-  const startAnimation = useCallback(() => {
-    setIsAnimating(true);
-    setIsDecrypted(false);
-    iterationCount.current = 0;
-    setRevealedIndices(new Set());
-  }, []);
-
   const stopAnimation = useCallback(() => {
     setIsAnimating(false);
     setIsDecrypted(true);
-    setDisplayText(text);
+    if (textContentRef.current) {
+        textContentRef.current.textContent = text;
+        textContentRef.current.className = className;
+    }
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
-  }, [text]);
+  }, [text, className]);
 
   const animate = useCallback((timestamp) => {
     if (!lastTimestamp.current) lastTimestamp.current = timestamp;
@@ -99,53 +89,62 @@ const DecryptedText = memo(({
     if (elapsed >= speed) {
       lastTimestamp.current = timestamp;
 
-      setRevealedIndices((prev) => {
-        const nextRevealed = new Set(prev);
-        const textLength = text.length;
+      const nextRevealed = revealedIndices.current;
+      const textLength = text.length;
 
-        // Calculate reveal target
-        let revealTarget;
-        if (sequential) {
-          revealTarget = prev.size + 1;
+      // Calculate reveal target
+      let revealTarget;
+      if (sequential) {
+        revealTarget = nextRevealed.size + 1;
+      } else {
+        iterationCount.current += 1;
+        revealTarget = Math.floor((iterationCount.current / maxIterations) * textLength);
+      }
+
+      while (nextRevealed.size < revealTarget && nextRevealed.size < textLength) {
+        const nextIndex = getNextIndex(nextRevealed);
+        if (nextIndex !== null) nextRevealed.add(nextIndex);
+        else break;
+      }
+
+      // ── HIGH PERFORMANCE: Direct DOM Update ──
+      if (textContentRef.current) {
+        textContentRef.current.textContent = shuffleText(text, nextRevealed);
+        // During animation, use encryptedClassName if provided
+        if (nextRevealed.size < textLength) {
+            textContentRef.current.className = encryptedClassName || className;
         } else {
-          iterationCount.current += 1;
-          revealTarget = Math.floor((iterationCount.current / maxIterations) * textLength);
+            textContentRef.current.className = className;
         }
+      }
 
-        while (nextRevealed.size < revealTarget && nextRevealed.size < textLength) {
-          const nextIndex = getNextIndex(nextRevealed);
-          if (nextIndex !== null) nextRevealed.add(nextIndex);
-          else break;
-        }
-
-        // BATCH: Update display text in the same tick if possible
-        setDisplayText(shuffleText(text, nextRevealed));
-
-        if (nextRevealed.size >= textLength) {
-          setTimeout(stopAnimation, speed);
-          return nextRevealed;
-        }
-
-        return nextRevealed;
-      });
+      if (nextRevealed.size >= textLength) {
+        stopAnimation();
+        return;
+      }
     }
 
     animationRef.current = requestAnimationFrame(animate);
-  }, [speed, sequential, text, shuffleText, getNextIndex, maxIterations, stopAnimation]);
+  }, [speed, sequential, text, shuffleText, getNextIndex, maxIterations, stopAnimation, encryptedClassName, className]);
+
+  const startAnimation = useCallback(() => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setIsDecrypted(false);
+    iterationCount.current = 0;
+    revealedIndices.current = new Set();
+    lastTimestamp.current = 0;
+    animationRef.current = requestAnimationFrame(animate);
+  }, [animate, isAnimating]);
 
   useEffect(() => {
-    if (isAnimating) {
-      animationRef.current = requestAnimationFrame(animate);
-    }
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [isAnimating, animate]);
+  }, []);
 
   useEffect(() => {
-    if (trigger) {
-      startAnimation();
-    }
+    if (trigger) startAnimation();
   }, [trigger, startAnimation]);
 
   useEffect(() => {
@@ -177,51 +176,30 @@ const DecryptedText = memo(({
     if (animateOn === 'click' && (clickMode === 'toggle' || !isDecrypted)) {
       if (isDecrypted && clickMode === 'toggle') {
         setIsDecrypted(false);
-        setDisplayText(shuffleText(text, new Set()));
+        if (textContentRef.current) textContentRef.current.textContent = shuffleText(text, new Set());
       } else {
         startAnimation();
       }
     }
   };
 
-  // ── Optimization: Return a single text node when not animating to save DOM nodes & INP ──
-  if (!isAnimating && isDecrypted) {
-    return (
-      <motion.span
-        ref={containerRef}
-        className={`inline-block whitespace-pre-wrap font-mono tracking-normal ${parentClassName} ${className}`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={handleClick}
-        {...props}
-      >
-        {text}
-      </motion.span>
-    );
-  }
-
-  const activeText = isAnimating ? displayText : text;
-
   return (
     <motion.span
       ref={containerRef}
-      className={`inline-block whitespace-pre-wrap font-mono tracking-normal ${parentClassName}`}
+      className={`inline-block whitespace-pre-wrap font-mono tracking-normal tabular-nums ${parentClassName}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
+      style={{ minWidth: `${text.length}ch` }} // CLS Fix: Reserve space
       {...props}
     >
       <span className="sr-only">{text}</span>
-      <span aria-hidden="true" style={{ fontVariantNumeric: 'tabular-nums' }}>
-        {activeText.split('').map((char, i) => (
-          <span
-            key={i}
-            className={revealedIndices.has(i) || isDecrypted ? className : encryptedClassName}
-            style={{ transition: 'color 0.1s ease, opacity 0.1s ease' }}
-          >
-            {char}
-          </span>
-        ))}
+      <span 
+        aria-hidden="true" 
+        ref={textContentRef} 
+        className={isDecrypted ? className : encryptedClassName}
+      >
+        {isDecrypted ? text : shuffleText(text, new Set())}
       </span>
     </motion.span>
   );

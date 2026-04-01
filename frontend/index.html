@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
   <!-- Strict Content Security Policy (Prevents unauthorized data exfiltration) -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* http://127.0.0.1:* https://127.0.0.1:* wss://syncforge-io.onrender.com https://syncforge-io.onrender.com https://*.sentry.io https://sentry.io https://api.nasa.gov https://api.fontshare.com https://cdn.fontshare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com https://cdnjs.cloudflare.com https://api.fontshare.com https://cdn.fontshare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://api.fontshare.com https://cdn.fontshare.com; worker-src 'self' blob: data:; img-src 'self' data: blob: *; media-src 'self' data: blob:; object-src 'none'; frame-src 'self' *;" />
   
@@ -15,14 +16,16 @@
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Geist+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Geist+Mono:wght@400;500;600&display=swap">
+  <!-- Preload Critical Fonts for LCP -->
   <link rel="preconnect" href="https://api.fontshare.com">
-  <link rel="preconnect" href="https://cdn.fontshare.com">
+  <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
   
-  <link rel="preload" as="style" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,600,500,400&f[]=switzer@700,600,500,400,300&display=swap">
-  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,600,500,400&f[]=switzer@700,600,500,400,300&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap">
-  <!-- Font Awesome Icons - Preload critical icons or use async if possible -->
+  <!-- Font Awesome & Fontshare - Non-blocking -->
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,600,500,400&f[]=switzer@700,600,500,400,300&display=swap" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+
   <title>• KLIVRA •</title>
   <style>
     :root {
@@ -33,9 +36,21 @@
     body {
       background-color: #080812;
       margin: 0;
-      font-family: 'Switzer', system-ui, sans-serif;
+      font-family: 'Sora', 'Switzer', system-ui, sans-serif;
       color: #ffffff;
+      -webkit-font-smoothing: antialiased;
     }
+    /* Critical Hero Styles */
+    .h-root h1 {
+      font-size: clamp(1.875rem, 0.4545rem + 7.1023vw, 3.75rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      margin: 0;
+    }
+    @media (min-width: 640px) { .h-root h1 { font-size: 3rem; } }
+    @media (min-width: 1024px) { .h-root h1 { font-size: 3.75rem; } }
+
     #root {
       min-height: 100vh;
       display: flex;

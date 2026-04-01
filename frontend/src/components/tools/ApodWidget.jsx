@@ -66,6 +66,8 @@ const ApodWidget = () => {
                                 return imgSrc;
                             })()}
                             alt={display.title}
+                            width={600}
+                            height={220}
                             loading="lazy"
                             decoding="async"
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

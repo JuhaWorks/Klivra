@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import AsciiWave from './AsciiWave';
 
 // ---------------------------------------------------------------------------
 // Design tokens — single source of truth
@@ -306,19 +305,6 @@ export function GlobalLoadingScreen({ letter = 'K', statusText = 'INITIALIZING' 
                 overflow: 'hidden',
             }}
         >
-            {/* ASCII wave — bottom, very dim */}
-            <div
-                style={{
-                    position: 'absolute',
-                    inset: '0 0 0 0',
-                    bottom: 0,
-                    height: '30%',
-                    opacity: 0.07,
-                    pointerEvents: 'none',
-                }}
-            >
-                <AsciiWave speed={0.4} />
-            </div>
 
             {/* Grid overlay — architectural feel */}
             <div

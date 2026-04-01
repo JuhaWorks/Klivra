@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/ui/Button';
+import Counter from '../components/ui/Counter';
 
 // ── Vanguard 2026: Physics Configuration ──
 const LIQUID_SPRING = { type: "spring", stiffness: 260, damping: 20, mass: 0.5 };
@@ -143,7 +144,7 @@ export default function Tasks() {
 
     return (
         <article 
-            className="min-h-screen pb-20 pt-8 px-1 space-y-10 w-full max-w-[2000px] mx-auto @container"
+            className="min-h-screen pb-20 pt-8 px-1 space-y-8 sm:space-y-10 w-full max-w-[2000px] mx-auto @container overflow-x-hidden"
         >
             <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 z-20 relative">
                 <div className="space-y-4">
@@ -154,10 +155,10 @@ export default function Tasks() {
                         <span>Neural Operations Center</span>
                     </div>
                     <div className="space-y-4">
-                        <h1 className="text-5xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.85]">
+                        <h1 className="text-4xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.85]">
                             Task <span className="text-theme">Nexus.</span>
                         </h1>
-                        <p className="text-secondary font-medium text-base sm:text-xl max-w-xl leading-relaxed opacity-80">
+                        <p className="text-secondary font-medium text-sm sm:text-xl max-w-xl leading-relaxed opacity-80">
                             Orchestrate complex project segments through high-fidelity synchronization and real-time state management.
                         </p>
                     </div>
@@ -191,7 +192,7 @@ export default function Tasks() {
                     <Button
                         leftIcon={Plus}
                         size="lg"
-                        className="h-14 sm:h-16 px-8 rounded-[1.75rem] sm:rounded-[2rem] shadow-xl shadow-theme/10 hover:shadow-theme/20 transform hover:-translate-y-1 transition-all duration-300"
+                        className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-xl shadow-theme/10 w-full sm:w-auto"
                     >
                         New Directive
                     </Button>
@@ -208,19 +209,19 @@ export default function Tasks() {
                         placeholder="Search neural link for tasks..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-sunken/50 border border-subtle rounded-2xl sm:rounded-3xl pl-16 pr-6 h-14 sm:h-16 text-primary placeholder:text-tertiary focus:outline-none focus:border-theme/30 focus:ring-4 focus:ring-theme/10 transition-all font-medium text-sm shadow-inner"
+                        className="w-full bg-sunken/50 border border-subtle rounded-2xl sm:rounded-3xl pl-14 sm:pl-16 pr-6 h-12 sm:h-16 text-primary placeholder:text-tertiary focus:outline-none focus:border-theme/30 focus:ring-4 focus:ring-theme/10 transition-all font-medium text-sm shadow-inner"
                     />
                 </div>
 
                 {/* Project Segment Filter */}
                 <div className="relative shrink-0 w-full md:w-auto">
                     <button 
-                        className="w-full h-14 sm:h-16 flex items-center justify-between md:justify-start gap-4 px-8 bg-sunken rounded-2xl sm:rounded-3xl border border-subtle hover:border-theme/50 transition-all group active:scale-95 shadow-inner"
+                        className="w-full h-12 sm:h-16 flex items-center justify-between md:justify-start gap-4 px-6 sm:px-8 bg-sunken rounded-2xl sm:rounded-3xl border border-subtle hover:border-theme/50 transition-all group active:scale-95 shadow-inner"
                         aria-haspopup="listbox"
                     >
                         <div className="flex items-center gap-3">
                             <Filter className="w-4 h-4 text-tertiary group-hover:text-theme transition-colors" />
-                            <span className="text-[10px] sm:text-[11px] font-black text-secondary uppercase tracking-[0.2em] whitespace-nowrap">
+                            <span className="text-[9px] sm:text-[11px] font-black text-secondary uppercase tracking-[0.2em] whitespace-nowrap">
                                 {activeProject ? activeProject.name : 'ALL SEGMENTS'}
                             </span>
                         </div>
@@ -232,12 +233,16 @@ export default function Tasks() {
                 <div className="hidden lg:flex items-center gap-8 px-6">
                     <div className="flex flex-col items-center">
                         <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-1 opacity-60">Active</span>
-                        <span className="text-sm font-black text-theme px-4 py-1.5 bg-theme/5 rounded-xl border border-theme/10 font-mono tracking-tighter">12</span>
+                        <span className="text-sm font-black text-theme px-4 py-1.5 bg-theme/5 rounded-xl border border-theme/10 font-mono tracking-tighter">
+                            <Counter value={12} />
+                        </span>
                     </div>
                     <div className="w-px h-10 bg-subtle/50 shadow-sm" />
                     <div className="flex flex-col items-center">
                         <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-1 opacity-60">Risk</span>
-                        <span className="text-sm font-black text-danger px-4 py-1.5 bg-danger/5 rounded-xl border border-danger/10 shadow-sm font-mono tracking-tighter">02</span>
+                        <span className="text-sm font-black text-danger px-4 py-1.5 bg-danger/5 rounded-xl border border-danger/10 shadow-sm font-mono tracking-tighter">
+                            <Counter value={2} />
+                        </span>
                     </div>
                 </div>
             </nav>

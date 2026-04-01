@@ -100,10 +100,10 @@ const Projects = () => {
     };
 
     return (
-        <div className="w-full space-y-12 pb-20 max-w-[2000px] mx-auto">
+        <div className="w-full space-y-8 sm:space-y-12 pb-20 max-w-[2000px] mx-auto overflow-x-hidden">
             <DeadlinePopup projects={activeProjects} user={user} />
             {/* Header Area */}
-            <header className="relative -mx-4 sm:-mx-6 lg:-mx-12 px-4 sm:px-6 lg:px-12 pt-6 sm:pt-10 pb-12 sm:pb-16 overflow-hidden border-b border-default rounded-b-[3.15rem] sm:rounded-b-[5rem] mb-12">
+            <header className="relative -mx-4 sm:-mx-6 lg:-mx-12 px-4 sm:px-8 lg:px-12 pt-6 sm:pt-10 pb-10 sm:pb-16 overflow-hidden border-b border-default rounded-b-[2.5rem] sm:rounded-b-[5rem] mb-8 sm:mb-12">
                 <div className="absolute inset-0 z-0">
                     <GlassSurface width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} blur={30} />
                 </div>
@@ -112,12 +112,12 @@ const Projects = () => {
                 
                 <div className="relative z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-10">
                     <div className="space-y-4 sm:space-y-6">
-                        <div className="flex items-center gap-3 text-theme font-black text-[10px] uppercase tracking-[0.4em]">
+                        <div className="flex items-center gap-3 text-theme font-black text-[9px] sm:text-[10px] uppercase tracking-[0.4em]">
                             <LayoutGrid className="w-3.5 h-3.5 text-theme/60" />
                             <span>Neural Project Domains</span>
                         </div>
-                        <h1 className="text-5xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">Projects</h1>
-                        <p className="text-secondary font-medium text-base sm:text-xl max-w-xl leading-relaxed opacity-80">
+                        <h1 className="text-4xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">Projects</h1>
+                        <p className="text-secondary font-medium text-sm sm:text-xl max-w-xl leading-relaxed opacity-80">
                             Orchestrate and synchronize team operations within a high-fidelity creative workspace.
                         </p>
                     </div>
@@ -160,7 +160,7 @@ const Projects = () => {
                                 size="lg"
                                 onClick={() => setIsCreateModalOpen(true)}
                                 leftIcon={Plus}
-                                className="h-14 sm:h-16 px-8 rounded-[1.75rem] sm:rounded-[2rem] shadow-xl shadow-theme/10"
+                                className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-xl shadow-theme/10 w-full sm:w-auto"
                             >
                                 New Project
                             </Button>
@@ -177,7 +177,7 @@ const Projects = () => {
                         leftIcon={Search}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="rounded-[2rem] sm:rounded-[2.5rem] h-12 sm:h-14 bg-sunken/50 border-subtle"
+                        className="rounded-2xl sm:rounded-[2.5rem] h-12 sm:h-14 bg-sunken border-subtle"
                     />
                 </div>
             </div>
@@ -198,15 +198,15 @@ const Projects = () => {
                                 className="group h-full flex flex-col rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden border-subtle hover:border-theme/30 transition-all duration-500"
                                 padding="p-0"
                             >
-                                <div className="p-4 sm:p-5 flex flex-col h-full">
-                                    <div className="relative mb-6 sm:mb-8">
+                                <div className="p-1.5 flex flex-col h-full">
+                                    <div className="relative mb-4 sm:mb-8">
                                         <ProjectImage
                                             project={project}
                                             className="rounded-[2rem] sm:rounded-[2.5rem] border border-subtle aspect-video object-cover"
                                         />
-                                        <div className="absolute top-4 right-4">
+                                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
                                             <div className={twMerge(clsx(
-                                                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border backdrop-blur-xl shadow-2xl transition-all group-hover:scale-105",
+                                                "px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] border backdrop-blur-xl shadow-2xl transition-all group-hover:scale-105",
                                                 getStatusStyles(project.status)
                                             ))}>
                                                 {project.status || 'Active'}
@@ -214,37 +214,37 @@ const Projects = () => {
                                         </div>
                                     </div>
 
-                                    <div className="px-4 sm:px-6 space-y-4 mb-8">
+                                    <div className="px-3 sm:px-6 space-y-4 mb-6 sm:mb-8">
                                         <div className="space-y-1.5">
-                                            <h3 className="text-2xl sm:text-3xl font-black text-primary tracking-tighter group-hover:text-theme transition-colors line-clamp-1">
+                                            <h3 className="text-xl sm:text-3xl font-black text-primary tracking-tighter group-hover:text-theme transition-colors line-clamp-1">
                                                 {project.name}
                                             </h3>
-                                            <p className="text-tertiary text-xs sm:text-sm font-medium line-clamp-2 leading-relaxed min-h-[40px] opacity-80">
+                                            <p className="text-tertiary text-[11px] sm:text-sm font-medium line-clamp-2 leading-relaxed min-h-[36px] sm:min-h-[40px] opacity-80">
                                                 {project.description}
                                             </p>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-8 pt-4 border-t border-subtle/50">
-                                            <div className="space-y-1.5">
-                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block opacity-60">Deadline</span>
-                                                <div className="flex items-center gap-2.5 text-primary">
-                                                    <Calendar className="w-4 h-4 text-theme/60" />
-                                                    <span className="text-xs sm:text-sm font-bold font-mono">
+                                        <div className="grid grid-cols-2 gap-4 sm:gap-8 pt-4 border-t border-subtle/50">
+                                            <div className="space-y-1">
+                                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Deadline</span>
+                                                <div className="flex items-center gap-2 text-primary">
+                                                    <Calendar className="w-3.5 h-3.5 text-theme/60" />
+                                                    <span className="text-[11px] sm:text-sm font-bold font-mono">
                                                         {new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block opacity-60">Synchronized</span>
-                                                <div className="flex items-center gap-2.5 text-primary">
-                                                    <Users className="w-4 h-4 text-theme/60" />
-                                                    <span className="text-xs sm:text-sm font-bold font-mono">{project.members?.length || 0} MEMBERS</span>
+                                            <div className="space-y-1">
+                                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Synchronized</span>
+                                                <div className="flex items-center gap-2 text-primary">
+                                                    <Users className="w-3.5 h-3.5 text-theme/60" />
+                                                    <span className="text-[11px] sm:text-sm font-bold font-mono truncate">{project.members?.length || 0} MEMBERS</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-auto px-6 sm:px-8 py-6 sm:py-8 border-t border-subtle bg-sunken/30 flex items-center justify-between">
+                                    <div className="mt-auto px-4 sm:px-8 py-4 sm:py-8 border-t border-subtle bg-sunken/30 flex items-center justify-between gap-4">
                                         <div className="flex -space-x-2.5">
                                             {project.members?.slice(0, 4).map((m, i) => (
                                                 <div key={i} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-base bg-sunken flex items-center justify-center overflow-hidden transition-all group-hover:scale-110 hover:z-10 shadow-lg">

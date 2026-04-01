@@ -11,6 +11,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import GlassSurface from '../ui/GlassSurface';
 import { API_BASE } from '../auth/AuthLayout';
+import { getOptimizedAvatar } from '../../utils/avatar';
 
 const STATUS_COLOR = {
     Online: 'text-success',
@@ -19,21 +20,6 @@ const STATUS_COLOR = {
     Offline: 'text-tertiary',
 };
 
-const getOptimizedAvatar = (url) => {
-    if (!url) return 'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&format=webp';
-    
-    let processedUrl = url;
-    // If it's a relative path, prefix it with API_BASE
-    if (processedUrl.startsWith('/') && !processedUrl.startsWith('//')) {
-        const base = API_BASE.replace(/\/api$/, '');
-        processedUrl = `${base}${processedUrl}`;
-    }
-
-    if (processedUrl.includes('upload/')) {
-        return processedUrl.replace('upload/', 'upload/w_200,h_200,c_fill,f_auto,q_auto/');
-    }
-    return processedUrl;
-};
 
 const TopBar = () => {
     const { user, logout } = useAuthStore();
@@ -91,7 +77,10 @@ const TopBar = () => {
                     
                     {/* Brand name for very small mobile screens when sidebar is hidden */}
                     {isMobile && (
-                        <span className="text-xl font-black tracking-tighter text-primary truncate sm:hidden">klvira</span>
+                        <div className="flex items-center gap-2 sm:hidden overflow-hidden">
+                            <img src="/logo.png?v=2" alt="" width={24} height={24} className="w-6 h-6 object-contain opacity-80" />
+                            <span className="text-xl font-black tracking-tighter text-primary truncate">klvira</span>
+                        </div>
                     )}
                 </div>
 
@@ -115,6 +104,8 @@ const TopBar = () => {
                                 <img
                                     src={getOptimizedAvatar(user?.avatar)}
                                     alt=""
+                                    width={36}
+                                    height={36}
                                     referrerPolicy="no-referrer"
                                     className="w-9 h-9 rounded-xl border border-default object-cover"
                                 />

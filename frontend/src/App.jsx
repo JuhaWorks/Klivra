@@ -22,10 +22,10 @@ const ProjectSettings = lazy(() => import('./components/projects/ProjectSettings
 const Tasks = lazy(() => import('./pages/Tasks'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
-import AdminDashboard from './pages/AdminDashboard';
-import SecurityFeed from './pages/SecurityFeed';
-import Home from './pages/Home';
-import Networking from './pages/Networking';
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
+const Home = lazy(() => import('./pages/Home'));
+const Networking = lazy(() => import('./pages/Networking'));
 
 import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
 
@@ -33,7 +33,8 @@ import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isCheckingAuth } = useAuthStore();
 
-  if (isCheckingAuth && !isAuthenticated) return <GlobalLoadingScreen />;
+  // During auth check, we don't redirect, just let the parent handle the skeleton
+  if (isCheckingAuth) return <PageLoader />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -58,11 +59,9 @@ function App() {
     checkAuth();
   }, [checkAuth]);
 
-  if (isCheckingAuth && !isAuthenticated) {
-    return <GlobalLoadingScreen />;
-  }
-
-  return (
+  // Zero-LCP Refactor: Render the Layout shell even during auth checks
+  // This allows the browser to paint the UI structure (LCP) while waiting for the network.
+  const appContent = (
     <Router>
       <Toaster position="top-right" toastOptions={{ style: { background: '#09090b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
       <CommandPalette />
@@ -83,7 +82,7 @@ function App() {
               <ProtectedRoute>
                 <RequireVerification>
                   <ErrorBoundary>
-                    <Layout />
+                    <Layout checkingAuth={isCheckingAuth} />
                   </ErrorBoundary>
                 </RequireVerification>
               </ProtectedRoute>
@@ -109,6 +108,8 @@ function App() {
       </Suspense>
     </Router>
   );
+
+  return appContent;
 }
 
 export default App;

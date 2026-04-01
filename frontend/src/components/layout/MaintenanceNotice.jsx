@@ -213,12 +213,12 @@ const MaintenanceNotice = () => {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.5 }}
                     className="fixed inset-0 z-[10000] bg-[#080808]
-                               flex items-center justify-center
-                               p-8 overflow-hidden"
+                               flex flex-col items-center justify-center
+                               p-6 sm:p-12 overflow-hidden"
                 >
                     {/* Fine grid texture */}
                     <div
-                        className="absolute inset-0 opacity-[0.15]"
+                        className="absolute inset-0 opacity-[0.12]"
                         style={{
                             backgroundImage:
                                 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px),' +
@@ -231,109 +231,114 @@ const MaintenanceNotice = () => {
                         }}
                     />
 
-                    <div className="relative z-10 w-full max-w-[480px] flex flex-col items-center">
-
-                        {/* Icon */}
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.1, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-                            className="mb-8"
-                        >
-                            <div className="w-16 h-16 rounded-[18px]
-                                            bg-emerald-500/[0.07] border border-emerald-500/[0.13]
-                                            flex items-center justify-center">
-                                <ShieldCheck className="w-7 h-7 text-emerald-500" strokeWidth={1.5} />
-                            </div>
-                        </motion.div>
-
-                        {/* Heading */}
-                        <motion.h1
-                            initial={{ y: 16, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.16, duration: 0.45 }}
-                            className="text-center font-extrabold text-white tracking-[-0.035em] leading-[1.05] mb-4"
-                            style={{ fontSize: 'clamp(32px, 7vw, 50px)' }}
-                        >
-                            System Maintenance
-                        </motion.h1>
-
-                        {/* Admin message */}
-                        <motion.p
-                            initial={{ y: 12, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.22, duration: 0.4 }}
-                            className="text-[15px] text-center leading-[1.7] text-white/38
-                                       max-w-[380px] mb-11"
-                        >
-                            {displayMsg}
-                        </motion.p>
-
-                        {/* Hairline */}
-                        <motion.div
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ delay: 0.28, duration: 0.55 }}
-                            className="w-full h-px bg-white/[0.06] mb-11"
-                        />
-
-                        {/* Countdown */}
-                        {countdown && (
+                    <div className="relative z-10 w-full max-w-[520px] flex flex-col items-center gap-y-10 sm:gap-y-12">
+                        
+                        <div className="flex flex-col items-center">
+                            {/* Icon */}
                             <motion.div
-                                initial={{ y: 10, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.32, duration: 0.4 }}
-                                className="flex flex-col items-center gap-2.5 mb-8"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 0.1, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+                                className="mb-6 sm:mb-8"
                             >
-                                <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-500/40">
-                                    Estimated time remaining
-                                </span>
-                                <span
-                                    className="font-mono font-bold text-white leading-none tracking-[-0.02em] tabular-nums"
-                                    style={{ fontSize: 'clamp(52px, 13vw, 76px)' }}
-                                >
-                                    {countdown}
-                                </span>
-                                {countdownUnit && (
-                                    <span className="font-mono text-[10px] text-white/12 tracking-[0.28em] uppercase">
-                                        {countdownUnit}
-                                    </span>
-                                )}
+                                <div className="w-16 h-16 rounded-[22px]
+                                                bg-emerald-500/[0.07] border border-emerald-500/[0.13]
+                                                flex items-center justify-center">
+                                    <ShieldCheck className="w-8 h-8 text-emerald-500" strokeWidth={1.5} />
+                                </div>
                             </motion.div>
-                        )}
 
-                        {/* Scheduled end time pill */}
-                        {endTimeStr && (
-                            <motion.div
-                                initial={{ y: 8, opacity: 0 }}
+                            {/* Heading */}
+                            <motion.h1
+                                initial={{ y: 16, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.38, duration: 0.4 }}
-                                className="flex items-center gap-2.5 px-5 py-2.5 mb-11 rounded-xl
-                                           bg-white/[0.025] border border-white/[0.07]"
+                                transition={{ delay: 0.16, duration: 0.45 }}
+                                className="text-center font-extrabold text-white tracking-[-0.04em] leading-[1.05] mb-4"
+                                style={{ fontSize: 'clamp(32px, 8vw, 56px)' }}
                             >
-                                <Calendar className="w-[13px] h-[13px] text-emerald-500/50 shrink-0" />
-                                <span className="text-[13px] text-white/35 tracking-[0.01em]">
-                                    Scheduled to resume
-                                </span>
-                                <span className="text-[13px] text-white/72 font-medium tracking-[0.01em]">
-                                    {endTimeStr}
-                                </span>
-                            </motion.div>
-                        )}
+                                System Maintenance
+                            </motion.h1>
 
-                        {/* Hairline */}
-                        <div className="w-full h-px bg-white/[0.05] mb-6" />
-
-                        {/* Incident ID */}
-                        {incidentId && (
+                            {/* Admin message */}
                             <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.5 }}
-                                className="font-mono text-[11px] text-white/14 tracking-[0.06em]"
+                                initial={{ y: 12, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.22, duration: 0.4 }}
+                                className="text-[14px] sm:text-[16px] text-center leading-[1.7] text-white/40
+                                           max-w-[400px]"
                             >
-                                Incident · {incidentId}
+                                {displayMsg}
                             </motion.p>
+                        </div>
+
+                        {/* Middle Section: Countdown + Divider */}
+                        <div className="w-full flex flex-col items-center">
+                            {/* Hairline */}
+                            <motion.div
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ delay: 0.28, duration: 0.55 }}
+                                className="w-full h-px bg-white/[0.06] mb-10 sm:mb-12"
+                            />
+
+                            {/* Countdown */}
+                            {countdown && (
+                                <motion.div
+                                    initial={{ y: 10, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.32, duration: 0.4 }}
+                                    className="flex flex-col items-center gap-y-2 mb-10 sm:mb-12"
+                                >
+                                    <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-500/40">
+                                        Estimated time remaining
+                                    </span>
+                                    <span
+                                        className="font-mono font-bold text-white leading-none tracking-[-0.025em] tabular-nums"
+                                        style={{ fontSize: 'clamp(52px, 15vw, 84px)' }}
+                                    >
+                                        {countdown}
+                                    </span>
+                                    {countdownUnit && (
+                                        <span className="font-mono text-[9px] sm:text-[10px] text-white/12 tracking-[0.28em] uppercase">
+                                            {countdownUnit}
+                                        </span>
+                                    )}
+                                </motion.div>
+                            )}
+
+                            {/* Scheduled end time pill */}
+                            {endTimeStr && (
+                                <motion.div
+                                    initial={{ y: 8, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.38, duration: 0.4 }}
+                                    className="flex items-center gap-x-2.5 px-6 py-3 rounded-2xl
+                                               bg-white/[0.03] border border-white/[0.08]"
+                                >
+                                    <Calendar className="w-4 h-4 text-emerald-500/50 shrink-0" />
+                                    <span className="text-sm text-white/35">
+                                        Scheduled to resume
+                                    </span>
+                                    <span className="text-sm text-white/75 font-semibold">
+                                        {endTimeStr}
+                                    </span>
+                                </motion.div>
+                            )}
+                        </div>
+
+                        {/* Footer Section: Incident ID */}
+                        {incidentId && (
+                            <div className="w-full flex flex-col items-center pt-8">
+                                <div className="w-20 h-px bg-white/[0.05] mb-6" />
+                                <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.5 }}
+                                    className="font-mono text-[11px] text-white/14 tracking-[0.08em] uppercase"
+                                >
+                                    Incident Node · {incidentId}
+                                </motion.p>
+                            </div>
                         )}
                     </div>
                 </motion.div>

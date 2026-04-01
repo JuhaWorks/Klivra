@@ -7,33 +7,51 @@ import { RefreshCw } from 'lucide-react';
  * Full-page loader for initial auth checks
  */
 export const GlobalLoadingScreen = () => (
-    <div className="fixed inset-0 z-[9999] bg-base flex flex-col items-center justify-center p-6 text-center">
-        <div className="relative mb-8">
-            <div className="absolute inset-0 bg-theme/20 blur-3xl rounded-full animate-pulse" />
+    <div className="fixed inset-0 z-[9999] bg-[#09090b] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-theme/5 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="relative mb-10">
+            {/* Spinning ring */}
             <motion.div 
                 animate={{ rotate: 360 }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                className="relative z-10 w-24 h-24 rounded-[2.5rem] bg-surface border-2 border-theme/20 flex items-center justify-center shadow-2xl shadow-theme/10"
-            >
-                <img src="/logo.png?v=2" alt="klvira" className="w-12 h-12 grayscale opacity-50" />
-            </motion.div>
-        </div>
-        
-        <div className="space-y-2">
-            <h2 className="text-xl font-black text-primary tracking-tighter">Initializing Klivra Core</h2>
-            <div className="flex items-center justify-center gap-2 text-tertiary">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Synchronizing Session...</span>
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                className="w-24 h-24 rounded-full border-[1px] border-theme/10 border-t-theme/40"
+            />
+            {/* Static Inner Logo */}
+            <div className="absolute inset-0 flex items-center justify-center">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-theme opacity-80">
+                    <path d="M20 5L35 30H5L20 5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                    <circle cx="20" cy="20" r="6" fill="currentColor" fillOpacity="0.2" />
+                </svg>
             </div>
         </div>
         
-        <div className="fixed bottom-12 left-0 right-0 px-12">
-            <div className="max-w-xs mx-auto h-[2px] bg-white/5 rounded-full overflow-hidden">
+        <div className="space-y-3 relative z-10">
+            <h2 className="text-xl font-bold text-white tracking-tight">Initializing <span className="text-theme">Klivra</span> Core</h2>
+            <div className="flex items-center justify-center gap-3">
+                <div className="flex gap-1">
+                    {[0, 0.2, 0.4].map(d => (
+                        <motion.div 
+                            key={d}
+                            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                            transition={{ duration: 1.2, repeat: Infinity, delay: d }}
+                            className="w-1.5 h-1.5 rounded-full bg-theme"
+                        />
+                    ))}
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">Synchronizing Session</span>
+            </div>
+        </div>
+        
+        {/* Progress simulator */}
+        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-48">
+            <div className="h-[2px] bg-white/5 rounded-full overflow-hidden">
                 <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="h-full bg-gradient-to-r from-transparent via-theme to-transparent opacity-60"
+                    transition={{ duration: 3, ease: 'easeInOut' }}
+                    className="h-full bg-theme/50"
                 />
             </div>
         </div>

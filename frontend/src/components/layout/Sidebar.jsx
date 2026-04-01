@@ -12,6 +12,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { cn } from '../../utils/cn';
 import GlassSurface from '../ui/GlassSurface';
+import { getOptimizedAvatar } from '../../utils/avatar';
 
 const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -143,7 +144,7 @@ const SidebarComponent = () => {
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 35, mass: 0.8 }}
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 border-r border-default shadow-2xl transition-all",
+                    "relative h-full border-r border-default shadow-2xl transition-all",
                     "flex flex-col rounded-r-[2rem] overflow-hidden",
                     !isSidebarExpanded && "pointer-events-none"
                 )}
@@ -163,7 +164,7 @@ const SidebarComponent = () => {
                 {/* Brand */}
                 <div className={cn("h-20 flex items-center relative z-10 shrink-0", effectiveCollapsed ? "justify-center px-0" : "gap-4 px-6")}>
                     <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform overflow-hidden">
-                        <img src="/logo.png?v=2" alt="klvira logo" className="w-full h-full object-cover" />
+                        <img src="/logo.png?v=2" alt="klvira logo" width={40} height={40} className="w-full h-full object-cover" />
                     </div>
                     {!effectiveCollapsed && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-w-0">
@@ -252,7 +253,7 @@ const SidebarComponent = () => {
 
                     <div className={cn("rounded-[2.5rem] bg-white/5 border border-white/5 transition-all p-1.5", effectiveCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-3 pr-3")}>
                         <Link to="/profile" onClick={() => isMobile && setSidebarExpanded(false)} className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-accent-500/10 to-accent-500/20 border border-white/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform">
-                            {user?.avatar ? <img src={user.avatar} alt={user.name} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <UserCircle className="w-6 h-6 text-theme" />}
+                            {user?.avatar ? <img src={getOptimizedAvatar(user.avatar)} alt={user.name} width={40} height={40} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <UserCircle className="w-6 h-6 text-theme" />}
                         </Link>
                         {!effectiveCollapsed && (
                             <Link to="/profile" className="flex flex-col min-w-0 flex-1 group">

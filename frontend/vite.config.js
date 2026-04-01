@@ -8,7 +8,16 @@ export default defineConfig({
   build: {
     minify: 'esbuild',
     sourcemap: false,
-    chunkSizeWarningLimit: 1000, // Increase warning limit since we are letting Vite bundle naturally
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          core: ['react', 'react-dom', 'react-router-dom', 'framer-motion', 'zustand', 'axios'],
+          charts: ['recharts'],
+          three: ['three'],
+        }
+      }
+    }
   },
 
   esbuild: {

@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/react'
 import './index.css'
 import App from './App.jsx'
 
-if (import.meta.env.VITE_SENTRY_DSN) {
+if (import.meta.env.VITE_SENTRY_DSN && import.meta.env.PROD) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     integrations: [
@@ -16,8 +16,6 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     tracePropagationTargets: [/^https:\/\/syncforge-io\.onrender\.com/],
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    
-    // Privacy: Prevent Data Leakage
     maskAllText: true,
     maskAllInputs: true,
   });

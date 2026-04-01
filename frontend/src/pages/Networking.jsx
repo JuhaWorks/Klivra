@@ -12,10 +12,12 @@ import { api } from '../store/useAuthStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSocketStore } from '../store/useSocketStore';
 import Card from '../components/ui/Card';
+import Counter from '../components/ui/Counter';
 import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
 import NetworkingSkeleton from '../components/networking/NetworkingSkeleton';
 import { API_BASE } from '../components/auth/AuthLayout';
+import { getOptimizedAvatar } from '../utils/avatar';
 
 const EASE = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
 
@@ -47,26 +49,14 @@ const StatusDot = ({ status }) => {
 const Avatar = ({ user, size = 'md' }) => {
     const [isError, setIsError] = useState(false);
     const sizes = { sm: 'w-9 h-9', md: 'w-12 h-12', lg: 'w-16 h-16' };
+    const pxSizes = { sm: 36, md: 48, lg: 64 };
     const textSizes = { sm: 'text-[10px]', md: 'text-sm', lg: 'text-lg' };
     
-    const getOptimizedAvatar = (url) => {
-        if (!url) return null;
-        if (url.includes('upload/')) {
-            return url.replace('upload/', 'upload/w_200,h_200,c_fill,f_auto,q_auto/');
-        }
-        return url;
-    };
-
     const avatarUrl = useMemo(() => {
         if (!user?.avatar) return null;
-        let url = user.avatar;
-        // If it's a relative path, prefix it with API_BASE
-        if (url.startsWith('/') && !url.startsWith('//')) {
-            const base = API_BASE.replace(/\/api$/, '');
-            url = `${base}${url}`;
-        }
-        return getOptimizedAvatar(url);
+        return getOptimizedAvatar(user.avatar);
     }, [user?.avatar]);
+
     const initials = useMemo(() => {
         if (!user?.name) return '?';
         const parts = user.name.split(' ');
@@ -80,6 +70,8 @@ const Avatar = ({ user, size = 'md' }) => {
                 <img 
                     src={avatarUrl} 
                     alt="" 
+                    width={pxSizes[size]}
+                    height={pxSizes[size]}
                     referrerPolicy="no-referrer"
                     onError={() => setIsError(true)}
                     className="w-full h-full object-cover" 
@@ -122,40 +114,34 @@ const SocialStats = ({ count }) => {
     );
 };
 
-// ── Connection Card ──────────────────────────────────────────────────────────
+// ── Connection Card (Compact) ────────────────────────────────────────────────
 const ConnectionCard = ({ connection, onRemove }) => {
     const user = connection.user;
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={EASE}
-        >
+        <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
             <Card variant="glass" padding="p-0" className="group hover:border-theme/20 transition-all duration-300">
-                <div className="p-5 flex items-start gap-4">
+                <div className="p-3.5 flex items-start gap-3">
                     <div className="relative">
-                        <Avatar user={user} />
+                        <Avatar user={user} size="sm" />
                         <div className="absolute -bottom-0.5 -right-0.5">
                             <StatusDot status={user?.status} />
                         </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-sm font-black text-primary truncate">{user?.name}</h4>
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <h4 className="text-[13px] font-black text-primary truncate">{user?.name}</h4>
                             <RoleBadge role={user?.role} />
                         </div>
-                        <p className="text-xs text-tertiary truncate font-medium">{user?.email}</p>
+                        <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
                         <SocialStats count={user?.totalConnections} />
                         {user?.customMessage && (
-                            <p className="text-xs text-secondary mt-1.5 italic truncate">"{user.customMessage}"</p>
+                            <p className="text-[11px] text-secondary mt-1.5 italic truncate opacity-80">"{user.customMessage}"</p>
                         )}
                         {connection.labels?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">
                                 {connection.labels.map((label, i) => (
-                                    <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-theme/5 text-[10px] font-bold text-theme border border-theme/10">
-                                        <Tag className="w-2.5 h-2.5" />{label}
+                                    <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-theme/5 text-[9px] font-bold text-theme border border-theme/10">
+                                        <Tag className="w-2 h-2" />{label}
                                     </span>
                                 ))}
                             </div>
@@ -163,10 +149,10 @@ const ConnectionCard = ({ connection, onRemove }) => {
                     </div>
                     <button
                         onClick={() => onRemove(connection._id)}
-                        className="opacity-0 group-hover:opacity-100 p-2 rounded-xl text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-xl text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
                         title="Remove connection"
                     >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </Card>
@@ -186,53 +172,47 @@ const IncomingRequestCard = ({ request, onRespond }) => {
     };
 
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 12 }}
-            transition={EASE}
-        >
+        <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={EASE}>
             <Card variant="glass" padding="p-0" className="border-l-2 border-l-theme/40">
-                <div className="p-5">
-                    <div className="flex items-start gap-4">
-                        <Avatar user={user} />
+                <div className="p-4">
+                    <div className="flex items-start gap-3">
+                        <Avatar user={user} size="sm" />
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                                <h4 className="text-sm font-black text-primary truncate">{user?.name}</h4>
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <h4 className="text-[13px] font-black text-primary truncate">{user?.name}</h4>
                                 <RoleBadge role={user?.role} />
                             </div>
-                            <p className="text-xs text-tertiary truncate font-medium">{user?.email}</p>
+                            <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
                             <SocialStats count={user?.totalConnections} />
                         </div>
-                        <span className="text-[10px] text-tertiary font-mono">
+                        <span className="text-[10px] text-tertiary font-mono opacity-60">
                             {new Date(request.createdAt).toLocaleDateString()}
                         </span>
                     </div>
                     {request.note && (
-                        <div className="mt-3 p-3 rounded-xl bg-sunken border border-default">
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <MessageSquare className="w-3 h-3 text-tertiary" />
-                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest">Note</span>
+                        <div className="mt-2.5 p-2.5 rounded-xl bg-sunken border border-default">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                                <MessageSquare className="w-2.5 h-2.5 text-tertiary" />
+                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest">Note</span>
                             </div>
-                            <p className="text-xs text-secondary leading-relaxed">"{request.note}"</p>
+                            <p className="text-[11px] text-secondary leading-relaxed line-clamp-2">"{request.note}"</p>
                         </div>
                     )}
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2 mt-3.5">
                         <button
                             onClick={() => handleRespond('accept')}
                             disabled={loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black bg-theme text-white hover:bg-theme/90 shadow-lg shadow-theme/15 disabled:opacity-50 active:scale-[0.98] transition-all"
+                            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-black bg-theme text-white hover:bg-theme/90 shadow-lg shadow-theme/15 disabled:opacity-50 active:scale-[0.98] transition-all"
                         >
-                            {loading === 'accept' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                            {loading === 'accept' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
                             Accept
                         </button>
                         <button
                             onClick={() => handleRespond('decline')}
                             disabled={loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-secondary border border-default bg-sunken hover:bg-default disabled:opacity-50 active:scale-[0.98] transition-all"
+                            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold text-secondary border border-default bg-sunken hover:bg-default disabled:opacity-50 active:scale-[0.98] transition-all"
                         >
-                            {loading === 'decline' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
+                            {loading === 'decline' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
                             Decline
                         </button>
                     </div>
@@ -248,23 +228,23 @@ const SentRequestCard = ({ request, onWithdraw }) => {
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
             <Card variant="glass" padding="p-0">
-                <div className="p-5 flex items-center gap-4">
+                <div className="p-3.5 flex items-center gap-3">
                     <Avatar user={user} size="sm" />
                     <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-primary truncate">{user?.name}</h4>
-                        <p className="text-xs text-tertiary truncate">{user?.email}</p>
+                        <h4 className="text-[13px] font-bold text-primary truncate leading-tight">{user?.name}</h4>
+                        <p className="text-[11px] text-tertiary truncate">{user?.email}</p>
                         <SocialStats count={user?.totalConnections} />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1 text-[10px] text-amber-500 font-bold">
-                            <Clock className="w-3 h-3" /> Pending
+                        <span className="flex items-center gap-1 text-[9px] text-amber-500 font-bold uppercase tracking-tight">
+                            <Clock className="w-2.5 h-2.5" /> Pending
                         </span>
                         <button
                             onClick={() => onWithdraw(request._id)}
-                            className="p-2 rounded-xl text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
+                            className="p-1.5 rounded-xl text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
                             title="Withdraw request"
                         >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3" />
                         </button>
                     </div>
                 </div>
@@ -295,14 +275,14 @@ const DiscoverCard = ({ user, onConnect }) => {
     const getActionButton = () => {
         if (user.connectionStatus === 'accepted') {
             return (
-                <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black text-theme bg-theme/10 border border-theme/20">
+                <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[9px] font-black text-theme bg-theme/10 border border-theme/20 uppercase tracking-tight">
                     <UserCheck className="w-3 h-3" /> Connected
                 </span>
             );
         }
         if (user.connectionStatus === 'pending') {
             return (
-                <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20">
+                <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 uppercase tracking-tight">
                     <Clock className="w-3 h-3" /> {user.direction === 'sent' ? 'Sent' : 'Received'}
                 </span>
             );
@@ -312,7 +292,7 @@ const DiscoverCard = ({ user, onConnect }) => {
                 onClick={() => setShowNote(!showNote)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black bg-theme text-white hover:bg-theme/90 shadow-lg shadow-theme/15 active:scale-[0.98] transition-all"
             >
-                <UserPlus className="w-3 h-3" /> Connect
+                <UserPlus className="w-2.5 h-2.5" /> Connect
             </button>
         );
     };
@@ -320,28 +300,28 @@ const DiscoverCard = ({ user, onConnect }) => {
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
             <Card variant="glass" padding="p-0" className="hover:border-theme/15 transition-all duration-300">
-                <div className="p-5">
-                    <div className="flex items-start gap-4">
+                <div className="p-3.5">
+                    <div className="flex items-start gap-3">
                         <div className="relative">
-                            <Avatar user={user} />
+                            <Avatar user={user} size="sm" />
                             <div className="absolute -bottom-0.5 -right-0.5">
                                 <StatusDot status={user?.status} />
                             </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                                <h4 className="text-sm font-black text-primary truncate">{user?.name}</h4>
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <h4 className="text-[13px] font-black text-primary truncate">{user?.name}</h4>
                                 <RoleBadge role={user?.role} />
                             </div>
-                            <p className="text-xs text-tertiary truncate font-medium">{user?.email}</p>
+                            <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
                             <SocialStats count={user?.totalConnections} />
                             {user?.customMessage && (
-                                <p className="text-xs text-secondary mt-1 italic truncate">"{user.customMessage}"</p>
+                                <p className="text-[11px] text-secondary mt-1.5 italic truncate opacity-80">"{user.customMessage}"</p>
                             )}
                             {user?.reason && (
                                 <div className="flex items-start gap-1.5 mt-2 p-1.5 rounded-lg bg-theme/5 border border-theme/10">
-                                    <Sparkles className="w-3 h-3 text-theme shrink-0 mt-0.5" />
-                                    <p className="text-[10px] text-theme font-bold leading-tight uppercase tracking-tight">
+                                    <Sparkles className="w-2.5 h-2.5 text-theme shrink-0 mt-0.5" />
+                                    <p className="text-[9px] text-theme font-bold leading-tight uppercase tracking-tight">
                                         {user.reason}
                                     </p>
                                 </div>
@@ -359,21 +339,21 @@ const DiscoverCard = ({ user, onConnect }) => {
                                 transition={{ duration: 0.2 }}
                                 className="overflow-hidden"
                             >
-                                <div className="mt-4 space-y-3">
+                                <div className="mt-3.5 space-y-2.5">
                                     <textarea
                                         value={note}
                                         onChange={(e) => setNote(e.target.value)}
                                         placeholder="Add a personal note (optional)..."
                                         maxLength={300}
                                         rows={2}
-                                        className="w-full px-4 py-3 rounded-xl bg-sunken border border-default text-xs text-primary placeholder-tertiary resize-none outline-none focus:border-theme focus:ring-2 focus:ring-theme/10 transition-all"
+                                        className="w-full px-3 py-2.5 rounded-xl bg-sunken border border-default text-[11px] text-primary placeholder-tertiary resize-none outline-none focus:border-theme focus:ring-2 focus:ring-theme/10 transition-all font-medium"
                                     />
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] text-tertiary font-mono">{note.length}/300</span>
+                                        <span className="text-[9px] text-tertiary font-mono">{note.length}/300</span>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => { setShowNote(false); setNote(''); }}
-                                                className="px-3 py-1.5 rounded-xl text-[10px] font-bold text-secondary border border-default bg-sunken hover:bg-default transition-all"
+                                                className="px-3 py-1.5 rounded-xl text-[9px] font-bold text-secondary border border-default bg-sunken hover:bg-default transition-all uppercase tracking-tight"
                                             >
                                                 Cancel
                                             </button>
@@ -382,8 +362,8 @@ const DiscoverCard = ({ user, onConnect }) => {
                                                 disabled={sending}
                                                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[10px] font-black bg-theme text-white hover:bg-theme/90 disabled:opacity-50 shadow-lg shadow-theme/15 active:scale-[0.98] transition-all"
                                             >
-                                                {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                                                Send Request
+                                                {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-2.5 h-2.5" />}
+                                                Send
                                             </button>
                                         </div>
                                     </div>
@@ -686,9 +666,9 @@ const Networking = () => {
 
     // ── Stats Cards ──────────────────────────────────────────────────────────
     const STATS = [
-        { label: 'Connections', value: Math.max(stats.connectionCount, connections.length), icon: Users2, accent: 'var(--accent-500)' },
-        { label: 'Received', value: Math.max(stats.pendingCount, pending.length), icon: UserPlus, accent: 'oklch(0.70 0.15 240)' },
-        { label: 'Sent', value: Math.max(stats.sentCount, sent.length), icon: Send, accent: 'oklch(0.72 0.15 60)' },
+        { label: 'Connections', value: Math.max(0, stats.connectionCount), icon: Users2, accent: 'var(--accent-500)', glow: 'var(--accent-bg)' },
+        { label: 'Received', value: stats.pendingCount, icon: UserPlus, accent: 'oklch(0.70 0.15 240)', glow: 'oklch(0.70 0.15 240 / 0.10)' },
+        { label: 'Sent', value: stats.sentCount, icon: Send, accent: 'oklch(0.72 0.15 60)', glow: 'oklch(0.72 0.15 60 / 0.10)' },
     ];
 
     const discoverData = searchQuery.length >= 2 ? searchResults : suggestions;
@@ -716,6 +696,7 @@ const Networking = () => {
                 {/* Ambient glow */}
                 <div className="fixed top-0 left-0 right-0 h-[220px] pointer-events-none z-0 overflow-hidden">
                     <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-theme/10 rounded-full blur-[120px] opacity-40" />
+                    <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-theme/5 rounded-full blur-[120px] opacity-30" />
                 </div>
 
                 <div className="px-1 relative z-10">
@@ -741,33 +722,35 @@ const Networking = () => {
                         </div>
                     </motion.header>
 
-                    {/* Stats Row */}
-                    <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10 sm:mb-12">
+                    {/* Stats Grid - Moved below header */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                         {STATS.map((s, i) => (
-                            <Card
+                            <motion.div
                                 key={s.label}
-                                variant="glass"
-                                performance="premium"
-                                hideBorder={true}
-                                padding="p-6 sm:p-8"
-                                className="cursor-default rounded-[2.5rem] sm:rounded-[3.15rem]"
                                 initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ ...EASE, delay: i * 0.06 }}
+                                transition={{ ...EASE, delay: i * 0.04 }}
                             >
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-8"
-                                     style={{ background: `color-mix(in oklch, ${s.accent}, transparent 85%)`, border: `1px solid color-mix(in oklch, ${s.accent}, transparent 70%)` }}>
-                                    <s.icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: s.accent }} />
-                                </div>
-                                <div className="text-3xl sm:text-5xl font-bold tracking-tighter text-primary leading-none mb-2">
-                                    {s.value}
-                                </div>
-                                <div className="text-[10px] sm:text-[11px] font-bold tracking-widest text-tertiary uppercase font-mono">
-                                    {s.label}
-                                </div>
-                            </Card>
+                                <Card
+                                    variant="glass"
+                                    performance="premium"
+                                    padding="p-6 sm:p-8"
+                                    hideBorder={true}
+                                    className="rounded-[2.5rem] sm:rounded-[3.15rem] cursor-default"
+                                >
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-8"
+                                        style={{ background: s.glow, border: `1px solid ${s.accent}20` }}>
+                                        <s.icon className="w-5 h-5" style={{ color: s.accent }} />
+                                    </div>
+                                    <div className="text-3xl sm:text-4xl font-bold tracking-tighter text-primary leading-none mb-2 tabular-nums">
+                                        <Counter value={s.value} delay={i * 60} />
+                                    </div>
+                                    <div className="text-[10px] sm:text-[11px] font-bold tracking-widest text-tertiary uppercase font-mono">{s.label}</div>
+                                </Card>
+                            </motion.div>
                         ))}
-                    </section>
+                    </div>
+
 
                     {/* Tabs */}
                     <div className="flex flex-wrap items-center gap-1.5 mb-10 p-1.5 rounded-[1.75rem] bg-sunken/50 border border-subtle w-fit backdrop-blur-xl">
@@ -860,13 +843,13 @@ const Networking = () => {
                                         style={{ height: `${rowVirtualizer.getTotalSize() - rowVirtualizer.options.scrollMargin}px` }}
                                     >
                                         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                                            const startIndex = virtualRow.index * 2;
-                                            const rowItems = connections.slice(startIndex, startIndex + 2);
+                                            const startIndex = virtualRow.index * 3;
+                                            const rowItems = connections.slice(startIndex, startIndex + 3);
                                             
                                             return (
                                                 <div
                                                     key={virtualRow.key}
-                                                    className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 gap-3"
+                                                    className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
                                                     style={{ 
                                                         transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
                                                         height: `${virtualRow.size}px`
@@ -904,7 +887,7 @@ const Networking = () => {
                                     <EmptyState icon={UserPlus} title="No pending requests" subtitle="When someone sends you a connection request, it will appear here." />
                                 ) : (
                                     <>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 relative">
                                             <AnimatePresence mode="popLayout">
                                                 {pending.map(req => (
                                                     <IncomingRequestCard key={req._id} request={req} onRespond={handleRespond} />
@@ -937,7 +920,7 @@ const Networking = () => {
                                     <EmptyState icon={Send} title="No sent requests" subtitle="Requests you've sent will appear here until they're accepted or declined." />
                                 ) : (
                                     <>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 relative">
                                             <AnimatePresence mode="popLayout">
                                                 {sent.map(req => (
                                                     <SentRequestCard key={req._id} request={req} onWithdraw={(id) => withdrawMutation.mutate(id)} />
@@ -976,7 +959,7 @@ const Networking = () => {
                                 {discoverData.length === 0 && (searchQuery.length >= 2 || (!searchQuery && suggestions.length === 0)) ? (
                                     <EmptyState icon={Search} title="No users found" subtitle={searchQuery ? "Try a different search term or filter." : "No suggestions available right now."} />
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 relative">
                                         <AnimatePresence mode="popLayout">
                                             {discoverData.map(u => (
                                                 <DiscoverCard key={u._id} user={u} onConnect={handleConnect} />

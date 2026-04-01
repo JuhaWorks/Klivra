@@ -77,14 +77,14 @@
   --text-base: clamp(0.875rem, 2.5vw, 0.9375rem);
   --text-lg: clamp(0.95rem, 2.8vw, 1.0625rem);
   --text-xl: clamp(1.1rem, 3.2vw, 1.25rem);
-  --text-2xl: clamp(1.25rem, 4vw, 1.5rem);
-  --text-3xl: clamp(1.5rem, 5vw, 1.875rem);
-  --text-4xl: clamp(1.875rem, 6vw, 2.25rem);
-  --text-5xl: clamp(2.25rem, 8vw, 3rem);
-  --text-6xl: clamp(3rem, 10vw, 3.75rem);
-  --text-hero: clamp(2.75rem, 12vw, 7rem);
-  --text-fluid-lg: clamp(1.125rem, 4vw, 2rem);
-  --text-fluid-base: clamp(0.875rem, 2.5vw, 1.125rem);
+  --text-2xl: clamp(1.125rem, 4vw, 1.5rem);
+  --text-3xl: clamp(1.25rem, 5vw, 1.875rem);
+  --text-4xl: clamp(1.5rem, 6vw, 2.25rem);
+  --text-5xl: clamp(1.75rem, 8vw, 3rem);
+  --text-6xl: clamp(2rem, 10vw, 3.75rem);
+  --text-hero: clamp(2.25rem, 12vw, 7rem);
+  --text-fluid-lg: clamp(1rem, 4vw, 2rem);
+  --text-fluid-base: clamp(0.8125rem, 2.5vw, 1.125rem);
 
   /* OKLCH neutral scale */
   --color-neutral-50: oklch(0.985 0.002 247);
@@ -114,12 +114,12 @@
   --breakpoint-4xl: 2560px;
 
   /* Spacing extras with fluid scaling */
-  --spacing-18: clamp(2.5rem, 6vw, 4.5rem);
-  --spacing-22: clamp(3.5rem, 8vw, 5.5rem);
-  --spacing-26: clamp(4.5rem, 10vw, 6.5rem);
-  --spacing-fluid-sm: clamp(0.75rem, 2vw, 1.5rem);
-  --spacing-fluid-md: clamp(1.25rem, 4vw, 2.5rem);
-  --spacing-fluid-lg: clamp(1.75rem, 6vw, 4.5rem);
+  --spacing-18: clamp(1.5rem, 6vw, 4.5rem);
+  --spacing-22: clamp(2rem, 8vw, 5.5rem);
+  --spacing-26: clamp(2.5rem, 10vw, 6.5rem);
+  --spacing-fluid-sm: clamp(0.5rem, 2vw, 1.5rem);
+  --spacing-fluid-md: clamp(1rem, 4vw, 2.5rem);
+  --spacing-fluid-lg: clamp(1.5rem, 6vw, 4.5rem);
 
   /* Border radius */
   --radius-xs: 4px;
@@ -442,6 +442,7 @@ body {
   /* Performance: Promote background to its own layer to avoid layout shifts/repaints */
   transform: translateZ(0);
   will-change: background-color, background-image;
+  position: relative;
 }
 
 :focus-visible {

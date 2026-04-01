@@ -190,6 +190,7 @@ const getPlatformStats = async (req, res, next) => {
                 },
                 system: {
                     status: isMaintenance ? 'Maintenance' : 'Operational',
+                    isUnderMaintenance: isMaintenance,
                     endTime: endTime,
                     lastBackup: new Date().toISOString()
                 }
@@ -227,10 +228,20 @@ const toggleMaintenance = async (req, res, next) => {
         // Broadcast to every connected client so browsers can react instantly
         try {
             const { getIO } = require('../utils/socket');
-            getIO().emit('maintenanceChanged', {
-                enabled: !!enabled,
-                endTime: enabled ? endTime : null
+            const event = !!enabled ? 'maintenance:started' : 'maintenance:ended';
+            getIO().emit(event, {
+                isUnderMaintenance: !!enabled,
+                scheduledEndTime: enabled ? endTime : null,
+                message: null // Could pull from a config if we added localized messages
             });
+            
+            // Also emit updated if it's already enabled but end time changed
+            if (enabled) {
+                getIO().emit('maintenance:updated', {
+                    isUnderMaintenance: true,
+                    scheduledEndTime: endTime,
+                });
+            }
         } catch (socketErr) {
             // Non-fatal — socket may not be initialized during tests
         }
@@ -313,8 +324,9 @@ const getSystemStatus = async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             data: {
-                isMaintenance: isMaintenance,
-                endTime: endTime
+                isUnderMaintenance: isMaintenance,
+                scheduledEndTime: endTime,
+                timestamp: new Date().toISOString()
             }
         });
     } catch (error) {
