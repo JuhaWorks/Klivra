@@ -130,7 +130,7 @@ const SidebarComponent = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 lg:hidden" 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[80] lg:hidden" 
                         onClick={() => setSidebarExpanded(false)} 
                     />
                 )}
@@ -139,13 +139,21 @@ const SidebarComponent = () => {
             <motion.aside
                 initial={false}
                 animate={{ 
-                    width: isSidebarExpanded ? (effectiveCollapsed ? 80 : 280) : 0,
-                    x: isSidebarExpanded ? 0 : -280
+                    width: isMobile ? (isSidebarExpanded ? 280 : 0) : (isSidebarExpanded ? (effectiveCollapsed ? 80 : 280) : 0),
+                    x: isSidebarExpanded ? 0 : -280,
+                    opacity: isMobile && !isSidebarExpanded ? 0 : 1
                 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 35, mass: 0.8 }}
+                transition={{ 
+                    type: "spring", 
+                    stiffness: 400, 
+                    damping: 38, 
+                    mass: 1,
+                    restDelta: 0.001
+                }}
                 className={cn(
-                    "relative h-full border-r border-default shadow-2xl transition-all",
-                    "flex flex-col rounded-r-[2rem] overflow-hidden",
+                    "h-full border-r border-default shadow-modal transition-shadow",
+                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2.5rem]" : "relative rounded-r-[2rem]",
+                    "flex flex-col overflow-hidden bg-black/20",
                     !isSidebarExpanded && "pointer-events-none"
                 )}
                 style={{ borderRightColor: 'var(--border-glass)' }}
@@ -153,8 +161,8 @@ const SidebarComponent = () => {
                 {/* GLASS BACKGROUND */}
                 <div className="absolute inset-0 z-0">
                     <GlassSurface 
-                        width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} 
-                        backgroundOpacity={mode === MODES.DARK ? 0.06 : 0.15} opacity={0.93} 
+                        width="100%" height="100%" borderRadius={0} displace={0.6} distortionScale={-60} 
+                        backgroundOpacity={mode === MODES.DARK ? 0.08 : 0.20} opacity={0.96} blur={24}
                     />
                 </div>
 
@@ -179,7 +187,11 @@ const SidebarComponent = () => {
                         <ChevronRight className={cn("w-5 h-5 transition-transform duration-300", !effectiveCollapsed && "rotate-180")} />
                     </button>
                     {isMobile && isSidebarExpanded && (
-                        <button onClick={() => setSidebarExpanded(false)} className="p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5 lg:hidden ml-auto">
+                        <button 
+                            onClick={() => setSidebarExpanded(false)} 
+                            className="p-2.5 text-primary bg-white/10 hover:bg-rose-500/10 hover:text-rose-500 rounded-2xl transition-all active:scale-95 lg:hidden ml-auto border border-white/5"
+                            aria-label="Close menu"
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     )}
