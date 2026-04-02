@@ -88,15 +88,18 @@ export const useIdleTimer = () => {
             }
         };
 
-        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-        events.forEach(event => document.addEventListener(event, throttledReset));
+        // CRITICAL: passive:true tells the browser these listeners NEVER call preventDefault
+        // Without this, the browser must wait for every mousemove/touchstart to finish
+        // before it can paint — this is a major INP/scroll killer on mobile.
+        const listenerOptions = { passive: true };
+        events.forEach(event => document.addEventListener(event, throttledReset, listenerOptions));
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         resetTimer();
 
         return () => {
             events.forEach(event => {
-                document.removeEventListener(event, throttledReset);
+                document.removeEventListener(event, throttledReset, listenerOptions);
             });
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);

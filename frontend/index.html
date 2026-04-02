@@ -3,9 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <!-- Accessibility: allow user scaling (Lighthouse flags maximum-scale=1 as a11y issue) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Klivra — Modern project management and team collaboration platform. Manage projects, tasks, and your team in real time." />
+
   <!-- Strict Content Security Policy (Prevents unauthorized data exfiltration) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* http://127.0.0.1:* https://127.0.0.1:* wss://syncforge-io.onrender.com https://syncforge-io.onrender.com https://*.sentry.io https://sentry.io https://api.nasa.gov https://api.fontshare.com https://cdn.fontshare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com https://cdnjs.cloudflare.com https://api.fontshare.com https://cdn.fontshare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://api.fontshare.com https://cdn.fontshare.com; worker-src 'self' blob: data:; img-src 'self' data: blob: *; media-src 'self' data: blob:; object-src 'none'; frame-src 'self' *;" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* http://127.0.0.1:* https://127.0.0.1:* wss://syncforge-io.onrender.com https://syncforge-io.onrender.com https://*.sentry.io https://sentry.io https://api.nasa.gov https://api.fontshare.com https://cdn.fontshare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' blob: https://api.fontshare.com https://cdn.fontshare.com; font-src 'self' data: https://cdn.fontshare.com; worker-src 'self' blob: data:; img-src 'self' data: blob: *; media-src 'self' data: blob:; object-src 'none'; frame-src 'self' *;" />
   
   <!-- Prod Security: Disable React DevTools -->
   <script>
@@ -13,18 +16,17 @@
       window.__REACT_DEVTOOLS_GLOBAL_HOOK__.inject = function() {};
     }
   </script>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Geist+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Geist+Mono:wght@400;500;600&display=swap">
-  <!-- Preload Critical Fonts for LCP -->
+
+  <!-- Preconnect to font CDN early (critical render path) -->
   <link rel="preconnect" href="https://api.fontshare.com">
   <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
-  
-  <!-- Font Awesome & Fontshare - Non-blocking -->
+
+  <!-- Fontshare: non-blocking font load -->
   <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,600,500,400&f[]=switzer@700,600,500,400,300&display=swap" media="print" onload="this.media='all'">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,600,500,400&f[]=switzer@700,600,500,400,300&display=swap"></noscript>
+
+  <!-- Logo: preload at actual display size (40x40), not 640x640 -->
+  <link rel="icon" type="image/png" href="/logo.png?v=2">
 
   <title>• KLIVRA •</title>
   <style>
@@ -36,7 +38,7 @@
     body {
       background-color: #080812;
       margin: 0;
-      font-family: 'Sora', 'Switzer', system-ui, sans-serif;
+      font-family: 'Switzer', system-ui, sans-serif;
       color: #ffffff;
       -webkit-font-smoothing: antialiased;
     }

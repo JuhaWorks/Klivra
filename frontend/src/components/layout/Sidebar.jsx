@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from 'react';
+import React, { memo, useEffect, useTransition, useCallback } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -38,43 +38,30 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
                 linkActive ? "text-theme" : "text-secondary hover:text-primary"
             )}
         >
-            {isActive && (
-                <motion.div
-                    layoutId="sidebar-active"
-                    className="absolute inset-0 rounded-2xl bg-theme/10 border border-theme/20 shadow-[0_0_20px_rgba(var(--theme-rgb),0.05)]"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-            )}
+            {/* GPU-only active indicator: uses opacity+scale (composited), not layout properties */}
+            <span className={cn(
+                "absolute inset-0 rounded-2xl bg-theme/10 border border-theme/20 shadow-[0_0_20px_rgba(var(--theme-rgb),0.05)]",
+                "transition-opacity duration-200",
+                isActive ? "opacity-100" : "opacity-0"
+            )} />
             
             <Icon className={cn(
                 "w-5 h-5 transition-colors z-10 shrink-0",
                 isActive ? "text-theme" : "group-hover:text-theme-lt"
             )} />
             
-            <AnimatePresence mode="wait">
-                {!isCollapsed && (
-                    <motion.span 
-                        initial={{ opacity: 0, x: -5 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -5 }}
-                        transition={{ duration: 0.15 }}
-                        className="font-bold text-sm tracking-tight z-10 truncate"
-                    >
-                        {item.label}
-                    </motion.span>
-                )}
-            </AnimatePresence>
-            
-            {isActive && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className={cn(
-                        "w-1.5 h-1.5 rounded-full bg-theme shadow-theme z-10",
-                        isCollapsed ? "absolute bottom-1 left-1/2 -translate-x-1/2" : "ml-auto"
-                    )}
-                />
+            {!isCollapsed && (
+                <span className="font-bold text-sm tracking-tight z-10 truncate">
+                    {item.label}
+                </span>
             )}
+            
+            <span className={cn(
+                "w-1.5 h-1.5 rounded-full bg-theme shadow-theme z-10",
+                "transition-opacity duration-200",
+                isCollapsed ? "absolute bottom-1 left-1/2 -translate-x-1/2" : "ml-auto",
+                isActive ? "opacity-100" : "opacity-0"
+            )} />
         </NavLink>
     );
 });
@@ -100,7 +87,25 @@ const SidebarComponent = () => {
         }
     }, [isTablet, isCollapsed, setCollapsed]);
 
-    const handlePrefetch = (path) => {
+    // Prefetch the JS chunk AND the data for a route when the user hovers.
+    // On production, lazy chunks take 200-800ms to download+parse.
+    // By the time the user clicks, the chunk is already resident in the module cache.
+    const chunkMap = {
+        '/': () => import('../../pages/Home'),
+        '/projects': () => import('../../pages/Projects'),
+        '/tasks': () => import('../../pages/Tasks'),
+        '/networking': () => import('../../pages/Networking'),
+        '/settings': () => import('../../pages/Settings'),
+        '/profile': () => import('../../pages/Profile'),
+        '/whiteboard/main-workspace': () => import('../tools/Whiteboard'),
+        '/admin': () => import('../../pages/AdminDashboard'),
+        '/admin/security': () => import('../../pages/SecurityFeed'),
+    };
+
+    const handlePrefetch = useCallback((path) => {
+        // Prefetch the JS chunk
+        chunkMap[path]?.();
+        // Prefetch API data for data-heavy routes
         if (path === '/projects') {
             queryClient.prefetchQuery({
                 queryKey: ['projects'],
@@ -108,12 +113,16 @@ const SidebarComponent = () => {
                 staleTime: 1000 * 60 * 5
             });
         }
-    };
+    }, [queryClient]);
 
-    const handleLogout = async () => {
-        await logout();
+    const [, startTransition] = useTransition();
+
+    const handleLogout = useCallback(() => {
+        // Navigate instantly — don't await the API call.
+        // INP fix: the click response is immediate; logout happens in background.
         navigate('/login');
-    };
+        logout().catch(() => {});
+    }, [logout, navigate]);
 
     const visibleNavItems = (user?.role === 'Admin' || isAdminSection)
         ? navItems.filter(item => item.path === '/')
@@ -172,7 +181,7 @@ const SidebarComponent = () => {
                 {/* Brand */}
                 <div className={cn("h-20 flex items-center relative z-10 shrink-0", effectiveCollapsed ? "justify-center px-0" : "gap-4 px-6")}>
                     <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform overflow-hidden">
-                        <img src="/logo.png?v=2" alt="klvira logo" width={40} height={40} className="w-full h-full object-cover" />
+                        <img src="/logo.png?v=2" alt="Klivra logo" width={40} height={40} fetchPriority="high" className="w-full h-full object-cover" />
                     </div>
                     {!effectiveCollapsed && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-w-0">
@@ -255,7 +264,7 @@ const SidebarComponent = () => {
                                 {!effectiveCollapsed && <span>Settings</span>}
                             </NavLink>
                         )}
-                        <button onClick={() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK)}
+                        <button onClick={() => startTransition(() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK))}
                             className={cn("w-full flex items-center rounded-2xl text-sm font-bold transition-all duration-300", effectiveCollapsed ? "justify-center h-11 px-0" : "gap-4 px-4 py-3", "text-tertiary hover:text-primary hover:bg-white/5")}
                         >
                             {mode === MODES.DARK ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}

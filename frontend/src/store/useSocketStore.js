@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from './useAuthStore';
+import { startTransition } from 'react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 
                     import.meta.env.VITE_API_URL ||
@@ -69,11 +70,13 @@ export const useSocketStore = create((set, get) => ({
         });
 
         socket.on('presenceUpdate', (viewers) => {
-            set({ activeViewers: viewers });
+            // Non-urgent background update — defer if user is interacting
+            startTransition(() => set({ activeViewers: viewers }));
         });
 
         socket.on('globalPresenceUpdate', (users) => {
-            set({ onlineUsers: users });
+            // Non-urgent background update — defer if user is interacting
+            startTransition(() => set({ onlineUsers: users }));
         });
 
         socket.on('projectActivity', ({ userName, action }) => {

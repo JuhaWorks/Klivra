@@ -33,9 +33,8 @@ const ApodWidget = () => {
     });
 
     const display = isError || !apod ? FALLBACK : apod;
-    // Prioritize HD URL for "full image" experience
-    const rawSrc = display.hdurl || display.url || (display.media_type === 'video' ? display.thumbnail_url : null);
-    const imgSrc = rawSrc || FALLBACK.url;
+    // Use regular url (not hdurl) — hdurl is full-res, often 4-8MB. The widget is 600x220px.
+    const imgSrc = (display.media_type === 'video' ? display.thumbnail_url : display.url) || FALLBACK.url;
 
     return (
         <Card className="group h-full min-h-[450px] overflow-hidden flex flex-col" padding="p-0">
@@ -54,21 +53,11 @@ const ApodWidget = () => {
                     {/* Image Section */}
                     <div className="relative h-[220px] shrink-0 overflow-hidden">
                         <img
-                            src={(() => {
-                                // Adaptive Loading: Check for Data Saver or Slow Connection
-                                if (navigator.connection) {
-                                  const { saveData, effectiveType } = navigator.connection;
-                                  if (saveData || effectiveType === 'slow-2g' || effectiveType === '2g') {
-                                    // Load lower quality version if available, or just keep it minimal
-                                    return imgSrc + '&w=400&q=60'; // Mocking a quality param if the API supported it
-                                  }
-                                }
-                                return imgSrc;
-                            })()}
+                            src={imgSrc}
                             alt={display.title}
                             width={600}
                             height={220}
-                            loading="lazy"
+                            fetchpriority="high"
                             decoding="async"
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             onError={(e) => { 
