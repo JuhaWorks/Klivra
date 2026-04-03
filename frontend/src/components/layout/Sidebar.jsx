@@ -15,11 +15,11 @@ import GlassSurface from '../ui/GlassSurface';
 import { getOptimizedAvatar } from '../../utils/avatar';
 
 const navItems = [
-    { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { label: 'Projects', path: '/projects', icon: FolderKanban },
-    { label: 'Tasks', path: '/tasks', icon: CheckSquare },
-    { label: 'Network', path: '/networking', icon: Users2, hideForAdmin: true },
-    { label: 'Whiteboard', path: '/whiteboard/main-workspace', icon: Presentation },
+    { label: 'Dashboard', path: '/', icon: LayoutDashboard, description: 'Overview & analytics' },
+    { label: 'Projects', path: '/projects', icon: FolderKanban, description: 'Manage your projects' },
+    { label: 'Tasks', path: '/tasks', icon: CheckSquare, description: 'Track work items' },
+    { label: 'Network', path: '/networking', icon: Users2, description: 'Connections & teams', hideForAdmin: true },
+    { label: 'Whiteboard', path: '/whiteboard/main-workspace', icon: Presentation, description: 'Visual workspace' },
 ];
 
 const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
@@ -32,36 +32,66 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
             onClick={onClose}
             onMouseEnter={() => onPrefetch(item.path)}
             className={({ isActive: linkActive }) => cn(
-                "group relative flex items-center rounded-2xl transition-all duration-200",
-                isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                "hover:bg-theme/5 active:scale-[0.98]",
-                linkActive ? "text-theme" : "text-secondary hover:text-primary"
+                "sidebar-nav-item group relative flex items-center transition-all duration-200 select-none",
+                isCollapsed 
+                    ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
+                    : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                linkActive 
+                    ? "text-theme" 
+                    : "text-tertiary hover:text-primary"
             )}
         >
-            {/* GPU-only active indicator: uses opacity+scale (composited), not layout properties */}
+            {/* Active background fill */}
             <span className={cn(
-                "absolute inset-0 rounded-2xl bg-theme/10 border border-theme/20 shadow-[0_0_20px_rgba(var(--theme-rgb),0.05)]",
-                "transition-opacity duration-200",
+                "absolute inset-0 rounded-xl transition-opacity duration-200",
+                isCollapsed ? "rounded-2xl" : "rounded-xl",
+                "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
                 isActive ? "opacity-100" : "opacity-0"
             )} />
-            
-            <Icon className={cn(
-                "w-5 h-5 transition-colors z-10 shrink-0",
-                isActive ? "text-theme" : "group-hover:text-theme-lt"
+
+            {/* Hover background */}
+            <span className={cn(
+                "absolute inset-0 transition-opacity duration-150",
+                isCollapsed ? "rounded-2xl" : "rounded-xl",
+                "bg-white/5",
+                isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
             )} />
-            
+
+            {/* Icon container */}
+            <span className={cn(
+                "relative z-10 flex items-center justify-center shrink-0 transition-all duration-200",
+                isCollapsed ? "w-5 h-5" : "w-5 h-5",
+                isActive ? "text-theme" : "group-hover:text-theme/70"
+            )}>
+                <Icon strokeWidth={isActive ? 2 : 1.75} className="w-full h-full" />
+            </span>
+
             {!isCollapsed && (
-                <span className="font-bold text-sm tracking-tight z-10 truncate">
-                    {item.label}
+                <span className="relative z-10 flex flex-col min-w-0 flex-1">
+                    <span className={cn(
+                        "text-sm leading-tight truncate transition-colors duration-150",
+                        isActive ? "font-semibold text-theme" : "font-medium"
+                    )}>
+                        {item.label}
+                    </span>
                 </span>
             )}
-            
-            <span className={cn(
-                "w-1.5 h-1.5 rounded-full bg-theme shadow-theme z-10",
-                "transition-opacity duration-200",
-                isCollapsed ? "absolute bottom-1 left-1/2 -translate-x-1/2" : "ml-auto",
-                isActive ? "opacity-100" : "opacity-0"
-            )} />
+
+            {/* Active left accent bar */}
+            {!isCollapsed && (
+                <span className={cn(
+                    "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-theme transition-all duration-200",
+                    isActive ? "h-5 opacity-100" : "h-0 opacity-0"
+                )} />
+            )}
+
+            {/* Collapsed active dot */}
+            {isCollapsed && (
+                <span className={cn(
+                    "absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-theme transition-all duration-200",
+                    isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
+                )} />
+            )}
         </NavLink>
     );
 });
@@ -87,9 +117,6 @@ const SidebarComponent = () => {
         }
     }, [isTablet, isCollapsed, setCollapsed]);
 
-    // Prefetch the JS chunk AND the data for a route when the user hovers.
-    // On production, lazy chunks take 200-800ms to download+parse.
-    // By the time the user clicks, the chunk is already resident in the module cache.
     const chunkMap = {
         '/': () => import('../../pages/Home'),
         '/projects': () => import('../../pages/Projects'),
@@ -103,9 +130,7 @@ const SidebarComponent = () => {
     };
 
     const handlePrefetch = useCallback((path) => {
-        // Prefetch the JS chunk
         chunkMap[path]?.();
-        // Prefetch API data for data-heavy routes
         if (path === '/projects') {
             queryClient.prefetchQuery({
                 queryKey: ['projects'],
@@ -118,8 +143,6 @@ const SidebarComponent = () => {
     const [, startTransition] = useTransition();
 
     const handleLogout = useCallback(() => {
-        // Navigate instantly — don't await the API call.
-        // INP fix: the click response is immediate; logout happens in background.
         navigate('/login');
         logout().catch(() => {});
     }, [logout, navigate]);
@@ -128,7 +151,6 @@ const SidebarComponent = () => {
         ? navItems.filter(item => item.path === '/')
         : navItems;
 
-    // Don't use effectively "isCollapsed" when on mobile drawer, force expanded look
     const effectiveCollapsed = isMobile ? false : isCollapsed;
 
     return (
@@ -148,8 +170,8 @@ const SidebarComponent = () => {
             <motion.aside
                 initial={false}
                 animate={{ 
-                    width: isMobile ? (isSidebarExpanded ? 280 : 0) : (isSidebarExpanded ? (effectiveCollapsed ? 80 : 280) : 0),
-                    x: isSidebarExpanded ? 0 : -280,
+                    width: isMobile ? (isSidebarExpanded ? 272 : 0) : (isSidebarExpanded ? (effectiveCollapsed ? 72 : 272) : 0),
+                    x: isSidebarExpanded ? 0 : -272,
                     opacity: isMobile && !isSidebarExpanded ? 0 : 1
                 }}
                 transition={{ 
@@ -161,8 +183,8 @@ const SidebarComponent = () => {
                 }}
                 className={cn(
                     "h-full border-r border-default shadow-modal transition-shadow",
-                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2.5rem]" : "relative rounded-r-[2rem]",
-                    "flex flex-col overflow-hidden bg-black/20",
+                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2rem]" : "relative rounded-r-[1.75rem]",
+                    "flex flex-col overflow-hidden",
                     isSidebarExpanded ? "pointer-events-auto" : "pointer-events-none"
                 )}
                 style={{ borderRightColor: 'var(--border-glass)' }}
@@ -175,115 +197,350 @@ const SidebarComponent = () => {
                     />
                 </div>
 
-                {/* Theme Ambient Effect */}
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-accent-500/5 to-transparent pointer-events-none z-[-1]" />
+                {/* Subtle vertical gradient accent at top */}
+                <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-accent-500/8 via-accent-500/3 to-transparent pointer-events-none z-[1]" />
+                
+                {/* Subtle inner right border glow */}
+                <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-accent-500/20 via-transparent to-transparent pointer-events-none z-[1]" />
 
-                {/* Brand */}
-                <div className={cn("h-20 flex items-center relative z-10 shrink-0", effectiveCollapsed ? "justify-center px-0" : "gap-4 px-6")}>
-                    <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform overflow-hidden">
-                        <img src="/logo.png?v=2" alt="Klivra logo" width={40} height={40} fetchPriority="high" className="w-full h-full object-cover" />
+                {/* ── Brand Header ── */}
+                <div className={cn(
+                    "h-[4.25rem] flex items-center relative z-10 shrink-0",
+                    effectiveCollapsed ? "justify-center px-0" : "gap-3 px-5"
+                )}>
+                    {/* Logo */}
+                    <div className={cn(
+                        "shrink-0 rounded-xl overflow-hidden transition-all duration-200",
+                        "shadow-[0_2px_8px_rgba(0,0,0,0.24)] ring-1 ring-white/10",
+                        effectiveCollapsed ? "w-9 h-9" : "w-8 h-8"
+                    )}>
+                        <img 
+                            src="/logo.png?v=2" alt="Klivra logo" 
+                            width={40} height={40} 
+                            fetchPriority="high" 
+                            className="w-full h-full object-cover" 
+                        />
                     </div>
+
                     {!effectiveCollapsed && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-w-0">
-                            <span className="text-lg font-black tracking-tighter text-primary truncate">klvira</span>
-                            <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest truncate">{isAdminSection ? 'Administration' : 'Workspace'}</span>
+                        <motion.div 
+                            initial={{ opacity: 0, x: -6 }} 
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.18 }}
+                            className="flex flex-col min-w-0 flex-1"
+                        >
+                            <span className="text-[15px] font-black tracking-tight text-primary leading-none">
+                                klivra
+                            </span>
+                            <span className="text-[10px] font-semibold text-tertiary uppercase tracking-[0.14em] mt-0.5">
+                                {isAdminSection ? 'Administration' : 'Workspace'}
+                            </span>
                         </motion.div>
                     )}
+
+                    {/* Desktop collapse toggle */}
                     <button 
                         onClick={toggleCollapse} 
-                        className="hidden lg:flex ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-white/5"
+                        className={cn(
+                            "hidden lg:flex items-center justify-center shrink-0",
+                            "w-7 h-7 rounded-lg transition-all duration-150",
+                            "text-tertiary hover:text-primary hover:bg-white/8",
+                            "border border-transparent hover:border-white/8",
+                            effectiveCollapsed ? "ml-0" : "ml-auto"
+                        )}
+                        aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
-                        <ChevronRight className={cn("w-5 h-5 transition-transform duration-300", !effectiveCollapsed && "rotate-180")} />
+                        <ChevronRight className={cn(
+                            "w-3.5 h-3.5 transition-transform duration-300",
+                            !effectiveCollapsed && "rotate-180"
+                        )} />
                     </button>
+
+                    {/* Mobile close button */}
                     {isMobile && isSidebarExpanded && (
                         <button 
                             onClick={() => setSidebarExpanded(false)} 
-                            className="p-2.5 text-primary bg-white/10 hover:bg-rose-500/10 hover:text-rose-500 rounded-2xl transition-all active:scale-95 lg:hidden ml-auto border border-white/5"
+                            className="p-2 text-tertiary hover:text-primary hover:bg-white/8 rounded-xl transition-all active:scale-95 lg:hidden ml-auto"
                             aria-label="Close menu"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4" />
                         </button>
                     )}
                 </div>
 
-                {/* Nav */}
-                <nav className={cn("flex-1 py-6 space-y-2 overflow-y-auto overflow-x-hidden relative z-10 scrollbar-hide", effectiveCollapsed ? "px-2" : "px-4")}>
-                    {!effectiveCollapsed && (
-                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 mb-4 text-[10px] font-black text-tertiary uppercase tracking-[0.2em]">
-                            {isAdminSection ? 'System Control' : 'Navigation'}
-                        </motion.p>
-                    )}
+                {/* ── Thin divider ── */}
+                <div className={cn(
+                    "relative z-10 mx-4 shrink-0",
+                    "h-px bg-gradient-to-r from-transparent via-white/8 to-transparent"
+                )} />
 
+                {/* ── Navigation ── */}
+                <nav className={cn(
+                    "flex-1 pt-4 pb-2 space-y-0.5 overflow-y-auto overflow-x-hidden relative z-10 scrollbar-none",
+                    effectiveCollapsed ? "px-2.5" : "px-3"
+                )}>
+
+                    {/* Admin section items */}
                     {user?.role === 'Admin' && (
-                        <div className="mb-6 space-y-2 px-1">
-                            <NavLink to="/admin" end onClick={() => isMobile && setSidebarExpanded(false)}
+                        <div className={cn("mb-4", !effectiveCollapsed && "space-y-0.5")}>
+                            {!effectiveCollapsed && (
+                                <motion.p 
+                                    initial={{ opacity: 0 }} 
+                                    animate={{ opacity: 1 }}
+                                    className="px-3 pb-1.5 text-[10px] font-bold text-tertiary uppercase tracking-[0.14em]"
+                                >
+                                    System
+                                </motion.p>
+                            )}
+                            {effectiveCollapsed && <div className="h-2" />}
+
+                            <NavLink 
+                                to="/admin" end 
+                                onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
-                                    "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                    effectiveCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                                    isActive ? "bg-theme/10 text-theme border border-theme/20" : "text-tertiary hover:text-primary hover:bg-white/5"
+                                    "group relative flex items-center transition-all duration-200 select-none",
+                                    effectiveCollapsed 
+                                        ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
+                                        : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                                    isActive ? "text-theme" : "text-tertiary hover:text-primary"
                                 )}
                             >
-                                <ShieldAlert className="w-5 h-5 shrink-0" />
-                                {!effectiveCollapsed && <span>Admin Panel</span>}
+                                {({ isActive }) => (
+                                    <>
+                                        <span className={cn(
+                                            "absolute inset-0 transition-opacity duration-200",
+                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
+                                            "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
+                                            isActive ? "opacity-100" : "opacity-0"
+                                        )} />
+                                        <span className={cn(
+                                            "absolute inset-0 transition-opacity duration-150",
+                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
+                                            "bg-white/5",
+                                            isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+                                        )} />
+                                        <ShieldAlert strokeWidth={isActive ? 2 : 1.75} className="w-5 h-5 relative z-10 shrink-0" />
+                                        {!effectiveCollapsed && (
+                                            <span className={cn(
+                                                "relative z-10 text-sm truncate leading-tight",
+                                                isActive ? "font-semibold" : "font-medium"
+                                            )}>Admin Panel</span>
+                                        )}
+                                        {!effectiveCollapsed && (
+                                            <span className={cn(
+                                                "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-theme transition-all duration-200",
+                                                isActive ? "h-5 opacity-100" : "h-0 opacity-0"
+                                            )} />
+                                        )}
+                                    </>
+                                )}
                             </NavLink>
-                            <NavLink to="/admin/security" onClick={() => isMobile && setSidebarExpanded(false)}
+
+                            <NavLink 
+                                to="/admin/security" 
+                                onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
-                                    "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                    effectiveCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                                    isActive ? "bg-danger/10 text-danger border border-danger/20" : "text-tertiary hover:text-danger hover:bg-danger/5"
+                                    "group relative flex items-center transition-all duration-200 select-none",
+                                    effectiveCollapsed 
+                                        ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
+                                        : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                                    isActive ? "text-danger" : "text-tertiary hover:text-danger"
                                 )}
                             >
-                                <Activity className="w-5 h-5 shrink-0" />
-                                {!effectiveCollapsed && <span>Security Feed</span>}
+                                {({ isActive }) => (
+                                    <>
+                                        <span className={cn(
+                                            "absolute inset-0 transition-opacity duration-200",
+                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
+                                            "bg-gradient-to-r from-danger/12 to-danger/6 border border-danger/20",
+                                            isActive ? "opacity-100" : "opacity-0"
+                                        )} />
+                                        <span className={cn(
+                                            "absolute inset-0 transition-opacity duration-150",
+                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
+                                            "bg-white/5",
+                                            isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+                                        )} />
+                                        <Activity strokeWidth={isActive ? 2 : 1.75} className="w-5 h-5 relative z-10 shrink-0" />
+                                        {!effectiveCollapsed && (
+                                            <span className={cn(
+                                                "relative z-10 text-sm truncate leading-tight",
+                                                isActive ? "font-semibold" : "font-medium"
+                                            )}>Security Feed</span>
+                                        )}
+                                        {!effectiveCollapsed && isActive && (
+                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-danger opacity-100" />
+                                        )}
+                                    </>
+                                )}
                             </NavLink>
                         </div>
                     )}
 
-                    <div className="space-y-1">
+                    {/* Main nav section label */}
+                    {!effectiveCollapsed && (
+                        <motion.p 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }}
+                            className="px-3 pb-1.5 text-[10px] font-bold text-tertiary uppercase tracking-[0.14em]"
+                        >
+                            {isAdminSection ? 'Overview' : 'Main Menu'}
+                        </motion.p>
+                    )}
+                    {effectiveCollapsed && !user?.role === 'Admin' && <div className="h-2" />}
+
+                    {/* Nav items */}
+                    <div className="space-y-0.5">
                         {visibleNavItems.map((item) => (
                             <SidebarItem 
-                                key={item.path} item={item} isActive={location.pathname === item.path}
-                                onClose={() => isMobile && setSidebarExpanded(false)} onPrefetch={handlePrefetch} isCollapsed={effectiveCollapsed}
+                                key={item.path} 
+                                item={item} 
+                                isActive={location.pathname === item.path}
+                                onClose={() => isMobile && setSidebarExpanded(false)} 
+                                onPrefetch={handlePrefetch} 
+                                isCollapsed={effectiveCollapsed}
                             />
                         ))}
                     </div>
                 </nav>
 
-                {/* Footer */}
-                <div className={cn("mt-auto border-t border-white/5 relative z-10 shrink-0", effectiveCollapsed ? "p-3" : "p-4")}>
-                    <div className="space-y-1 mb-6">
+                {/* ── Thin divider ── */}
+                <div className={cn(
+                    "relative z-10 mx-4 shrink-0",
+                    "h-px bg-gradient-to-r from-transparent via-white/8 to-transparent"
+                )} />
+
+                {/* ── Footer ── */}
+                <div className={cn(
+                    "relative z-10 shrink-0 pt-3 pb-4",
+                    effectiveCollapsed ? "px-2.5" : "px-3"
+                )}>
+                    {/* Settings & theme toggle */}
+                    <div className={cn("space-y-0.5 mb-3")}>
                         {!isAdminSection && (
-                            <NavLink to="/settings" onClick={() => isMobile && setSidebarExpanded(false)}
+                            <NavLink 
+                                to="/settings" 
+                                onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
-                                    "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                    effectiveCollapsed ? "justify-center h-11 w-full px-0" : "gap-4 px-4 py-3",
-                                    isActive ? "bg-theme/10 text-theme border border-theme/20" : "text-tertiary hover:text-primary hover:bg-white/5"
+                                    "group relative flex items-center transition-all duration-200 select-none",
+                                    effectiveCollapsed 
+                                        ? "justify-center h-10 w-10 mx-auto rounded-xl" 
+                                        : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                                    isActive ? "text-theme" : "text-tertiary hover:text-primary"
                                 )}
                             >
-                                <Settings className="w-5 h-5 shrink-0" />
-                                {!effectiveCollapsed && <span>Settings</span>}
+                                {({ isActive }) => (
+                                    <>
+                                        <span className={cn(
+                                            "absolute inset-0 rounded-xl transition-opacity duration-200",
+                                            "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
+                                            isActive ? "opacity-100" : "opacity-0"
+                                        )} />
+                                        <span className={cn(
+                                            "absolute inset-0 rounded-xl transition-opacity duration-150 bg-white/5",
+                                            isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+                                        )} />
+                                        <Settings strokeWidth={isActive ? 2 : 1.75} className="w-4 h-4 relative z-10 shrink-0" />
+                                        {!effectiveCollapsed && (
+                                            <span className={cn(
+                                                "relative z-10 text-sm truncate",
+                                                isActive ? "font-semibold" : "font-medium"
+                                            )}>Settings</span>
+                                        )}
+                                        {!effectiveCollapsed && (
+                                            <span className={cn(
+                                                "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-theme transition-all duration-200",
+                                                isActive ? "h-4 opacity-100" : "h-0 opacity-0"
+                                            )} />
+                                        )}
+                                    </>
+                                )}
                             </NavLink>
                         )}
-                        <button onClick={() => startTransition(() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK))}
-                            className={cn("w-full flex items-center rounded-2xl text-sm font-bold transition-all duration-300", effectiveCollapsed ? "justify-center h-11 px-0" : "gap-4 px-4 py-3", "text-tertiary hover:text-primary hover:bg-white/5")}
+
+                        {/* Theme toggle */}
+                        <button 
+                            onClick={() => startTransition(() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK))}
+                            className={cn(
+                                "group relative w-full flex items-center transition-all duration-200 select-none text-tertiary hover:text-primary",
+                                effectiveCollapsed 
+                                    ? "justify-center h-10 w-10 mx-auto rounded-xl" 
+                                    : "gap-3 px-3 py-2.5 rounded-xl"
+                            )}
                         >
-                            {mode === MODES.DARK ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                            {!effectiveCollapsed && <span>{mode === MODES.DARK ? 'Light Mode' : 'Dark Mode'}</span>}
+                            <span className="absolute inset-0 rounded-xl transition-opacity duration-150 bg-white/5 opacity-0 group-hover:opacity-100" />
+                            {mode === MODES.DARK 
+                                ? <Sun className="w-4 h-4 relative z-10 shrink-0" strokeWidth={1.75} />
+                                : <Moon className="w-4 h-4 relative z-10 shrink-0" strokeWidth={1.75} />
+                            }
+                            {!effectiveCollapsed && (
+                                <span className="relative z-10 text-sm font-medium">
+                                    {mode === MODES.DARK ? 'Light Mode' : 'Dark Mode'}
+                                </span>
+                            )}
                         </button>
                     </div>
 
-                    <div className={cn("rounded-[2.5rem] bg-white/5 border border-white/5 transition-all p-1.5", effectiveCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-3 pr-3")}>
-                        <Link to="/profile" onClick={() => isMobile && setSidebarExpanded(false)} className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-accent-500/10 to-accent-500/20 border border-white/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform">
-                            {user?.avatar ? <img src={getOptimizedAvatar(user.avatar)} alt={user.name} width={40} height={40} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <UserCircle className="w-6 h-6 text-theme" />}
+                    {/* User profile card */}
+                    <div className={cn(
+                        "rounded-xl border border-white/8 bg-white/4 transition-all duration-200",
+                        "hover:bg-white/6 hover:border-white/12",
+                        effectiveCollapsed 
+                            ? "p-1.5 flex flex-col items-center gap-2" 
+                            : "p-1.5 flex items-center gap-2.5"
+                    )}>
+                        {/* Avatar */}
+                        <Link 
+                            to="/profile" 
+                            onClick={() => isMobile && setSidebarExpanded(false)} 
+                            className={cn(
+                                "shrink-0 rounded-lg overflow-hidden transition-all duration-150",
+                                "ring-1 ring-white/10 hover:ring-accent-500/40",
+                                "w-9 h-9 flex items-center justify-center",
+                                "bg-gradient-to-br from-accent-500/20 to-accent-600/20"
+                            )}
+                        >
+                            {user?.avatar 
+                                ? <img 
+                                    src={getOptimizedAvatar(user.avatar)} 
+                                    alt={user.name} 
+                                    width={36} height={36} 
+                                    loading="lazy" decoding="async" 
+                                    className="w-full h-full object-cover" 
+                                  /> 
+                                : <UserCircle className="w-5 h-5 text-theme" />
+                            }
                         </Link>
+
                         {!effectiveCollapsed && (
-                            <Link to="/profile" className="flex flex-col min-w-0 flex-1 group">
-                                <span className="text-sm font-black text-primary truncate group-hover:text-theme transition-colors">{user?.name}</span>
-                                <span className="text-[10px] font-black text-tertiary uppercase tracking-tighter truncate">{user?.role}</span>
-                            </Link>
+                            <>
+                                <Link to="/profile" className="flex flex-col min-w-0 flex-1 group/profile">
+                                    <span className="text-[13px] font-semibold text-primary truncate leading-tight group-hover/profile:text-theme transition-colors duration-150">
+                                        {user?.name}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-tertiary truncate leading-tight capitalize mt-0.5">
+                                        {user?.role}
+                                    </span>
+                                </Link>
+                                <button 
+                                    onClick={handleLogout} 
+                                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-tertiary hover:text-danger hover:bg-danger/10 transition-all duration-150"
+                                    aria-label="Log out"
+                                >
+                                    <LogOut className="w-3.5 h-3.5" />
+                                </button>
+                            </>
                         )}
-                        {!effectiveCollapsed && <button onClick={handleLogout} className="p-2 text-tertiary hover:text-danger transition-colors"><LogOut className="w-4 h-4" /></button>}
-                        {effectiveCollapsed && <button onClick={handleLogout} className="w-10 h-10 rounded-2xl flex items-center justify-center text-tertiary hover:text-danger hover:bg-danger/5 transition-all"><LogOut className="w-5 h-5" /></button>}
+
+                        {effectiveCollapsed && (
+                            <button 
+                                onClick={handleLogout} 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-tertiary hover:text-danger hover:bg-danger/10 transition-all duration-150"
+                                aria-label="Log out"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </motion.aside>
