@@ -32,7 +32,8 @@ const getTasks = async (req, res, next) => {
         const total = await Task.countDocuments({ project: req.params.projectId });
 
         const tasks = await Task.find({ project: req.params.projectId })
-            .populate('assignee', 'name email')
+            .populate('assignee', 'name email avatar')
+            .select('-__v')
             .skip(skip)
             .limit(limit)
             .lean();

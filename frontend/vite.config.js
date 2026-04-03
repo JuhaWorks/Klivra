@@ -1,9 +1,22 @@
-import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { compression } from 'vite-plugin-compression2';
 
 export default defineConfig({
-  plugins: [tailwindcss(), react()],
+  plugins: [
+    tailwindcss(), 
+    react(),
+    compression({
+      algorithm: 'brotliCompress',
+      exclude: [/\.(br)$/, /\.(gz)$/],
+      threshold: 1024
+    }),
+    compression({
+      algorithm: 'gzip',
+      exclude: [/\.(br)$/, /\.(gz)$/],
+      threshold: 1024
+    })
+  ],
 
   build: {
     minify: 'esbuild',

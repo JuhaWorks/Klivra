@@ -149,11 +149,17 @@ const os = require('os');
 const enableCluster = process.env.NODE_ENV === 'production' || process.env.ENABLE_CLUSTER === 'true';
 
 if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
+  // Advanced Memory-Aware Supervisor:
+  // Render Free Tier has 512MB RAM. Each Node process takes ~150-250MB.
+  // Spawning workers equal to CPU count (often 4-8 on shared infra) crashes the container.
   const numCPUs = os.cpus().length;
+  const isRender = process.env.RENDER || process.env.NODE_ENV === 'production';
+  const workerLimit = isRender ? 1 : Math.min(numCPUs, 1);
+  
   logger.info(`🔥 Global Cluster Manager (PID ${process.pid}) initializing...`);
-  logger.info(`Spawning ${numCPUs} background workers to handle traffic load.`);
+  logger.info(`Detected ${numCPUs} CPUs. Spawning ${workerLimit} worker(s) to maintain <512MB memory footprint.`);
 
-  for (let i = 0; i < numCPUs; i++) {
+  for (let i = 0; i < workerLimit; i++) {
     cluster.fork();
   }
 
@@ -162,14 +168,15 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
     cluster.fork();
   });
 } else {
+  const isRender = process.env.RENDER || process.env.NODE_ENV === 'production';
   // 6. DB Connection (Workers only)
   mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 5000,
     connectTimeoutMS: 10000,
     socketTimeoutMS: 45000,
-    maxPoolSize: 100, // Increased for clustered environment
+    maxPoolSize: 10, // Reduced from 100 to save RAM on low-tier cloud hosting
     family: 4,
-    compressors: ['zlib'] // Enable network compression
+    // Removed zlib compressor to save CPU/RAM overhead at this scale
   }).then(async () => {
     logger.info(`✅ MongoDB Connected in Worker ${process.pid}!`);
 
@@ -202,6 +209,19 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
   // 8. Server Initialization
   const PORT = process.env.PORT || 5000;
   server.listen(PORT, () => logger.info(`🚀 Worker ${process.pid} listening to HTTP & WebSockets on port ${PORT}`));
+
+  // Advanced Memory Guardian (Watchdog)
+  // Ensures the worker stays under Render's 512MB limit by triggering a graceful
+  // restart before the container is forcibly killed.
+  if (isRender) {
+    setInterval(() => {
+      const rss = process.memoryUsage().rss / 1024 / 1024;
+      if (rss > 420) { // Limit to 420MB to allow 92MB "breathing room" for the Master process
+        logger.warn(`💾 MEMORY GUARDIAN: RSS (${Math.round(rss)}MB) near limit. Triggering graceful respawn...`);
+        server.close(() => process.exit(0));
+      }
+    }, 15000); // Check every 15s
+  }
 
   process.on('unhandledRejection', (err) => {
     logger.error(`Unhandled Rejection Error in Worker ${process.pid}: ${err.message}`);

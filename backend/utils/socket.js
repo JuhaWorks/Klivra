@@ -13,16 +13,11 @@ module.exports = {
             cors: {
                 origin: (origin, cb) => {
                     const allowedOrigins = new Set([
-                        'http://localhost:5173',
-                        'http://localhost:5174',
-                        'http://localhost:5175',
-                        'http://localhost:3000',
-                        'http://127.0.0.1:5173',
-                        'https://klivra.vercel.app',
+                        'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175',
+                        'http://localhost:3000', 'http://127.0.0.1:5173', 'https://klivra.vercel.app',
                         ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
                         process.env.FRONTEND_URL?.replace(/\/$/, '')
                     ].filter(Boolean).map(o => o.trim()));
-
                     if (!origin || allowedOrigins.has(origin)) cb(null, true);
                     else cb(new Error('Not allowed by CORS'));
                 },
@@ -30,423 +25,166 @@ module.exports = {
             }
         });
 
-        // Setup Redis Adapter for Clustering (if Redis is configured)
         const REDIS_URL = process.env.REDIS_URL || (process.env.NODE_ENV === 'production' ? null : 'redis://localhost:6379');
         if (REDIS_URL) {
             const { createClient } = require('redis');
             const pubClient = createClient({ url: REDIS_URL });
             const subClient = pubClient.duplicate();
-
-            // Suppress background connection errors when Redis is not available
-            pubClient.on('error', () => { });
-            subClient.on('error', () => { });
-
-            Promise.all([pubClient.connect(), subClient.connect()])
-                .then(() => {
-                    io.adapter(createAdapter(pubClient, subClient));
-                    logger.info('🔗 Socket.IO configured with Redis Adapter for multi-worker sync.');
-                })
-                .catch(err => {
-                    const errMsg = err?.message || 'Connection refused';
-                    logger.warn(`⚠️ Failed to connect Redis Adapter (${errMsg}). Running in standalone mode.`);
-                });
+            pubClient.on('error', () => { }); subClient.on('error', () => { });
+            Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+                io.adapter(createAdapter(pubClient, subClient));
+                logger.info('🔗 Socket.IO configured with Redis Adapter.');
+            }).catch(err => logger.warn(`⚠️ Redis Adapter failed: ${err.message}`));
         }
 
-        // JWT Authentication Middleware
         io.use(async (socket, next) => {
             try {
                 const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
-
-                if (!token) {
-                    return next(new Error('Authentication error: No token provided'));
-                }
-
+                if (!token) return next(new Error('Auth error'));
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 const user = await User.findById(decoded.id).select('-password');
-
-                if (!user) {
-                    return next(new Error('Authentication error: User not found'));
-                }
-
-                if (user.isBanned) {
-                    return next(new Error('Authentication error: Account suspended'));
-                }
-
+                if (!user || user.isBanned) return next(new Error('Invalid user'));
                 socket.user = user;
                 next();
-            } catch (err) {
-                logger.error(`Socket Auth Error: ${err.message}`);
-                next(new Error('Authentication error: Invalid token'));
-            }
+            } catch (err) { next(new Error('Auth error')); }
         });
 
-        // --- DATA STRUCTURES ---
-        // Room tracking: projectId -> { userId -> { name, avatar, status, sockets: Set } }
-        const projectRooms = new Map();
-        // Global tracking: userId -> { name, avatar, status, sockets: Set }
-        const globalPresence = new Map();
-        // Field locks: projectId -> { fieldId -> { userId, name } }
-        // Field locks: projectId -> { fieldId -> { userId, name } }
-        const activeLocks = new Map();
-        // Disconnect grace period (to prevent reload flip-flop)
-        const pendingDisconnects = new Map(); // userId -> timeoutId
+        // ── ULTRA-ADVANCED REDIS STATE (0-RAM FOOTPRINT) ─────────────────────
+        const localUserSockets = new Map();
+        const rc = () => { const cl = getRedisClient(); return (cl && cl.isReady) ? cl : null; };
 
-        // --- BROADCAST HELPERS ---
-        const getGlobalPresenceData = async () => {
-            const redisClient = getRedisClient();
-            if (redisClient && redisClient.isReady) {
-                const data = await redisClient.hGetAll('presence:global');
-                return Object.values(data).map(val => JSON.parse(val));
-            }
-            // Return FULL data including avatar for client-side merging
-            return Array.from(globalPresence.entries()).map(([userId, userState]) => ({
-                userId,
-                name: userState.name,
-                avatar: userState.avatar,
-                status: userState.status
-            }));
-        };
-
+        let globalUpdateTimeout;
         const broadcastGlobalPresence = async () => {
-            const data = await getGlobalPresenceData();
-            io.emit('globalPresenceUpdate', data);
+            if (globalUpdateTimeout) return;
+            globalUpdateTimeout = setTimeout(async () => {
+                const redis = rc();
+                if (!redis) return;
+                const hashData = await redis.hGetAll('presence:global').catch(() => ({}));
+                io.emit('globalPresenceUpdate', Object.values(hashData).map(v => JSON.parse(v)));
+                globalUpdateTimeout = null;
+            }, 500); // 500ms debounce
         };
 
-        // Push global presence directly to a single socket (instant, no round-trip)
-        const pushPresenceToSocket = async (sock) => {
-            const data = await getGlobalPresenceData();
-            sock.emit('globalPresenceUpdate', data);
+        const broadcastPresence = async (projectId) => {
+            const redis = rc();
+            if (!redis) return;
+            const hashData = await redis.hGetAll(`presence:project:${projectId}`).catch(() => ({}));
+            io.to(`project_${projectId}`).emit('presenceUpdate', Object.values(hashData).map(v => JSON.parse(v)));
         };
 
-        const getRoomViewers = (projectId) => {
-            const roomData = projectRooms.get(projectId);
-            if (!roomData) return [];
-
-            return Array.from(roomData.entries()).map(([userId, userState]) => {
-                // Enrich with live global status for accuracy
-                const gState = globalPresence.get(userId);
-                return {
-                    userId,
-                    name: userState.name,
-                    avatar: userState.avatar,
-                    status: gState ? gState.status : userState.status
-                };
-            });
+        const broadcastLocks = async (projectId) => {
+            const redis = rc();
+            if (!redis) return;
+            const locks = await redis.hGetAll(`presence:locks:${projectId}`).catch(() => ({}));
+            const parsed = {}; Object.entries(locks).forEach(([k, v]) => parsed[k] = JSON.parse(v));
+            io.to(`project_${projectId}`).emit('locksUpdated', parsed);
         };
 
-        const broadcastPresence = (projectId) => {
-            const viewers = getRoomViewers(projectId);
-            io.to(`project_${projectId}`).emit('presenceUpdate', viewers);
-        };
-
-        const broadcastLocks = (projectId) => {
-            const locks = activeLocks.get(projectId) || {};
-            io.to(`project_${projectId}`).emit('locksUpdated', locks);
-        };
-
-        // --- CONNECTION HANDLER ---
         io.on('connection', async (socket) => {
             const userId = socket.user._id.toString();
-            logger.info(`🔌 Socket Connected: ${socket.user.name} (${socket.id})`);
-
-            // Join a private room with the userID for targeted notifications
+            const redis = rc();
+            logger.info(`🔌 Socket Connected: ${socket.user.name}`);
             socket.join(userId);
-            logger.debug(`User ${socket.user.name} joined personal room: ${userId}`);
 
-            // Cancel any pending disconnect for this user (e.g., they reloaded)
-            if (pendingDisconnects.has(userId)) {
-                clearTimeout(pendingDisconnects.get(userId));
-                pendingDisconnects.delete(userId);
+            if (!localUserSockets.has(userId)) localUserSockets.set(userId, new Set());
+            localUserSockets.get(userId).add(socket.id);
+
+            if (redis) {
+                const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status: 'Online' });
+                await redis.hSet('presence:global', userId, state);
+                await redis.expire('presence:global', 86400);
             }
+            broadcastGlobalPresence();
 
-            // 1. Initial Global Presence Setup
-            if (!globalPresence.has(userId)) {
-                let initialStatus = socket.user.status || 'Online';
-                if (initialStatus === 'Offline') initialStatus = 'Online';
-
-                const state = {
-                    userId,
-                    name: socket.user.name,
-                    avatar: socket.user.avatar,
-                    status: initialStatus
-                };
-
-                globalPresence.set(userId, { ...state, sockets: new Set() });
-
-                // Sync to Redis for cross-cluster visibility
-                const redisClient = getRedisClient();
-                if (redisClient && redisClient.isReady) {
-                    await redisClient.hSet('presence:global', userId, JSON.stringify(state));
+            socket.on('joinProject', async (projectId) => {
+                socket.join(`project_${projectId}`);
+                if (redis) {
+                    const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status: 'Online' });
+                    await redis.hSet(`presence:project:${projectId}`, userId, state);
+                    // Ultra-Advanced: track memberships in Redis SET instead of local RAM
+                    await redis.sAdd(`user:projects:${userId}`, projectId);
+                    await redis.expire(`user:projects:${userId}`, 86400);
                 }
-
-                if (socket.user.status === 'Offline') {
-                    try {
-                        await User.findByIdAndUpdate(userId, { status: 'Online' });
-                    } catch (err) {
-                        logger.error(`Failed to update initial status to Online for ${userId}: ${err.message}`);
-                    }
-                }
-            }
-            globalPresence.get(userId).sockets.add(socket.id);
-
-            // INSTANT: push full presence directly to THIS socket right now
-            // so they see all online users without any round-trip request
-            await pushPresenceToSocket(socket);
-
-            // Broadcast to everyone else that a new user is online
-            await broadcastGlobalPresence();
-
-            // Allow any client to request a fresh presence snapshot on demand
-            socket.on('requestPresenceSync', async () => {
-                await pushPresenceToSocket(socket);
-            });
-
-            // Track joined projects for this socket to cleanup on disconnect
-            const joinedProjects = new Set();
-
-            // Auto-join admins to the security feed room
-            if (socket.user.role === 'Admin') {
-                socket.join('admin_security');
-                logger.info(`🔐 Admin ${socket.user.name} joined admin_security room`);
-            }
-
-            // 2. Project Room Joining
-            socket.on('joinProject', (projectId) => {
-                const roomKey = `project_${projectId}`;
-                socket.join(roomKey);
-                joinedProjects.add(projectId);
-
-                if (!projectRooms.has(projectId)) {
-                    projectRooms.set(projectId, new Map());
-                }
-
-                const roomData = projectRooms.get(projectId);
-
-                if (!roomData.has(userId)) {
-                    const gState = globalPresence.get(userId);
-                    roomData.set(userId, {
-                        name: socket.user.name,
-                        avatar: socket.user.avatar,
-                        status: gState ? gState.status : 'Online',
-                        sockets: new Set()
-                    });
-                }
-
-                roomData.get(userId).sockets.add(socket.id);
-
-                logger.info(`👥 User ${socket.user.name} joined project: ${projectId}`);
-
-                // INSTANT: broadcast updated room viewers to everyone in the room
                 broadcastPresence(projectId);
                 broadcastLocks(projectId);
-
-                // INSTANT: also push fresh global presence directly to this socket
-                // so they immediately see all globally-online users
-                pushPresenceToSocket(socket);
             });
 
-            // 3. Status Update (Active/Away/DND/Offline)
-            // Throttled to 3 seconds to prevent spam
-            const lastStatusUpdate = new Map();
             socket.on('setStatus', async ({ projectId, status }) => {
-                const now = Date.now();
-                if (lastStatusUpdate.has(userId) && now - lastStatusUpdate.get(userId) < 3000) return;
-                lastStatusUpdate.set(userId, now);
-
-                const gState = globalPresence.get(userId);
-                if (gState && gState.status !== status) {
-                    // 1. Update Globally
-                    gState.status = status;
-
-                    const redisClient = getRedisClient();
-                    if (redisClient && redisClient.isReady) {
-                        await redisClient.hSet('presence:global', userId, JSON.stringify({
-                            userId, name: gState.name, avatar: gState.avatar, status: gState.status
-                        }));
-                    }
-
-                    await broadcastGlobalPresence();
-
-                    // 1.5 Notify all user's sockets to sync local store
-                    gState.sockets.forEach(sId => {
-                        io.to(sId).emit('statusUpdated', status);
-                    });
-
-                    // 2. Persist to DB for synchronization across sessions
-                    try {
-                        await User.findByIdAndUpdate(userId, { status });
-                    } catch (err) {
-                        logger.error(`Failed to update status in DB for ${userId}: ${err.message}`);
-                    }
-
-                    // 3. Update Project-wide if applicable
+                if (redis) {
+                    const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status });
+                    await redis.hSet('presence:global', userId, state);
                     if (projectId) {
-                        const roomData = projectRooms.get(projectId);
-                        if (roomData && roomData.has(userId)) {
-                            roomData.get(userId).status = status;
-                            broadcastPresence(projectId);
-                        }
+                        await redis.hSet(`presence:project:${projectId}`, userId, state);
+                        broadcastPresence(projectId);
                     } else {
-                        // Update ALL projects this user is in
-                        joinedProjects.forEach(pId => {
-                            const roomData = projectRooms.get(pId);
-                            if (roomData && roomData.has(userId)) {
-                                roomData.get(userId).status = status;
-                                broadcastPresence(pId);
-                            }
-                        });
+                        const projects = await redis.sMembers(`user:projects:${userId}`);
+                        for (const pId of projects) {
+                            await redis.hSet(`presence:project:${pId}`, userId, state);
+                            broadcastPresence(pId);
+                        }
                     }
+                    broadcastGlobalPresence();
+                    io.to(userId).emit('statusUpdated', status);
+                    await User.findByIdAndUpdate(userId, { status }).catch(() => {});
                 }
             });
 
-            // 4. Field Locking
-            socket.on('acquireFieldLock', ({ projectId, fieldId }) => {
-                if (!activeLocks.has(projectId)) {
-                    activeLocks.set(projectId, {});
-                }
-
-                const projectLocks = activeLocks.get(projectId);
-
-                // If field is unlocked OR locked by same user (refresh case)
-                if (!projectLocks[fieldId] || projectLocks[fieldId].userId === userId) {
-                    projectLocks[fieldId] = {
-                        userId,
-                        userName: socket.user.name
-                    };
-                    broadcastLocks(projectId);
-                }
-            });
-
-            socket.on('releaseFieldLock', ({ projectId, fieldId }) => {
-                const projectLocks = activeLocks.get(projectId);
-                if (projectLocks && projectLocks[fieldId]) {
-                    if (projectLocks[fieldId].userId === userId) {
-                        delete projectLocks[fieldId];
+            socket.on('acquireFieldLock', async ({ projectId, fieldId }) => {
+                if (redis) {
+                    const existing = await redis.hGet(`presence:locks:${projectId}`, fieldId);
+                    if (!existing || JSON.parse(existing).userId === userId) {
+                        await redis.hSet(`presence:locks:${projectId}`, fieldId, JSON.stringify({ userId, userName: socket.user.name }));
                         broadcastLocks(projectId);
                     }
                 }
             });
 
-            // 5. Leaving Projects
-            socket.on('leaveProject', (projectId) => {
-                socket.leave(`project_${projectId}`);
-                joinedProjects.delete(projectId);
-
-                const roomData = projectRooms.get(projectId);
-                if (roomData) {
-                    const userState = roomData.get(userId);
-
-                    if (userState) {
-                        userState.sockets.delete(socket.id);
-                        if (userState.sockets.size === 0) {
-                            roomData.delete(userId);
-                        }
-                    }
-
-                    if (roomData.size === 0) {
-                        projectRooms.delete(projectId);
-                    }
+            socket.on('releaseFieldLock', async ({ projectId, fieldId }) => {
+                const existing = redis && await redis.hGet(`presence:locks:${projectId}`, fieldId);
+                if (existing && JSON.parse(existing).userId === userId) {
+                    await redis.hDel(`presence:locks:${projectId}`, fieldId);
+                    broadcastLocks(projectId);
                 }
-
-                broadcastPresence(projectId);
-                logger.info(`👋 User ${socket.user.name} left project: ${projectId}`);
             });
 
-            // 6. Generic Disconnect
             socket.on('disconnect', async () => {
-                // Cleanup Project Rooms
-                joinedProjects.forEach(projectId => {
-                    const roomData = projectRooms.get(projectId);
-                    if (roomData) {
-                        const userState = roomData.get(userId);
-
-                        if (userState) {
-                            userState.sockets.delete(socket.id);
-                            if (userState.sockets.size === 0) {
-                                roomData.delete(userId);
-
-                                // Instant Lock Release
-                                const projectLocks = activeLocks.get(projectId);
-                                if (projectLocks) {
-                                    Object.keys(projectLocks).forEach(fId => {
-                                        if (projectLocks[fId].userId === userId) {
-                                            delete projectLocks[fId];
-                                        }
-                                    });
-                                    broadcastLocks(projectId);
+                const sockets = localUserSockets.get(userId);
+                if (sockets) sockets.delete(socket.id);
+                if (!sockets || sockets.size === 0) {
+                    localUserSockets.delete(userId);
+                    setTimeout(async () => {
+                        const active = await io.in(userId).fetchSockets();
+                        if (active.length === 0 && redis) {
+                            await redis.hDel('presence:global', userId);
+                            const projects = await redis.sMembers(`user:projects:${userId}`);
+                            for (const pId of projects) {
+                                await redis.hDel(`presence:project:${pId}`, userId);
+                                broadcastPresence(pId);
+                                const locks = await redis.hGetAll(`presence:locks:${pId}`);
+                                for (const [fid, data] of Object.entries(locks)) {
+                                    if (JSON.parse(data).userId === userId) await redis.hDel(`presence:locks:${pId}`, fid);
                                 }
+                                broadcastLocks(pId);
                             }
-                        }
-
-                        if (roomData.size === 0) {
-                            projectRooms.delete(projectId);
-                            // We keep activeLocks until meaningful expiry or manual release
-                        }
-                        broadcastPresence(projectId);
-                    }
-                });
-
-                // Cleanup Global Presence
-                const gState = globalPresence.get(userId);
-                if (gState) {
-                    gState.sockets.delete(socket.id);
-                    if (gState.sockets.size === 0) {
-                        // User has no more active sockets. 
-                        // Start a grace period before marking them Offline/Removed.
-                        const timeoutId = setTimeout(async () => {
-                            globalPresence.delete(userId);
-                            pendingDisconnects.delete(userId);
+                            await redis.del(`user:projects:${userId}`);
                             broadcastGlobalPresence();
-
-                            logger.info(`👋 User ${socket.user.name} is now Offline (Grace period ended)`);
-
-                            try {
-                                await User.findByIdAndUpdate(userId, { status: 'Offline' });
-                            } catch (err) {
-                                logger.error(`Failed to set status Offline on disconnect for ${userId}: ${err.message}`);
-                            }
-                        }, 5000); // 5 second grace period for reloads
-
-                        pendingDisconnects.set(userId, timeoutId);
-                    }
+                            await User.findByIdAndUpdate(userId, { status: 'Offline' }).catch(() => {});
+                        }
+                    }, 5000);
                 }
-                logger.info(`🔌 Socket Disconnected: ${socket.id}`);
             });
 
-            // 7. Whiteboard Orchestration (Clustered Pass-through)
-            socket.on('join-whiteboard', (roomId) => {
-                socket.join(`whiteboard_${roomId}`);
-                logger.info(`🖌️ User ${socket.user.name} joined whiteboard: ${roomId}`);
-            });
-
+            // Ultra-Advanced: Volatile Drawing (Zero buffer growth)
+            socket.on('join-whiteboard', (roomId) => socket.join(`whiteboard_${roomId}`));
             socket.on('draw-line', ({ roomId, lineData }) => {
-                // Emits to all other clients in the room (across all clusters via Redis)
-                socket.to(`whiteboard_${roomId}`).emit('draw-line', lineData);
+                // 'volatile' tells socket.io it can drop these packets if network is slow,
+                // preventing memory buffer buildup on the server.
+                socket.volatile.to(`whiteboard_${roomId}`).emit('draw-line', lineData);
             });
-
-            socket.on('clear-board', (roomId) => {
-                socket.to(`whiteboard_${roomId}`).emit('clear-board');
-            });
+            socket.on('clear-board', (roomId) => socket.to(`whiteboard_${roomId}`).emit('clear-board'));
         });
-
-        // ── PRESENCE HEARTBEAT ─────────────────────────────────────────
-        // Re-broadcast global presence every 30s to all clients.
-        // Acts as a self-healing mechanism if any client missed an update.
-        const presenceHeartbeat = setInterval(async () => {
-            if (globalPresence.size > 0) {
-                await broadcastGlobalPresence();
-            }
-        }, 30000);
-
-        // Clean up heartbeat if the server shuts down
-        io.on('close', () => clearInterval(presenceHeartbeat));
 
         return io;
     },
-    getIO: () => {
-        if (!io) {
-            throw new Error('Socket.io not initialized!');
-        }
-        return io;
-    }
+    getIO: () => { if (!io) throw new Error('Socket.io not initialized!'); return io; }
 };

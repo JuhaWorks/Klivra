@@ -44,6 +44,7 @@ const getProject = async (req, res, next) => {
     try {
         const project = await Project.findById(req.params.id)
             .populate('members.userId', 'name email avatar')
+            .select('-__v -deadlineNotified')
             .lean();
 
         if (!project || project.deletedAt !== null) {
@@ -227,7 +228,7 @@ const getProjectInsights = async (req, res, next) => {
 
 const getWorkspaceStats = async (req, res, next) => {
     try {
-        const projects = await Project.find({ 'members.userId': req.user._id, deletedAt: null });
+        const projects = await Project.find({ 'members.userId': req.user._id, deletedAt: null }).select('_id status').lean();
         const projectIds = projects.map(p => p._id);
         const taskStats = await Task.aggregate([
             { $match: { project: { $in: projectIds } } },

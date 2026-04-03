@@ -3,6 +3,7 @@ import { useSocketStore } from '../../store/useSocketStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, X, Circle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { getOptimizedAvatar } from '../../utils/avatar';
 
 const GlobalPresence = () => {
     const location = useLocation();
@@ -71,11 +72,12 @@ const GlobalPresence = () => {
                                     className="flex items-center gap-4 p-3 rounded-2xl hover:bg-sunken border border-transparent hover:border-default transition-all group"
                                 >
                                     <div className="relative">
-                                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-default">
+                                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-default bg-sunken flex items-center justify-center">
                                             <img
-                                                src={user.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
+                                                src={getOptimizedAvatar(user.avatar, 'sm')}
                                                 className="w-full h-full object-cover"
                                                 alt={user.name}
+                                                loading="lazy"
                                             />
                                         </div>
                                         <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-surface
