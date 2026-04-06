@@ -198,7 +198,7 @@ export default function AccountStatusTab() {
             {/* Danger Zone Metadata */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-rose-500/10">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-rose-500 tracking-tighter uppercase">Danger <span className="text-primary">Zone.</span></h2>
+                    <h2 className="text-2xl font-black text-rose-500 tracking-tighter uppercase">Critical <span className="text-primary">Operations.</span></h2>
                     <p className="text-[10px] font-black text-rose-500/40 uppercase tracking-[0.3em]">Irreversible Account Actions</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-2xl shadow-xl">
@@ -261,7 +261,7 @@ export default function AccountStatusTab() {
                 </Card>
             </div>
 
-            {/* Protocol Warning */}
+            {/* Danger Zone Warning */}
             <div className="relative p-8 overflow-hidden rounded-[2.5rem] border border-default flex items-start gap-6 group opacity-50">
                 <div className="absolute inset-0 z-0">
                     <GlassSurface width="100%" height="100%" borderRadius={40} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />

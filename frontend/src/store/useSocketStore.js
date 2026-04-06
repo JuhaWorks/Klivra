@@ -55,6 +55,10 @@ export const useSocketStore = create((set, get) => ({
         });
 
         socket.on('reconnect', () => {
+            const { currentProjectId } = get();
+            if (currentProjectId) {
+                socket.emit('joinProject', currentProjectId);
+            }
             socket.emit('requestPresenceSync');
             console.log('🔄 Socket reconnected — presence synced');
         });
@@ -126,6 +130,22 @@ export const useSocketStore = create((set, get) => ({
         }
 
         set(newState);
+    },
+
+    joinProject: (projectId) => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('joinProject', projectId);
+            set({ currentProjectId: projectId });
+        }
+    },
+
+    leaveProject: (projectId) => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('leaveProject', projectId);
+            set({ currentProjectId: null });
+        }
     },
 
     disconnect: () => {

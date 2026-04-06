@@ -29,7 +29,7 @@ const DangerZoneTab = ({ project }) => {
             <header className="pb-2">
                 <div className="flex items-center gap-2 text-red-500 font-semibold text-[10px] uppercase tracking-[0.35em] mb-3">
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>Danger Zone</span>
+                    <span>Critical Operations</span>
                 </div>
                 <h2 className="text-4xl font-black text-white tracking-tighter">Project Deletion</h2>
                 <p className="text-gray-500 text-sm mt-2 max-w-lg leading-relaxed">

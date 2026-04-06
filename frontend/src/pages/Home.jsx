@@ -151,17 +151,16 @@ const Home = () => {
 
             <header className="mb-10 relative z-10">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <StatusDot active />
-                            <span className="text-[11px] text-tertiary uppercase tracking-widest font-mono">{dateString}</span>
+                     <div className="space-y-2">
+                        <div className="flex items-center gap-3 mb-2 opacity-0 h-0 overflow-hidden">
+                            <p className="text-xs font-black text-theme uppercase tracking-[0.3em] bg-theme/10 px-3 py-1 rounded-full border border-theme/20">Executive Summary</p>
+                            <div className="h-px w-10 bg-white/10" />
+                            <p className="text-[10px] font-bold text-tertiary uppercase tracking-widest">Global Operations</p>
                         </div>
-                        <h1 className="text-4xl sm:text-6xl font-bold text-primary tracking-tight m-0">
-                            {greeting}, <span className="text-theme">{firstName}</span>
+                        <h1 className="text-4xl font-black text-primary tracking-tighter">
+                            Welcome back, <span className="text-theme">{user?.name?.split(' ')[0] || 'User'}.</span>
                         </h1>
-                        <p className="text-secondary max-w-xl opacity-80">
-                            {user?.role === 'Admin' ? 'Platform oversight is live.' : 'Your creative workspace is operational.'}
-                        </p>
+                        <p className="text-sm text-tertiary font-medium">Keep track of your projects and team activity below.</p>
                     </div>
                     <Button variant="primary" size="lg" leftIcon={Plus} as={Link} to="/projects" className="rounded-3xl shadow-xl shadow-theme/10 h-14">
                         New Project
@@ -197,8 +196,8 @@ const Home = () => {
                                 <Activity className="w-5 h-5 text-theme" />
                             </div>
                             <div>
-                                <h3 className="text-base font-bold text-primary m-0">Recent Activity</h3>
-                                <p className="text-[10px] text-tertiary font-mono m-0 uppercase tracking-widest text-neutral-500">Neural Operational Log</p>
+                                <h3 className="text-xl font-black text-primary tracking-tighter">Project Activity</h3>
+                                <p className="text-[10px] font-black text-tertiary uppercase tracking-widest mt-1 opacity-60 italic">Latest updates from your workspace</p>
                             </div>
                         </div>
                         <button onClick={() => setIsAuditExpanded(!isAuditExpanded)} className="flex items-center gap-2 text-xs font-bold text-tertiary hover:text-primary outline-none">
@@ -259,7 +258,7 @@ const Home = () => {
             <footer className="mt-12 pt-12 flex items-center gap-6 border-t border-subtle relative z-10">
                 <div className="flex items-center gap-2">
                     <StatusDot active />
-                    <span className="text-[10px] font-mono text-tertiary uppercase tracking-widest">Operational</span>
+                    <span className="text-[10px] font-mono text-tertiary uppercase tracking-widest">Systems Online</span>
                 </div>
                 <span className="text-[10px] font-mono text-tertiary uppercase tracking-widest opacity-50">{roleLabel} ACCESS</span>
             </footer>

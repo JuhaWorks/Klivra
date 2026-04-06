@@ -5,7 +5,13 @@ const {
     createTask,
     updateTask,
     deleteTask,
+    getTaskActivity
 } = require('../controllers/task.controller');
+const {
+    getTaskComments,
+    addTaskComment,
+    deleteTaskComment
+} = require('../controllers/taskComment.controller');
 const { protect } = require('../middlewares/access.middleware');
 const { cacheMiddleware } = require('../utils/redis');
 
@@ -19,5 +25,14 @@ router.route('/')
 router.route('/:id')
     .put(updateTask)
     .delete(deleteTask);
+
+router.get('/:id/activity', getTaskActivity);
+
+// Comments routes
+router.route('/:taskId/comments')
+    .get(getTaskComments)
+    .post(addTaskComment);
+
+router.delete('/comments/:commentId', deleteTaskComment);
 
 module.exports = router;

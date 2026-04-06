@@ -74,6 +74,31 @@ const projectSchema = new mongoose.Schema(
             approachingDismissedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
             exceeded: { type: Boolean, default: false },
             exceededDismissedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+        },
+        // Kanban Extension Config
+        kanbanConfig: {
+            columns: [
+                { id: { type: String, default: 'Pending' }, title: { type: String, default: 'Backlog' }, color: { type: String, default: 'text-tertiary' }, wipLimit: { type: Number, default: 0 } },
+                { id: { type: String, default: 'In Progress' }, title: { type: String, default: 'In Progress' }, color: { type: String, default: 'text-theme' }, wipLimit: { type: Number, default: 0 } },
+                { id: { type: String, default: 'Completed' }, title: { type: String, default: 'Completed' }, color: { type: String, default: 'text-success' }, wipLimit: { type: Number, default: 0 } }
+            ],
+            availableLabels: [{
+                id: { type: String, required: true },
+                text: { type: String, required: true },
+                color: { type: String, required: true }
+            }]
+        },
+        taskTemplates: [{
+            name: { type: String, required: true },
+            structure: { type: Object, required: true }
+        }],
+        checklistTemplates: [{
+            name: { type: String, required: true },
+            items: [{ type: String, required: true }]
+        }],
+        boardBackground: {
+            type: { type: String, enum: ['color', 'gradient', 'image'], default: 'gradient' },
+            value: { type: String, default: 'bg-sunken' }
         }
     },
     {

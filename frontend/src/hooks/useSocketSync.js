@@ -1,24 +1,19 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { io } from 'socket.io-client';
-
-import { BASE_URL } from '../store/useAuthStore';
-
-const SOCKET_URL = BASE_URL.replace(/\/api$/, '');
+import { useSocketStore } from '../store/useSocketStore';
 
 export const useSocketSync = (projectId) => {
     const queryClient = useQueryClient();
+    const { socket } = useSocketStore();
 
     useEffect(() => {
-        if (!projectId) return;
-
-        const socket = io(SOCKET_URL, { transports: ['websocket'] });
+        if (!projectId || !socket) return;
 
         // Subscribe to this specific project room
         socket.emit('joinProject', projectId);
 
         // Listen for standard background MVC updates
-        socket.on('taskUpdated', (updatedTask) => {
+        const onTaskUpdated = (updatedTask) => {
             queryClient.setQueryData(['tasks', projectId], (oldData) => {
                 if (!oldData) return [];
                 const taskExists = oldData.some(t => t._id === updatedTask._id);
@@ -28,19 +23,18 @@ export const useSocketSync = (projectId) => {
                     return [...oldData, updatedTask];
                 }
             });
-        });
+        };
 
         // Listen for raw task deletions
-        socket.on('taskDeleted', (deletedTaskId) => {
+        const onTaskDeleted = (deletedTaskId) => {
             queryClient.setQueryData(['tasks', projectId], (oldData) => {
                 if (!oldData) return [];
                 return oldData.filter(t => t._id !== deletedTaskId);
             });
-        });
+        };
 
         // Listen for direct Kanban "drag" movement events 
-        // (Handled directly in KanbanBoard.jsx usually, but we can capture it here globally)
-        socket.on('task:moved', (movedTask) => {
+        const onTaskMoved = (movedTask) => {
             queryClient.setQueryData(['tasks', projectId], (oldData) => {
                 if (!oldData) return [];
                 const taskExists = oldData.some(t => t._id === movedTask._id);
@@ -49,13 +43,17 @@ export const useSocketSync = (projectId) => {
                 }
                 return [...oldData, { ...movedTask, status: movedTask.newStatus }];
             });
-        });
+        };
+
+        socket.on('taskUpdated', onTaskUpdated);
+        socket.on('taskDeleted', onTaskDeleted);
+        socket.on('task:moved', onTaskMoved);
 
         return () => {
-            socket.off('taskUpdated');
-            socket.off('taskDeleted');
-            socket.off('task:moved');
-            socket.disconnect();
+            socket.off('taskUpdated', onTaskUpdated);
+            socket.off('taskDeleted', onTaskDeleted);
+            socket.off('task:moved', onTaskMoved);
+            socket.emit('leaveProject', projectId);
         };
-    }, [projectId, queryClient]);
+    }, [projectId, socket, queryClient]);
 };

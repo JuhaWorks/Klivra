@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useSocketStore } from '../store/useSocketStore';
 import { useAuthStore } from '../store/useAuthStore';
 
-const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
+const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 const CHANNEL_NAME = 'klivra_presence_sync';
 
 // DOM events that count as user activity

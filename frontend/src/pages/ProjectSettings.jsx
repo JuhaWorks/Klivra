@@ -344,7 +344,7 @@ const ProjectSettings = () => {
                         <div className="bg-red-500/5 border border-red-500/20 rounded-3xl p-6 space-y-4 shadow-2xl">
                             <div className="flex items-center gap-2 text-red-400">
                                 <AlertTriangle className="w-5 h-5" />
-                                <h3 className="font-bold">Danger Zone</h3>
+                                <h3 className="font-bold">Critical Operations</h3>
                             </div>
                             <p className="text-xs text-red-500/70 leading-relaxed">
                                 Soft-deleting this project will hide it from everyone. This action can be undone by an administrator.

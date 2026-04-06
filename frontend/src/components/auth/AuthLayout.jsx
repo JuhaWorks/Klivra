@@ -78,7 +78,7 @@ export const Brand = ({ rightSide }) => {
                 </div>
                 <div>
                     <h1 className="text-2xl font-bold tracking-tighter text-primary">Klivra</h1>
-                    <p className="text-[10px] uppercase tracking-widest font-medium text-tertiary">Enterprise Edition</p>
+                    <p className="text-[10px] uppercase tracking-widest font-medium text-tertiary">Work Management Platform</p>
                 </div>
             </motion.header>
 

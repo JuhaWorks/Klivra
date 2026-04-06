@@ -425,7 +425,7 @@ html {
   text-size-adjust: 100%;
   hanging-punctuation: first last;
   interpolate-size: allow-keywords;
-  /* v4.1: animate height to/from auto */
+  /* Animate height to/from auto */
 }
 
 body {
@@ -631,7 +631,7 @@ video {
   color: var(--accent-600);
 }
 
-/* Text shadows (extends v4.1 native text-shadow-*) */
+/* Text shadows */
 @utility text-shadow-accent {
   text-shadow: 0 0 20px var(--accent-glow),
     0 2px 8px var(--text-shadow-color);
@@ -1068,7 +1068,7 @@ video {
     box-shadow: 0 0 0 3px var(--accent-bg);
   }
 
-  /* v4.1 — native validation feedback */
+  /* Native validation feedback */
   &:user-valid {
     border-color: color-mix(in oklab,
         var(--color-success) 50%, var(--border-default));

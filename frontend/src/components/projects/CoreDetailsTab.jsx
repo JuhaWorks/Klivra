@@ -68,7 +68,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
 
         try {
             await uploadMutation.mutateAsync({ id: project._id, file });
-            toast.success('Visual asset uplinked to node.');
+            toast.success('Project image uploaded successfully.');
         } catch (err) {
             setPreviewUrl(project.coverImageUrl || '');
         }
@@ -96,7 +96,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                 {!isAuthorized && (
                     <div className="flex items-center gap-2 px-4 py-1.5 glass-2 bg-sunken border-default rounded-xl">
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />
-                        <span className="text-[9px] font-black text-tertiary uppercase tracking-widest">Isolated Environment</span>
+                        <span className="text-[9px] font-black text-tertiary uppercase tracking-widest">Read-only Mode</span>
                     </div>
                 )}
             </header>
@@ -109,22 +109,22 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                             <LockedInput
                                 projectId={project._id}
                                 fieldId="name"
-                                label="Nexus Identifier"
+                                label="Project Name"
                                 register={register}
                                 error={errors.name}
                                 disabled={!isAuthorized || updateMutation.isPending}
-                                placeholder="Enter project identifier..."
+                                placeholder="Enter project name..."
                             />
 
                             <LockedInput
                                 projectId={project._id}
                                 fieldId="description"
-                                label="Mission Directive"
+                                label="Project Description"
                                 as="textarea"
                                 register={register}
                                 error={errors.description}
                                 disabled={!isAuthorized || updateMutation.isPending}
-                                placeholder="Define the primary objective..."
+                                placeholder="Describe the project objective..."
                             />
                         </div>
 
@@ -202,7 +202,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
 
                                 <div className="flex-1 space-y-6">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block ml-1">External CDN Link</label>
+                                        <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block ml-1">External Image URL</label>
                                         <input
                                             {...register('coverImageUrl')}
                                             disabled={!isAuthorized || updateMutation.isPending}
@@ -214,24 +214,24 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                     <div className="p-5 glass-2 bg-emerald-500/5 border border-emerald-500/10 rounded-[1.5rem] flex items-center gap-4">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                                         <p className="text-[10px] text-emerald-400/80 font-black uppercase tracking-widest leading-relaxed">
-                                            Asset Guideline: Recommended ratio 16:9 for optimal neural rendering.
+                                            Asset Guideline: Recommended ratio 16:9 for optimal display quality.
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Metadata Grid */}
+                        {/* Project Metadata */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Domain Class</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Project Category</label>
                                 <div className="relative">
                                     <select
                                         {...register('category')}
                                         disabled={!isAuthorized || updateMutation.isPending}
                                         className="w-full bg-surface border border-default rounded-2xl px-5 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all appearance-none cursor-pointer font-black text-xs uppercase tracking-widest"
                                     >
-                                        <option value="" disabled>Select Domain</option>
+                                        <option value="" disabled>Select Category</option>
                                         {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map(cat => (
                                             <option key={cat} value={cat}>{cat}</option>
                                         ))}
@@ -283,7 +283,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                 size="lg"
                                 className="px-12"
                             >
-                                Dispatch Changes
+                                Save Changes
                             </Button>
                         </footer>
                     )}

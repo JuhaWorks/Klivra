@@ -78,7 +78,7 @@ const TopBar = () => {
                     {/* Brand name for very small mobile screens when sidebar is hidden */}
                     {isMobile && (
                         <div className="flex items-center gap-2 sm:hidden overflow-hidden">
-                            <img src="/logo.png?v=2" alt="" width={24} height={24} className="w-6 h-6 object-contain opacity-80" />
+                            <img src="/logo.png" alt="" width={24} height={24} className="w-6 h-6 object-contain opacity-80" />
                             <span className="text-xl font-black tracking-tighter text-primary truncate">klvira</span>
                         </div>
                     )}

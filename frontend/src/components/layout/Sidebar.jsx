@@ -2,7 +2,8 @@ import React, { memo, useEffect, useTransition, useCallback } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    LayoutDashboard, FolderKanban, CheckSquare, Presentation, ShieldAlert, 
+    LayoutDashboard, Briefcase, Calendar, Compass, MessageSquare, Users,
+    FolderKanban, CheckSquare, Presentation, ShieldAlert, 
     Activity, Settings, LogOut, X, ChevronRight, Sun, Moon, UserCircle, Users2
 } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
@@ -15,11 +16,11 @@ import GlassSurface from '../ui/GlassSurface';
 import { getOptimizedAvatar } from '../../utils/avatar';
 
 const navItems = [
-    { label: 'Dashboard', path: '/', icon: LayoutDashboard, description: 'Overview & analytics' },
-    { label: 'Projects', path: '/projects', icon: FolderKanban, description: 'Manage your projects' },
-    { label: 'Tasks', path: '/tasks', icon: CheckSquare, description: 'Track work items' },
-    { label: 'Network', path: '/networking', icon: Users2, description: 'Connections & teams', hideForAdmin: true },
-    { label: 'Whiteboard', path: '/whiteboard/main-workspace', icon: Presentation, description: 'Visual workspace' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/', labelDescription: 'Project Overview' },
+    { icon: Briefcase, label: 'Projects', path: '/projects', labelDescription: 'Manage Projects' },
+    { icon: Calendar, label: 'Planning', path: '/tasks', labelDescription: 'Project Roadmap' },
+    { icon: Compass, label: 'Network', path: '/networking', labelDescription: 'Member Directory' },
+    { icon: MessageSquare, label: 'Collaboration', path: '/whiteboard/main-workspace', labelDescription: 'Shared Workspace' },
 ];
 
 const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
@@ -215,7 +216,7 @@ const SidebarComponent = () => {
                         effectiveCollapsed ? "w-9 h-9" : "w-8 h-8"
                     )}>
                         <img 
-                            src="/logo.png?v=2" alt="Klivra logo" 
+                            src="/logo.png" alt="Klivra logo" 
                             width={40} height={40} 
                             fetchPriority="high" 
                             className="w-full h-full object-cover" 
@@ -229,10 +230,10 @@ const SidebarComponent = () => {
                             transition={{ duration: 0.18 }}
                             className="flex flex-col min-w-0 flex-1"
                         >
-                            <span className="text-[15px] font-black tracking-tight text-primary leading-none">
+                            <span className="text-[17px] font-black tracking-tight text-primary leading-none mt-1">
                                 klivra
                             </span>
-                            <span className="text-[10px] font-semibold text-tertiary uppercase tracking-[0.14em] mt-0.5">
+                            <span className="text-[10px] font-semibold text-tertiary uppercase tracking-[0.14em] mt-1.5">
                                 {isAdminSection ? 'Administration' : 'Workspace'}
                             </span>
                         </motion.div>
@@ -384,7 +385,7 @@ const SidebarComponent = () => {
                             animate={{ opacity: 1 }}
                             className="px-3 pb-1.5 text-[10px] font-bold text-tertiary uppercase tracking-[0.14em]"
                         >
-                            {isAdminSection ? 'Overview' : 'Main Menu'}
+                            {isAdminSection ? 'Overview' : 'Navigation'}
                         </motion.p>
                     )}
                     {effectiveCollapsed && !user?.role === 'Admin' && <div className="h-2" />}

@@ -117,7 +117,7 @@ const LockedInput = ({
                         >
                             <div className="px-3 py-1.5 glass-2 bg-cyan-700/20 border border-cyan-500/30 rounded-xl flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                                <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest text-glow-cyan">Protocol Engaged: Editing</span>
+                                <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest text-glow-cyan">Editing Mode</span>
                             </div>
                         </motion.div>
                     )}

@@ -34,13 +34,13 @@ const AnimatedNumber = ({ value, duration = 1.2 }) => {
 
 /* ─────────────────────── status / role badges ─── */
 const STATUS_MAP = {
-    banned: { label: 'Banned', color: '#ff4d6d', bg: 'rgba(255,77,109,0.08)', border: 'rgba(255,77,109,0.2)' },
+    restricted: { label: 'Restricted', color: '#ff4d6d', bg: 'rgba(255,77,109,0.08)', border: 'rgba(255,77,109,0.2)' },
     inactive: { label: 'Inactive', color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.2)' },
     active: { label: 'Active', color: '#00e5a0', bg: 'rgba(0,229,160,0.08)', border: 'rgba(0,229,160,0.2)' },
 };
 
 const StatusBadge = ({ user: u }) => {
-    const key = u.isBanned ? 'banned' : !u.isActive ? 'inactive' : 'active';
+    const key = u.isBanned ? 'restricted' : !u.isActive ? 'inactive' : 'active';
     const { label, color, bg, border } = STATUS_MAP[key];
     return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 5, fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', fontFamily: 'var(--mono)', color, background: bg, border: `1px solid ${border}` }}>
@@ -219,7 +219,7 @@ const UserRow = ({ u, user, onRole, onBan, index }) => (
                             onMouseEnter={e => { if (u._id !== user._id) e.currentTarget.style.background = 'rgba(255,77,109,0.07)'; }}
                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}
                         >
-                            {u.isBanned ? '↑ Unban User' : '⊘ Ban User'}
+                            {u.isBanned ? '↑ Restore User' : '⊘ Restrict User'}
                         </DropdownMenu.Item>
                     </DropdownMenu.Content>
                 </DropdownMenu.Portal>
@@ -592,7 +592,7 @@ const AdminDashboard = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
                         <StatCard label="Total Users" value={stats.users.total} color="var(--green)" sub="Registered accounts" delay={0} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" /></svg>} spark />
                         <StatCard label="Active Users" value={stats.users.active} color="var(--green)" sub="Verified & operational" delay={.07} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>} spark />
-                        <StatCard label="Blacklisted" value={stats.users.banned} color="var(--red)" sub="Restricted access" delay={.14} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>} spark />
+                        <StatCard label="Restricted" value={stats.users.restricted} color="var(--red)" sub="Suspended access" delay={.14} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>} spark />
                         <StatCard label="Projects" value={stats.projects?.total ?? 0} color="var(--blue)" sub="Across all workspaces" delay={.21} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>} spark />
                     </div>
 
@@ -755,7 +755,7 @@ const AdminDashboard = () => {
                                                                             onMouseEnter={e => { if (u._id !== user._id) e.currentTarget.style.background = 'rgba(255,77,109,0.07)'; }}
                                                                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}
                                                                         >
-                                                                            {u.isBanned ? '↑ Unban User' : '⊘ Ban User'}
+                                                                            {u.isBanned ? '↑ Restore User' : '⊘ Restrict User'}
                                                                         </DropdownMenu.Item>
                                                                     </DropdownMenu.Content>
                                                                 </DropdownMenu.Portal>
@@ -814,7 +814,7 @@ const AdminDashboard = () => {
                         <span style={{ color: '#1a1a2e', fontSize: 10 }}>·</span>
                         <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>Auto-refresh 30s</span>
                         <span style={{ color: '#1a1a2e', fontSize: 10 }}>·</span>
-                        <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>v2.4.1</span>
+                         <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>System Monitored</span>
                     </motion.div>
                 </div>
             </div>

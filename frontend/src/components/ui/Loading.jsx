@@ -28,7 +28,7 @@ export const GlobalLoadingScreen = () => (
         </div>
         
         <div className="space-y-3 relative z-10">
-            <h2 className="text-xl font-bold text-white tracking-tight">Initializing <span className="text-theme">Klivra</span> Core</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">Loading <span className="text-theme">Klivra</span></h2>
             <div className="flex items-center justify-center gap-3">
                 <div className="flex gap-1">
                     {[0, 0.2, 0.4].map(d => (
@@ -40,7 +40,7 @@ export const GlobalLoadingScreen = () => (
                         />
                     ))}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">Synchronizing Session</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">Securing Session</span>
             </div>
         </div>
         
@@ -68,7 +68,7 @@ export const PageLoader = () => (
             <div className="p-4 rounded-3xl bg-theme/5 border border-theme/10">
                 <RefreshCw className="w-6 h-6 text-theme animate-spin" />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-tertiary opacity-50">Loading Node</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-tertiary opacity-50">Loading</span>
         </div>
     </div>
 );

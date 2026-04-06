@@ -167,7 +167,7 @@ const SecurityFeed = () => {
                         </div>
                         <div>
                             <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[11px]">Empty</p>
-                            <p className="text-gray-600 text-xs mt-2 uppercase tracking-widest leading-loose">No security anomalies detected in the current cycle</p>
+                            <p className="text-gray-600 text-xs mt-2 uppercase tracking-widest leading-loose">No security issues detected in the current period</p>
                         </div>
                     </div>
                 ) : (
@@ -209,7 +209,7 @@ const SecurityFeed = () => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-600/30" />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-700">Origin Protocol: </span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-700">Access IP: </span>
                                             <code className="text-[10px] font-black text-emerald-400/90">{log.ipAddress}</code>
                                         </div>
                                     </div>
@@ -228,14 +228,14 @@ const SecurityFeed = () => {
                         disabled={page === 1}
                         className="k-button-secondary px-8 py-3 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 translate-y-0 active:scale-95 transition-all"
                     >
-                        Previous Sequence
+                        Previous Page
                     </button>
                     <button
                         onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
                         disabled={page === pagination.pages}
                         className="k-button-secondary px-8 py-3 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 translate-y-0 active:scale-95 transition-all"
                     >
-                        Next Sequence
+                        Next Page
                     </button>
                 </div>
             )}

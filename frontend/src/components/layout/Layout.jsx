@@ -35,7 +35,7 @@ class GlobalErrorBoundary extends React.Component {
                         <RefreshCw className="w-10 h-10 text-rose-500" />
                     </div>
                     <h2 className="text-2xl font-black text-white tracking-tighter mb-2">Segment Desynchronized</h2>
-                    <p className="text-gray-500 text-sm max-w-md mb-8">{this.state.error?.message || "A critical error occurred in the operational node."}</p>
+                    <p className="text-gray-500 text-sm max-w-md mb-8">{this.state.error?.message || "A critical error occurred in the application."}</p>
                     <button 
                         onClick={() => this.setState({ hasError: false })}
                         className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold hover:bg-white/10 active:scale-95 transition-all outline-none focus:ring-4 focus:ring-white/20"
@@ -135,7 +135,7 @@ const Layout = ({ checkingAuth }) => {
 
     return (
         <div className="flex min-h-screen bg-[#09090b] relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
-            {/* ── AMBIENT NODES ────────────────────────────────────────── */}
+            {/* ── VISUAL ELEMENTS ────────────────────────────────────────── */}
             <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-[#09090b]">
                 {/* Simplified Grid */}
                 <div className="absolute inset-0 opacity-[0.03]" 
@@ -145,7 +145,7 @@ const Layout = ({ checkingAuth }) => {
                     }} 
                 />
                 
-                {/* Reduced Blur nodes for better INP */}
+                {/* Reduced Blur elements for better performance */}
                 <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] bg-theme/5 rounded-full blur-[80px]" />
                 <div className="absolute bottom-[5%] left-[-2%] w-[30%] h-[30%] bg-theme/3 rounded-full blur-[60px]" />
                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'url("/noise.svg")' }} />

@@ -10,7 +10,7 @@ const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 ActivityTab
- * Cinematic audit trail with Glassmorphism 2.0 and Framer Motion
+ * Audit history with Glassmorphism 2.0 and Framer Motion
  */
 const ActivityTab = ({ projectId }) => {
     const { data: activities, isLoading } = useProjectActivity(projectId);
@@ -21,33 +21,33 @@ const ActivityTab = ({ projectId }) => {
                 <div className="space-y-3">
                     <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]">
                         <History className="w-3.5 h-3.5" />
-                        <span>Audit Protocol</span>
+                        <span>Activity History</span>
                     </div>
-                    <h2 className="text-4xl font-black text-white tracking-tighter">Operational Timeline.</h2>
+                    <h2 className="text-4xl font-black text-white tracking-tighter">Activity Timeline.</h2>
                     <p className="text-gray-500 font-medium text-sm max-w-lg">
-                        Immutable record of all segment modifications, agent interventions, and system-level neural updates.
+                        Complete record of all project modifications, member actions, and status updates.
                     </p>
                 </div>
             </header>
 
             <Card className="overflow-hidden relative" padding="p-10">
                 <div className="relative">
-                    {/* Cinematic Timeline Guide */}
+                    {/* Timeline Guide */}
                     <div className="absolute left-6 top-4 bottom-4 w-px bg-gradient-to-b from-cyan-500/40 via-white/5 to-transparent" />
 
                     <div className="space-y-12 relative">
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-20 gap-4">
                                 <div className="w-12 h-12 border-4 border-cyan-500/10 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_20px_rgba(34,211,238,0.2)]" />
-                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest animate-pulse">Synchronizing Logs...</span>
+                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest animate-pulse">Loading Activity...</span>
                             </div>
                         ) : !activities || activities.length === 0 ? (
                             <div className="text-center py-24 flex flex-col items-center justify-center">
                                 <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center mb-6 shadow-2xl">
                                     <Info className="w-8 h-8 text-gray-700" />
                                 </div>
-                                <h3 className="text-xl font-black text-white tracking-tight">Timeline Inert</h3>
-                                <p className="text-gray-500 text-sm mt-1 max-w-xs">No operational data has been recorded for this segment.</p>
+                                <h3 className="text-xl font-black text-white tracking-tight">No Recent Activity</h3>
+                                <p className="text-gray-500 text-sm mt-1 max-w-xs">No activity has been recorded for this project yet.</p>
                             </div>
                         ) : (
                             <div className="space-y-12">
@@ -76,7 +76,7 @@ const ActivityTab = ({ projectId }) => {
                                             <div className="flex-1 space-y-3 min-w-0">
                                                 <div className="flex flex-col md:flex-row md:items-center gap-3">
                                                     <span className="text-sm font-black text-white tracking-tight">
-                                                        {log.user?.name || 'System Sovereign'}
+                                                        {log.user?.name || 'System'}
                                                     </span>
                                                     <div className="flex items-center gap-2">
                                                         <ChevronRight className="w-3 h-3 text-gray-800" />
@@ -89,13 +89,33 @@ const ActivityTab = ({ projectId }) => {
                                                 {/* Semantic Metadata Card */}
                                                 {log.details && Object.keys(log.details).length > 0 && (
                                                     <div className="glass-2 bg-white/[0.01] p-4 rounded-2xl border border-white/5 font-medium leading-relaxed max-w-2xl group-hover:border-white/10 transition-colors">
-                                                        <div className="flex items-center gap-3 mb-2">
+                                                        <div className="flex items-center gap-3 mb-3">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/40" />
-                                                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">Delta Payload</span>
+                                                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">
+                                                                {log.action === 'StatusChange' ? 'Status Update' : 'Update Details'}
+                                                            </span>
                                                         </div>
-                                                        <p className="text-xs text-gray-400 font-medium">
-                                                            {log.details.name || log.details.title || log.details.description || 'Metadata update successful.'}
-                                                        </p>
+                                                        
+                                                        {log.action === 'StatusChange' ? (
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="text-xs text-white font-bold truncate max-w-[200px]">
+                                                                    {log.details.title}
+                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="px-2 py-0.5 rounded-md bg-sunken border border-white/5 text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                                                                        {log.details.oldStatus}
+                                                                    </span>
+                                                                    <ChevronRight className="w-3 h-3 text-cyan-500/50" />
+                                                                    <span className="px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-black text-cyan-400 uppercase tracking-widest shadow-lg shadow-cyan-500/5">
+                                                                        {log.details.newStatus}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-xs text-gray-400 font-medium">
+                                                                {log.details.name || log.details.title || log.details.description || 'Update recorded.'}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 )}
 
@@ -112,7 +132,7 @@ const ActivityTab = ({ projectId }) => {
                                                         </span>
                                                     </div>
                                                     <div className="w-1 h-1 rounded-full bg-gray-800" />
-                                                    <span className="text-[9px] font-black text-gray-700 uppercase tracking-[0.2em]">Protocol Ver: 2.0.26</span>
+                                                    <span className="text-[9px] font-black text-gray-700 uppercase tracking-[0.2em]">Activity</span>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -129,7 +149,7 @@ const ActivityTab = ({ projectId }) => {
                     <Zap className="w-4 h-4 text-cyan-400" />
                 </div>
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                    Real-time audit synchronization active. All interventions are cryptographically signed.
+                    Real-time updates enabled.
                 </p>
             </footer >
         </div>

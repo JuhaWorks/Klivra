@@ -67,11 +67,11 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-            toast.success('Project dispatched to workspace engine! 🛰️');
+            toast.success('Project created successfully.');
             handleClose();
         },
         onError: (err) => {
-            toast.error(err.response?.data?.message || 'Dispatch failure. Check node status.');
+            toast.error(err.response?.data?.message || 'Failed to create project. Please try again.');
         }
     });
 
@@ -117,12 +117,12 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                         <header className="flex items-center justify-between mb-10">
                             <div>
                                 <Dialog.Title className="text-2xl font-black text-white tracking-tighter">
-                                    {step === 1 && "Initialization"}
-                                    {step === 2 && "Classification"}
-                                    {step === 3 && "Scheduling"}
+                                    {step === 1 && "Project Details"}
+                                    {step === 2 && "Category Selection"}
+                                    {step === 3 && "Timeline Planning"}
                                 </Dialog.Title>
                                 <Dialog.Description className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em] mt-1">
-                                    Nexus Protocol • Step {step} of 3
+                                    New Project Setup • Step {step} of 3
                                 </Dialog.Description>
                             </div>
                             <Dialog.Close asChild>
@@ -143,25 +143,24 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         className="space-y-6"
                                     >
                                         <Input
-                                            label="Project Identifier"
-                                            placeholder="e.g. Project Orion"
+                                            label="Project Name"
+                                            placeholder="e.g. Q3 Roadmap"
                                             error={errors.name?.message}
                                             {...register('name')}
                                         />
                                         
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Mission Objective</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Project Description</label>
                                             <textarea
                                                 {...register('description')}
                                                 rows={3}
-                                                placeholder="Define the architectural goal..."
+                                                placeholder="Describe the project goals and scope..."
                                                 className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-4 focus:ring-cyan-500/5 focus:border-cyan-500/30 transition-all resize-none font-medium text-sm"
                                             />
                                             {errors.description && <p className="text-xs text-red-400 ml-1 font-bold">{errors.description.message}</p>}
                                         </div>
-
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Visual Asset (Soft-Link)</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Project Cover Image</label>
                                             <div className="flex gap-4">
                                                 <div
                                                     onClick={() => fileInputRef.current.click()}
@@ -172,22 +171,22 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                                     ) : (
                                                         <>
                                                             <Upload className="w-6 h-6 text-gray-500 mb-1" />
-                                                            <span className="text-[9px] font-black text-gray-600 uppercase">Uplink</span>
+                                                            <span className="text-[9px] font-black text-gray-600 uppercase">Upload</span>
                                                         </>
                                                     )}
                                                 </div>
-
                                                 <div className="flex-1 space-y-3">
                                                     <Input
-                                                        placeholder="...or CDN endpoint"
+                                                        placeholder="...or image URL"
                                                         error={errors.coverImageUrl?.message}
                                                         {...register('coverImageUrl')}
                                                     />
                                                     <p className="text-[10px] text-gray-700 italic font-medium leading-relaxed">
-                                                        Note: Physical file uplinks override external CDN endpoints.
+                                                        Note: Local file uploads take precedence over URL links.
                                                     </p>
                                                 </div>
                                             </div>
+
 
                                             <input
                                                 type="file"
@@ -215,7 +214,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         className="space-y-6"
                                     >
                                         <div className="space-y-4">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Select Domain</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Project Category</label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map((cat) => (
                                                     <button
@@ -250,7 +249,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         <div className="grid grid-cols-2 gap-4">
                                             <Input
                                                 id="startDate"
-                                                label="Launch Day"
+                                                label="Start Date"
                                                 type="date"
                                                 leftIcon={Calendar}
                                                 error={errors.startDate?.message}
@@ -258,7 +257,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                             />
                                             <Input
                                                 id="endDate"
-                                                label="Target Horizon"
+                                                label="End Date"
                                                 type="date"
                                                 leftIcon={Target}
                                                 error={errors.endDate?.message}
@@ -286,7 +285,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                     fullWidth
                                     rightIcon={step < 3 ? ArrowRight : FolderPlus}
                                 >
-                                    {step === 3 ? "Launch Initiative" : "Next Segment"}
+                                    {step === 3 ? "Create Project" : "Next Step"}
                                 </Button>
                             </footer>
                         </form>

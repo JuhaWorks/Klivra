@@ -77,8 +77,8 @@ const ProjectSettingsDashboard = () => {
     if (!isValidId) {
         return <ProjectSettingsError
             icon={AlertCircle}
-            title="Malformed Segment ID"
-            description="The requested project identifier does not match standard nexus protocols."
+            title="Invalid Project ID"
+            description="The requested identifier does not match standard project formats."
         />;
     }
 
@@ -89,18 +89,18 @@ const ProjectSettingsDashboard = () => {
         if (status === 403) {
             return <ProjectSettingsError
                 icon={Lock}
-                title="Unauthorized Access"
-                description="Your node lacks the required clearance level for this project segment."
+                title="Access Denied"
+                description="You do not have the required permissions for this project."
             />;
         }
         return <ProjectSettingsError
             icon={Ghost}
-            title="Null Reference"
-            description="This project segment has been de-initialized or relocated within the neural network."
+            title="Project Not Found"
+            description="This project may have been moved, deleted, or de-initialized."
         />;
     }
 
-    if (!project) return <ProjectSettingsError title="Data Corruption" description="Failed to synchronize with the core database nodes." />;
+    if (!project) return <ProjectSettingsError title="Sync Error" description="Failed to connect with the database server." />;
 
     const userRole = project.members?.find(m =>
         (m.userId?._id || m.userId) === currentUser?._id
@@ -114,7 +114,7 @@ const ProjectSettingsDashboard = () => {
         { id: 'insights', label: 'Insights', icon: Zap },
         { id: 'members', label: 'Team', icon: Users },
         { id: 'activity', label: 'Audit', icon: History },
-        ...(isManager ? [{ id: 'danger', label: 'Danger Zone', icon: AlertCircle, color: 'text-red-400' }] : []),
+        ...(isManager ? [{ id: 'danger', label: 'Critical Operations', icon: AlertCircle, color: 'text-red-400' }] : []),
     ];
 
     return (
@@ -122,7 +122,7 @@ const ProjectSettingsDashboard = () => {
             {/* Nav Header Area */}
             <div className="space-y-10">
                 {/* Cinematic Banner Area */}
-                <header className="relative h-[280px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-2xl">
+                <header className="relative h-[180px] w-full rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
                     <ProjectImage
                         project={project}
                         aspect="h-full w-full"
@@ -152,10 +152,10 @@ const ProjectSettingsDashboard = () => {
                             <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
                                 <div className="flex items-center gap-2">
                                     <LayoutDashboard className="w-4 h-4 text-cyan-500/60" />
-                                    <span>Workspace Management</span>
+                                    <span>Workspace Settings</span>
                                 </div>
                                 <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-                                <span className="opacity-60">Node: {id.substring(0, 8).toUpperCase()}</span>
+                                <span className="opacity-60">ID: {id.substring(0, 8).toUpperCase()}</span>
                             </div>
                         </div>
 
@@ -179,7 +179,7 @@ const ProjectSettingsDashboard = () => {
                                         ))} />
                                     </div>
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                                        {isConnected ? 'Sync Active' : 'Disconnected'}
+                                        {isConnected ? 'Live Sync' : 'Disconnected'}
                                     </span>
                                 </div>
                             </div>
@@ -188,7 +188,7 @@ const ProjectSettingsDashboard = () => {
                 </header>
 
                 {/* Anti-grid Tab Navigation */}
-                <div className="flex flex-wrap items-center gap-3 p-2 glass-2 bg-white/5 border border-white/5 rounded-[2rem] w-fit">
+                <div className="flex flex-wrap items-center gap-3 p-2 glass-2 bg-white/5 border border-white/5 rounded-2xl w-fit">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.id;
                         const Icon = tab.icon;

@@ -90,7 +90,7 @@ const MemberRow = ({
                             className="z-[200] min-w-[180px] glass-2 bg-[#09090b]/80 border border-white/10 rounded-[1.5rem] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
                             sideOffset={8}
                         >
-                            <div className="px-3 py-2 text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1">Select Clearance</div>
+                            <div className="px-3 py-2 text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1">Select Access Level</div>
                             {['Manager', 'Editor', 'Viewer'].map((role) => (
                                 <DropdownMenu.Item
                                     key={role}

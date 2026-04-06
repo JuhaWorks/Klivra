@@ -120,7 +120,7 @@ export default function Settings() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[11px] font-medium text-secondary">v4.2.1 Stable</span>
+                                <span className="text-[11px] font-medium text-secondary">System Operational</span>
                             </div>
                         </div>
                     </aside>

@@ -23,9 +23,9 @@ const RequireVerification = ({ children }) => {
             setIsResending(true);
             try {
                 await api.post('/auth/resend-verification', { email: user.email });
-                toast.success('Verification signal dispatched. Check your terminal/inbox.');
+                toast.success('Verification email sent. Please check your inbox.');
             } catch (error) {
-                toast.error(error?.response?.data?.message || 'Signal failure. Retry established.');
+                toast.error(error?.response?.data?.message || 'Failed to send email. Please try again.');
             } finally {
                 setIsResending(false);
             }
@@ -60,8 +60,8 @@ const RequireVerification = ({ children }) => {
                         transition={{ delay: 0.1 }}
                         className="text-gray-400 font-medium mb-10 leading-relaxed"
                     >
-                        Security protocol requires email verification for <span className="text-white font-bold">{user.email}</span>. 
-                        Synchronize your account to gain full access to the Klivra engine.
+                        Email verification is required for <span className="text-white font-bold">{user.email}</span>. 
+                        Please verify your account to gain full access to Klivra.
                     </motion.p>
 
                     <div className="space-y-4">
@@ -71,7 +71,7 @@ const RequireVerification = ({ children }) => {
                             fullWidth
                             rightIcon={ArrowRight}
                         >
-                            Resend Signal
+                            Resend Email
                         </Button>
 
                         <button
@@ -79,13 +79,13 @@ const RequireVerification = ({ children }) => {
                             className="flex items-center justify-center gap-2 mx-auto text-sm font-black uppercase tracking-widest text-gray-500 hover:text-red-400 transition-colors py-2"
                         >
                             <LogOut className="w-4 h-4" />
-                            <span>Terminate Session</span>
+                            <span>Sign Out</span>
                         </button>
                     </div>
 
                     <div className="mt-12 pt-8 border-t border-white/5">
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-600">
-                            Protocol: TLS 1.3 / E2EE Active
+                            Security: End-to-End Encrypted
                         </p>
                     </div>
                 </Card>

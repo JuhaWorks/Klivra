@@ -4,8 +4,8 @@ import { Loader2, Check, X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 /**
- * Standard Vanguard Button v2.5
- * Premium Glassmorphism without Liquid Distortions
+ * Interactive Button Component
+ * Premium Glassmorphism Design
  */
 const Button = forwardRef(({
     children,
@@ -45,7 +45,8 @@ const Button = forwardRef(({
     };
 
     const variants = {
-        primary: 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 backdrop-blur-md shadow-lg shadow-accent/5',
+        primary: 'bg-accent/20 hover:bg-accent/30 text-accent border border-accent/30 backdrop-blur-md shadow-lg shadow-accent/10',
+        vibrant: 'bg-theme hover:brightness-110 text-white border border-white/10 shadow-2xl shadow-theme/30 font-black',
         secondary: 'bg-surface hover:bg-elevated text-primary border border-default backdrop-blur-md',
         ghost: 'bg-transparent text-tertiary hover:text-primary hover:bg-surface border-transparent',
         destructive: 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 backdrop-blur-md',

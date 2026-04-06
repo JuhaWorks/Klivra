@@ -26,6 +26,7 @@ const getProjects = async (req, res, next) => {
         else query.deletedAt = null;
 
         const projects = await Project.find(query)
+            .populate('members.userId', 'name email avatar')
             .select('name description status category startDate endDate coverImageUrl members.userId members.status')
             .sort('-createdAt')
             .lean();
@@ -94,7 +95,7 @@ const updateProject = async (req, res, next) => {
         }
 
         Object.keys(req.body).forEach(key => {
-            if (['name', 'description', 'category', 'startDate', 'endDate', 'status', 'coverImageUrl', 'coverImageId'].includes(key)) {
+            if (['name', 'description', 'category', 'startDate', 'endDate', 'status', 'coverImageUrl', 'coverImageId', 'kanbanConfig', 'taskTemplates', 'checklistTemplates', 'boardBackground'].includes(key)) {
                 if (key === 'endDate') {
                     const oldDate = project.endDate ? new Date(project.endDate).getTime() : 0;
                     const newDate = new Date(req.body[key]).getTime();
@@ -122,12 +123,15 @@ const updateProject = async (req, res, next) => {
 
         // Instantly trigger deadline check if endDate or status was part of this update.
         // Fire-and-forget (no await) so the API response is never delayed.
+        // Instantly trigger deadline check if endDate or status was part of this update.
+        // Fire-and-forget (no await) so the API response is never delayed.
         if (req.body.endDate !== undefined || req.body.status !== undefined) {
             checkSingleProject(project._id).catch(err =>
                 logger.error(`Instant deadline check error: ${err.message}`)
             );
         }
 
+        await project.populate('members.userId', 'name email avatar');
         res.status(200).json({ status: 'success', data: project });
     } catch (error) { next(error); }
 };
@@ -290,7 +294,8 @@ const globalSearch = async (req, res, next) => {
         const projectsPromise = Project.find(
             req.user.role === 'Admin' ? { $text: { $search: query } } : { $text: { $search: query }, "members.userId": req.user._id },
             { score: { $meta: "textScore" } }
-        ).sort({ score: { $meta: "textScore" } }).limit(5).lean();
+        ).populate('members.userId', 'name email avatar').sort({ score: { $meta: "textScore" } }).limit(5).lean();
+    
 
         const [tasks, projects] = await Promise.all([tasksPromise, projectsPromise]);
         res.status(200).json({ status: 'success', data: { tasks, projects } });
@@ -308,6 +313,7 @@ const getProjectInvitations = async (req, res, next) => {
             },
             deletedAt: null
         })
+        .populate('members.userId', 'name email avatar')
         .select('name description status category coverImageUrl members startDate endDate')
         .sort('-createdAt')
         .lean();

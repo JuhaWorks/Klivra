@@ -114,11 +114,11 @@ const Projects = () => {
                     <div className="space-y-4 sm:space-y-6">
                         <div className="flex items-center gap-3 text-theme font-black text-[9px] sm:text-[10px] uppercase tracking-[0.4em]">
                             <LayoutGrid className="w-3.5 h-3.5 text-theme/60" />
-                            <span>Neural Project Domains</span>
+                            <span>Project Workspace</span>
                         </div>
                         <h1 className="text-4xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">Projects</h1>
                         <p className="text-secondary font-medium text-sm sm:text-xl max-w-xl leading-relaxed opacity-80">
-                            Orchestrate and synchronize team operations within a high-fidelity creative workspace.
+                            Collaborate and manage project tasks within a professional shared workspace.
                         </p>
                     </div>
 
@@ -235,7 +235,7 @@ const Projects = () => {
                                                 </div>
                                             </div>
                                             <div className="space-y-1">
-                                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Synchronized</span>
+                                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Team Members</span>
                                                 <div className="flex items-center gap-2 text-primary">
                                                     <Users className="w-3.5 h-3.5 text-theme/60" />
                                                     <span className="text-[11px] sm:text-sm font-bold font-mono truncate">{project.members?.length || 0} MEMBERS</span>
@@ -316,9 +316,9 @@ const Projects = () => {
                     <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[3rem] sm:rounded-[4rem] bg-sunken border border-subtle flex items-center justify-center mb-10 sm:mb-12 shadow-inner">
                         <SearchX className="w-10 h-10 sm:w-14 sm:h-14 text-tertiary/40" />
                     </div>
-                    <h2 className="text-4xl sm:text-6xl font-black text-primary tracking-tighter mb-4 leading-none">Neutral Space.</h2>
+                    <h2 className="text-4xl sm:text-6xl font-black text-primary tracking-tighter mb-4 leading-none">No Projects Found.</h2>
                     <p className="text-tertiary font-medium text-base sm:text-lg max-w-sm mb-12 sm:mb-16 leading-relaxed opacity-80">
-                        This operational view is currently empty. Initialize a new project segment to begin.
+                        This view is currently empty. Create a new project to get started.
                     </p>
                     <Button
                         size="lg"
@@ -326,7 +326,7 @@ const Projects = () => {
                         leftIcon={Plus}
                         className="h-16 sm:h-20 px-10 sm:px-12 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl shadow-theme/20 text-lg"
                     >
-                        New Directive
+                        Create Project
                     </Button>
                 </div>
             )}

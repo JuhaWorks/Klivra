@@ -336,7 +336,7 @@ const MaintenanceNotice = () => {
                                     transition={{ delay: 0.5 }}
                                     className="font-mono text-[11px] text-white/14 tracking-[0.08em] uppercase"
                                 >
-                                    Incident Node · {incidentId}
+                                    Incident Reference · {incidentId}
                                 </motion.p>
                             </div>
                         )}

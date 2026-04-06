@@ -14,25 +14,68 @@ const taskSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['Pending', 'In Progress', 'Completed'],
             default: 'Pending',
+            trim: true,
         },
         priority: {
             type: String,
             enum: ['Low', 'Medium', 'High', 'Urgent'],
             default: 'Medium',
         },
-        // Reference to the user assigned to the task
+        type: {
+            type: String,
+            enum: ['Task', 'Bug', 'Feature', 'Maintenance'],
+            default: 'Task',
+        },
+        points: {
+            type: Number,
+            enum: [1, 2, 3, 5, 8, 13],
+            default: 1,
+        },
+        // Support for multiple assignees
+        assignees: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        }],
+        // Backward compatibility fallback for migration
         assignee: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
         },
+        watchers: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        }],
+        labels: [{
+            type: String, // Label ID from project.kanbanConfig.availableLabels
+        }],
+        dependencies: {
+            blockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }],
+            blocking: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }]
+        },
+        estimatedTime: { type: Number, default: 0 }, // In hours
+        actualTime: { type: Number, default: 0 }, // In hours
+        startDate: { type: Date },
+        dueDate: { type: Date },
+        isRecurring: {
+            enabled: { type: Boolean, default: false },
+            frequency: { type: String, enum: ['daily', 'weekly', 'monthly'] },
+            nextOccurrence: { type: Date }
+        },
+        isArchived: { type: Boolean, default: false },
         // Reference to the project the task belongs to
         project: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Project',
             required: [true, 'Task must belong to a project'],
         },
+        subtasks: [
+            {
+                title: { type: String, required: true, trim: true },
+                completed: { type: Boolean, default: false },
+                id: { type: String, required: true } // Internal ID for frontend tracking
+            }
+        ]
     },
     {
         timestamps: true,

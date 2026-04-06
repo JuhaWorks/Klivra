@@ -21,12 +21,17 @@ const ApodWidget = () => {
     const { data: apod, isLoading: apodLoading, isError } = useQuery({
         queryKey: ['apod'],
         queryFn: async () => {
-            const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
-            const res = await axios.get('https://api.nasa.gov/planetary/apod', {
-                params: { api_key: apiKey, thumbs: true },
-                timeout: 10000,
-            });
-            return res.data;
+            try {
+                const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
+                const res = await axios.get('https://api.nasa.gov/planetary/apod', {
+                    params: { api_key: apiKey, thumbs: true },
+                    timeout: 8000,
+                });
+                return res.data;
+            } catch (err) {
+                console.warn('NASA API currently unavailable. Using cached fallback.');
+                return null;
+            }
         },
         staleTime: 1000 * 60 * 60 * 24,
         retry: 2,
@@ -42,7 +47,7 @@ const ApodWidget = () => {
             <div className="absolute top-4 left-4 z-30">
                 <div className="px-3 py-1.5 rounded-xl glass-2 bg-black/40 backdrop-blur-md border-white/10 flex items-center gap-2">
                     <Rocket className="w-3 h-3 text-cyan-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white">Inspiration</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">Daily Insight</span>
                 </div>
             </div>
 
@@ -74,12 +79,12 @@ const ApodWidget = () => {
                     <div className="flex-1 p-6 flex flex-col gap-3 overflow-hidden bg-[var(--bg-surface)]">
                         <div className="flex items-center gap-2 text-zinc-500">
                             <Calendar className="w-3 h-3" />
-                            <span className="text-[9px] font-bold uppercase tracking-widest">Temporal Log: {new Date().toLocaleDateString()}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-widest">Date: {new Date().toLocaleDateString()}</span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
                             <div>
-                                <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest block mb-1">Explanation</span>
+                                <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest block mb-1">Description</span>
                                 <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
                                     {display.explanation}
                                 </p>
@@ -87,7 +92,7 @@ const ApodWidget = () => {
                                     className="text-[10px] font-bold text-cyan-500/80 hover:text-cyan-400 mt-1 transition-colors flex items-center gap-1 group/btn"
                                     onClick={() => window.open(display.url, '_blank')}
                                 >
-                                    <span>Full Discovery</span>
+                                    <span>View Source</span>
                                     <Rocket className="w-2.5 h-2.5 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
                                 </button>
                             </div>
@@ -104,7 +109,7 @@ const ApodWidget = () => {
 
                         <div className="pt-2 flex items-center gap-4">
                             <div className="h-px flex-1 bg-[var(--border-subtle)]" />
-                            <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest shrink-0">NASA Segment</span>
+                            <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest shrink-0">Data Source: NASA</span>
                         </div>
                     </div>
                 </>

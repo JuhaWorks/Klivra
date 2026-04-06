@@ -4,15 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { cn } from "../../utils/cn";
 
 /**
- * InteractiveGridBackground v5.0 — Vercel-optimized
- * - All-emerald (no cyan idle color)
- * - Zero-GC circular buffer trail (TypedArrays)
- * - Single offscreen canvas blit per frame
- * - Static grid rendered once on resize, never again
- * - DPR capped at 2 (saves ~56% GPU on 3× screens)
- * - Frame-rate-independent exponential lerp
- * - Batched fillRect path for trail (one composite op per frame)
- * - will-change: transform on canvases for GPU layer promotion
+ * Interactive Grid Background
+ * High-performance GPU-accelerated background with trail effects.
  */
 const InteractiveGridBackground = ({
   gridSize = 70,

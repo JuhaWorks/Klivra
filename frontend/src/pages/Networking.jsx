@@ -709,14 +709,14 @@ const Networking = () => {
                                         <Users2 className="w-4 h-4 text-theme" />
                                     </div>
                                     <span className="text-[10px] sm:text-[11px] text-tertiary uppercase tracking-[0.3em] font-mono">
-                                        Professional Network Domain
+                                        Professional Network
                                     </span>
                                 </div>
                                 <h1 className="text-5xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">
                                     Networking
                                 </h1>
                                 <p className="text-sm sm:text-lg text-secondary max-w-xl leading-relaxed opacity-80 font-medium">
-                                    Expand your professional neural link, sync with elite teams, and orchestrate global collaborations.
+                                    Connect with professionals, join project teams, and collaborate on global initiatives.
                                 </p>
                             </div>
                         </div>
@@ -798,7 +798,7 @@ const Networking = () => {
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Synchronize with other creators..."
+                                        placeholder="Connect with other professionals..."
                                         className="w-full bg-transparent text-sm font-medium text-primary placeholder-tertiary outline-none"
                                     />
                                     {searching && <Loader2 className="w-5 h-5 text-theme animate-spin shrink-0" />}
@@ -813,7 +813,7 @@ const Networking = () => {
                                     onChange={(e) => setRoleFilter(e.target.value)}
                                     className="px-8 py-4 rounded-[2rem] bg-sunken/50 border border-subtle text-xs font-black uppercase tracking-widest text-secondary outline-none focus:border-theme/30 transition-all cursor-pointer shadow-inner min-w-[200px]"
                                 >
-                                    <option value="">Operational Roles</option>
+                                    <option value="">All Roles</option>
                                     <option value="Manager">Managers</option>
                                     <option value="Developer">Developers</option>
                                 </select>
