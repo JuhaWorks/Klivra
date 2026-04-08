@@ -185,7 +185,14 @@ const updateTask = async (req, res, next) => {
             req.body.assignee = req.body.assignees.length > 0 ? req.body.assignees[0] : null;
         }
 
-        task = await Task.findByIdAndUpdate(req.params.id, req.body, {
+        // Clean up dependencies if they are coming as IDs
+        if (req.body.dependencies) {
+            if (req.body.dependencies.blockedBy) task.dependencies.blockedBy = req.body.dependencies.blockedBy;
+            if (req.body.dependencies.blocking) task.dependencies.blocking = req.body.dependencies.blocking;
+            delete req.body.dependencies;
+        }
+
+        task = await Task.findByIdAndUpdate(req.params.id, { $set: { ...req.body, dependencies: task.dependencies } }, {
             new: true,
             runValidators: true,
         });

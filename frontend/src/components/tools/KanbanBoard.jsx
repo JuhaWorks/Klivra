@@ -174,7 +174,9 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
         } else if (quickFilter === 'Risk') {
             filtered = filtered.filter(t => 
                 (t.status !== 'Completed' && t.status !== 'Canceled') && 
-                (t.priority === 'Urgent' || t.priority === 'High' || (t.dueDate && new Date(t.dueDate) < new Date()))
+                (t.priority === 'Urgent' || t.priority === 'High' || 
+                 (t.dueDate && new Date(t.dueDate) < new Date()) ||
+                 (t.dependencies?.blockedBy?.length > 0))
             );
         }
 

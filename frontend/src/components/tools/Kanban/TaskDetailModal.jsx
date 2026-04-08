@@ -14,7 +14,10 @@ import {
     Layers,
     MessageSquare,
     CheckCircle2,
-    Search
+    Search,
+    Link2,
+    X,
+    AlertCircle
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
@@ -62,6 +65,10 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, onClose, on
     const [isDeleting, setIsDeleting] = useState(false);
     const [newLabel, setNewLabel] = useState('');
     const [memberSearchQuery, setMemberSearchQuery] = useState('');
+    const [depSearchQuery, setDepSearchQuery] = useState('');
+    const [blockedBy, setBlockedBy] = useState(task.dependencies?.blockedBy?.map(d => d._id || d) || []);
+    const [blocking, setBlocking] = useState(task.dependencies?.blocking?.map(d => d._id || d) || []);
+    const [availableTasks, setAvailableTasks] = useState([]);
 
     const maxDueDate = project?.endDate ? new Date(project.endDate).toISOString().split('T')[0] : undefined;
 
@@ -74,10 +81,14 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, onClose, on
 
     const fetchComments = async () => {
         try {
-            const res = await api.get(`/tasks/${task._id}/comments`);
-            setComments(res.data.data);
+            const [cRes, tRes] = await Promise.all([
+                api.get(`/tasks/${task._id}/comments`),
+                projectId ? api.get(`/projects/${projectId}/tasks`) : api.get('/tasks')
+            ]);
+            setComments(cRes.data.data);
+            setAvailableTasks(tRes.data.data.filter(t => t._id !== task._id));
         } catch (err) {
-            console.error("Failed to fetch comments", err);
+            console.error("Failed to fetch modal context", err);
         }
     };
 
@@ -96,7 +107,9 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, onClose, on
             actualTime,
             isRecurring,
             isArchived,
-            subtasks
+            isArchived,
+            subtasks,
+            dependencies: { blockedBy, blocking }
         });
         onClose();
     };
@@ -165,6 +178,14 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, onClose, on
             m.userId?.email?.toLowerCase().includes(q)
         );
     }, [projectMembers, memberSearchQuery]);
+
+    const toggleSubtask = (id) => {
+        setSubtasks(subtasks.map(s => s.id === id ? { ...s, completed: !s.completed } : s));
+    };
+
+    const removeSubtask = (id) => {
+        setSubtasks(subtasks.filter(s => s.id !== id));
+    };
 
     return (
         <motion.div
@@ -288,6 +309,61 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, onClose, on
                                         </button>
                                     </form>
                                 )}
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-[8px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1.5 flex items-center justify-between">
+                                    <span>Blockers & Dependencies</span>
+                                    <Link2 className="w-2.5 h-2.5 text-theme/40" />
+                                </label>
+                                
+                                <div className="space-y-3 bg-white/[0.01] border border-white/5 rounded-2xl p-4">
+                                    <div className="relative group">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 group-focus-within:text-theme transition-colors" />
+                                        <input 
+                                            type="text"
+                                            value={depSearchQuery}
+                                            onChange={(e) => setDepSearchQuery(e.target.value)}
+                                            placeholder="Link blocking tasks..."
+                                            className="w-full bg-white/5 border border-white/5 focus:border-theme/40 rounded-xl pl-9 pr-3 py-2 text-[10px] font-bold text-white outline-none placeholder:text-gray-800 transition-all font-mono"
+                                        />
+                                    </div>
+
+                                    {depSearchQuery.trim() && (
+                                        <div className="max-h-[120px] overflow-y-auto custom-scrollbar border border-white/5 rounded-xl bg-black/40 shadow-2xl">
+                                            {availableTasks.filter(t => t.title.toLowerCase().includes(depSearchQuery.toLowerCase())).map(t => (
+                                                <button 
+                                                    key={t._id}
+                                                    onClick={() => !blockedBy.includes(t._id) && setBlockedBy([...blockedBy, t._id])}
+                                                    className="w-full text-left px-4 py-2 text-[10px] font-bold text-tertiary hover:bg-theme/20 hover:text-white border-b border-white/5 last:border-0 transition-colors"
+                                                >
+                                                    {t.title}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        {blockedBy.map(id => {
+                                            const t = availableTasks.find(x => x._id === id);
+                                            return (
+                                                <div key={id} className="flex items-center justify-between p-2.5 bg-rose-500/5 border border-rose-500/10 rounded-xl group/dep hover:border-rose-500/30 transition-all">
+                                                    <div className="flex items-center gap-3">
+                                                        <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[9px] font-black text-rose-200 uppercase tracking-tight leading-none">{t?.title || "Unknown Task"}</span>
+                                                            <span className="text-[7px] font-black text-gray-600 uppercase mt-1">Status: {t?.status}</span>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => setBlockedBy(blockedBy.filter(x => x !== id))} className="p-1.5 hover:bg-rose-500/20 rounded-lg text-rose-500 transition-all opacity-0 group-hover/dep:opacity-100">
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                        {blockedBy.length === 0 && <p className="text-[8px] font-black text-gray-700 uppercase text-center py-4 tracking-widest italic opacity-50">No blockers linked</p>}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
