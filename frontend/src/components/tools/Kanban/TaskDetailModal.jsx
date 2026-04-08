@@ -103,10 +103,9 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, onClose, on
             labels,
             dueDate: dueDate || null,
             startDate: startDate || null,
-            estimatedTime,
-            actualTime,
+            estimatedTime: estimatedTime || 0,
+            actualTime: actualTime || 0,
             isRecurring,
-            isArchived,
             isArchived,
             subtasks,
             dependencies: { blockedBy, blocking }
@@ -179,13 +178,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, onClose, on
         );
     }, [projectMembers, memberSearchQuery]);
 
-    const toggleSubtask = (id) => {
-        setSubtasks(subtasks.map(s => s.id === id ? { ...s, completed: !s.completed } : s));
-    };
 
-    const removeSubtask = (id) => {
-        setSubtasks(subtasks.filter(s => s.id !== id));
-    };
 
     return (
         <motion.div

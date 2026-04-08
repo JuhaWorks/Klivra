@@ -49,8 +49,15 @@ module.exports = {
             } catch (err) { next(new Error('Auth error')); }
         });
 
-        // ── ULTRA-ADVANCED REDIS STATE (0-RAM FOOTPRINT) ─────────────────────
+        // ── HYBRID PRESENCE STATE ─────────────────────
         const localUserSockets = new Map();
+        
+        // RAM Fallbacks for Dev Setup
+        const memGlobal = new Map(); 
+        const memProject = new Map(); // Map<projectId, Map<userId, stringifiedState>>
+        const memLocks = new Map(); // Map<projectId, Map<fieldId, stringifiedState>>
+        const memUserProjects = new Map(); // Map<userId, Set<String>>
+
         const rc = () => { const cl = getRedisClient(); return (cl && cl.isReady) ? cl : null; };
 
         let globalUpdateTimeout;
@@ -58,24 +65,27 @@ module.exports = {
             if (globalUpdateTimeout) return;
             globalUpdateTimeout = setTimeout(async () => {
                 const redis = rc();
-                if (!redis) return;
-                const hashData = await redis.hGetAll('presence:global').catch(() => ({}));
-                io.emit('globalPresenceUpdate', Object.values(hashData).map(v => JSON.parse(v)));
+                const values = redis 
+                    ? Object.values(await redis.hGetAll('presence:global').catch(() => ({})))
+                    : Array.from(memGlobal.values());
+                io.emit('globalPresenceUpdate', values.map(v => JSON.parse(v)));
                 globalUpdateTimeout = null;
-            }, 500); // 500ms debounce
+            }, 500); 
         };
 
         const broadcastPresence = async (projectId) => {
             const redis = rc();
-            if (!redis) return;
-            const hashData = await redis.hGetAll(`presence:project:${projectId}`).catch(() => ({}));
-            io.to(`project_${projectId}`).emit('presenceUpdate', Object.values(hashData).map(v => JSON.parse(v)));
+            const values = redis
+                ? Object.values(await redis.hGetAll(`presence:project:${projectId}`).catch(() => ({})))
+                : Array.from(memProject.get(projectId)?.values() || []);
+            io.to(`project_${projectId}`).emit('presenceUpdate', values.map(v => JSON.parse(v)));
         };
 
         const broadcastLocks = async (projectId) => {
             const redis = rc();
-            if (!redis) return;
-            const locks = await redis.hGetAll(`presence:locks:${projectId}`).catch(() => ({}));
+            const locks = redis
+                ? await redis.hGetAll(`presence:locks:${projectId}`).catch(() => ({}))
+                : Object.fromEntries(memLocks.get(projectId)?.entries() || []);
             const parsed = {}; Object.entries(locks).forEach(([k, v]) => parsed[k] = JSON.parse(v));
             io.to(`project_${projectId}`).emit('locksUpdated', parsed);
         };
@@ -89,29 +99,39 @@ module.exports = {
             if (!localUserSockets.has(userId)) localUserSockets.set(userId, new Set());
             localUserSockets.get(userId).add(socket.id);
 
+            const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status: 'Online' });
             if (redis) {
-                const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status: 'Online' });
                 await redis.hSet('presence:global', userId, state);
                 await redis.expire('presence:global', 86400);
+            } else {
+                memGlobal.set(userId, state);
             }
             broadcastGlobalPresence();
 
+            socket.on('requestPresenceSync', () => {
+                 broadcastGlobalPresence();
+            });
+
             socket.on('joinProject', async (projectId) => {
                 socket.join(`project_${projectId}`);
+                const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status: 'Online' });
                 if (redis) {
-                    const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status: 'Online' });
                     await redis.hSet(`presence:project:${projectId}`, userId, state);
-                    // Ultra-Advanced: track memberships in Redis SET instead of local RAM
                     await redis.sAdd(`user:projects:${userId}`, projectId);
                     await redis.expire(`user:projects:${userId}`, 86400);
+                } else {
+                    if (!memProject.has(projectId)) memProject.set(projectId, new Map());
+                    memProject.get(projectId).set(userId, state);
+                    if (!memUserProjects.has(userId)) memUserProjects.set(userId, new Set());
+                    memUserProjects.get(userId).add(projectId);
                 }
                 broadcastPresence(projectId);
                 broadcastLocks(projectId);
             });
 
             socket.on('setStatus', async ({ projectId, status }) => {
+                const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status });
                 if (redis) {
-                    const state = JSON.stringify({ userId, name: socket.user.name, avatar: socket.user.avatar, status });
                     await redis.hSet('presence:global', userId, state);
                     if (projectId) {
                         await redis.hSet(`presence:project:${projectId}`, userId, state);
@@ -123,10 +143,23 @@ module.exports = {
                             broadcastPresence(pId);
                         }
                     }
-                    broadcastGlobalPresence();
-                    io.to(userId).emit('statusUpdated', status);
-                    await User.findByIdAndUpdate(userId, { status }).catch(() => {});
+                } else {
+                    memGlobal.set(userId, state);
+                    if (projectId) {
+                        if (!memProject.has(projectId)) memProject.set(projectId, new Map());
+                        memProject.get(projectId).set(userId, state);
+                        broadcastPresence(projectId);
+                    } else {
+                        const projects = memUserProjects.get(userId) || [];
+                        for (const pId of projects) {
+                            if (memProject.has(pId)) memProject.get(pId).set(userId, state);
+                            broadcastPresence(pId);
+                        }
+                    }
                 }
+                broadcastGlobalPresence();
+                io.to(userId).emit('statusUpdated', status);
+                await User.findByIdAndUpdate(userId, { status }).catch(() => {});
             });
 
             socket.on('acquireFieldLock', async ({ projectId, fieldId }) => {
@@ -136,14 +169,31 @@ module.exports = {
                         await redis.hSet(`presence:locks:${projectId}`, fieldId, JSON.stringify({ userId, userName: socket.user.name }));
                         broadcastLocks(projectId);
                     }
+                } else {
+                    if (!memLocks.has(projectId)) memLocks.set(projectId, new Map());
+                    const existing = memLocks.get(projectId).get(fieldId);
+                    if (!existing || JSON.parse(existing).userId === userId) {
+                         memLocks.get(projectId).set(fieldId, JSON.stringify({ userId, userName: socket.user.name }));
+                         broadcastLocks(projectId);
+                    }
                 }
             });
 
             socket.on('releaseFieldLock', async ({ projectId, fieldId }) => {
-                const existing = redis && await redis.hGet(`presence:locks:${projectId}`, fieldId);
-                if (existing && JSON.parse(existing).userId === userId) {
-                    await redis.hDel(`presence:locks:${projectId}`, fieldId);
-                    broadcastLocks(projectId);
+                if (redis) {
+                    const existing = await redis.hGet(`presence:locks:${projectId}`, fieldId);
+                    if (existing && JSON.parse(existing).userId === userId) {
+                        await redis.hDel(`presence:locks:${projectId}`, fieldId);
+                        broadcastLocks(projectId);
+                    }
+                } else {
+                    if (memLocks.has(projectId)) {
+                        const existing = memLocks.get(projectId).get(fieldId);
+                        if (existing && JSON.parse(existing).userId === userId) {
+                             memLocks.get(projectId).delete(fieldId);
+                             broadcastLocks(projectId);
+                        }
+                    }
                 }
             });
 
@@ -154,19 +204,37 @@ module.exports = {
                     localUserSockets.delete(userId);
                     setTimeout(async () => {
                         const active = await io.in(userId).fetchSockets();
-                        if (active.length === 0 && redis) {
-                            await redis.hDel('presence:global', userId);
-                            const projects = await redis.sMembers(`user:projects:${userId}`);
-                            for (const pId of projects) {
-                                await redis.hDel(`presence:project:${pId}`, userId);
-                                broadcastPresence(pId);
-                                const locks = await redis.hGetAll(`presence:locks:${pId}`);
-                                for (const [fid, data] of Object.entries(locks)) {
-                                    if (JSON.parse(data).userId === userId) await redis.hDel(`presence:locks:${pId}`, fid);
+                        if (active.length === 0) {
+                            if (redis) {
+                                await redis.hDel('presence:global', userId);
+                                const projects = await redis.sMembers(`user:projects:${userId}`);
+                                for (const pId of projects) {
+                                    await redis.hDel(`presence:project:${pId}`, userId);
+                                    broadcastPresence(pId);
+                                    const locks = await redis.hGetAll(`presence:locks:${pId}`);
+                                    for (const [fid, data] of Object.entries(locks)) {
+                                        if (JSON.parse(data).userId === userId) await redis.hDel(`presence:locks:${pId}`, fid);
+                                    }
+                                    broadcastLocks(pId);
                                 }
-                                broadcastLocks(pId);
+                                await redis.del(`user:projects:${userId}`);
+                            } else {
+                                memGlobal.delete(userId);
+                                const projects = memUserProjects.get(userId) || [];
+                                for (const pId of projects) {
+                                     memProject.get(pId)?.delete(userId);
+                                     broadcastPresence(pId);
+                                     
+                                     const locks = memLocks.get(pId);
+                                     if (locks) {
+                                         for (const [fid, data] of locks.entries()) {
+                                             if (JSON.parse(data).userId === userId) locks.delete(fid);
+                                         }
+                                     }
+                                     broadcastLocks(pId);
+                                }
+                                memUserProjects.delete(userId);
                             }
-                            await redis.del(`user:projects:${userId}`);
                             broadcastGlobalPresence();
                             await User.findByIdAndUpdate(userId, { status: 'Offline' }).catch(() => {});
                         }

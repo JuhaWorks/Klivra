@@ -58,11 +58,12 @@ const ProjectSettingsDashboard = () => {
         const activeMembers = project.members.filter(m => !m.status || m.status === 'active');
         return activeMembers.map(m => {
             const memberId = m.userId?._id || m.userId;
+            const memberIdStr = memberId.toString();
             // Check project-room presence first (most accurate for current tab)
-            const isInRoom = activeViewers.some(v => v.userId === memberId);
+            const isInRoom = activeViewers.some(v => v.userId?.toString() === memberIdStr);
             // Fallback: check global presence (online users connected anywhere)
             const isOnlineGlobally = onlineUsers.some(
-                u => u.userId === memberId && u.status !== 'Offline'
+                u => u.userId?.toString() === memberIdStr && u.status !== 'Offline'
             );
             const isActive = isInRoom || isOnlineGlobally;
             return {

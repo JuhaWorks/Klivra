@@ -124,23 +124,29 @@ const createTask = async (req, res, next) => {
         const task = await Task.create({
             title,
             description,
-            status,
-            priority,
+            status: status || 'Pending',
+            priority: priority || 'Medium',
             assignees: taskAssignees,
-            assignee: assignee || (taskAssignees.length > 0 ? taskAssignees[0] : null), // Sync for legacy
-            type,
-            points,
-            labels,
-            dueDate,
-            startDate,
-            estimatedTime,
+            assignee: taskAssignees.length > 0 ? taskAssignees[0] : null, // Mirror first assignee for legacy mobile/client support
+            type: type || 'Task',
+            points: points || 1,
+            labels: labels || [],
+            dueDate: dueDate || null,
+            startDate: startDate || null,
+            estimatedTime: estimatedTime || 0,
             project: req.params.projectId
         });
 
-        // Emit real-time WebSocket event
-        socket.getIO().to(req.params.projectId).emit('taskUpdated', task);
+        // Populate the new task for immediate UI usage
+        const populatedTask = await Task.findById(task._id)
+            .populate('assignees', 'name email avatar')
+            .populate('project', 'name color')
+            .lean();
 
-        res.status(201).json({ status: 'success', data: task });
+        // Emit real-time WebSocket event
+        socket.getIO().to(req.params.projectId).emit('taskUpdated', populatedTask);
+
+        res.status(201).json({ status: 'success', data: populatedTask });
     } catch (error) {
         next(error);
     }

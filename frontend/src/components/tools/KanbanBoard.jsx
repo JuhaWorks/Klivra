@@ -98,7 +98,10 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
             queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
             toast.success('Task created successfully');
         },
-        onError: () => toast.error('Failed to create task')
+        onError: (err) => {
+            const msg = err.response?.data?.message || 'Failed to create task';
+            toast.error(msg, { duration: 4000 });
+        }
     });
 
     const updateTaskMutation = useMutation({
@@ -129,7 +132,8 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
             if (context?.previousTasks) {
                 queryClient.setQueryData(['tasks', projectId], context.previousTasks);
             }
-            toast.error('Sync conflict detected');
+            const msg = err.response?.data?.message || 'Update failed - sync conflict';
+            toast.error(msg);
         }
     });
 
