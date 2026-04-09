@@ -390,6 +390,9 @@ const getProjectInvitations = async (req, res, next) => {
 };
 
 const respondToProjectInvite = catchAsync(async (req, res) => {
+    if (req.user.isBanned) {
+        return res.status(403).json({ status: 'error', message: 'Your account is suspended. Action denied.' });
+    }
     const { status } = req.body;
     if (!['active', 'rejected'].includes(status)) {
         return res.status(400).json({ status: 'error', message: 'Invalid response status' });

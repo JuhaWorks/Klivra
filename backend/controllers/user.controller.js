@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const { z } = require('zod');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { cloudinary } = require('../config/cloudinary');
 const { getFrontendUrl, formatUserResponse, sendStandardEmail } = require('../utils/helpers');
 const { logSecurityEvent } = require('../utils/activityLogger');
 
@@ -30,19 +31,36 @@ const verifyEmailChangeSchema = z.object({
 // @access  Private
 const uploadAvatar = async (req, res, next) => {
     try {
-        // multer-storage-cloudinary puts the secure URL on req.file.path
         if (!req.file) {
-            // imageFilter rejected the file (wrong MIME type) or no file sent
             const msg = req.fileValidationError || 'Please upload an image file';
             res.status(400);
             return next(new Error(msg));
         }
 
-        const user = await User.findByIdAndUpdate(
-            req.user._id,
-            { avatar: req.file.path },
-            { new: true, runValidators: true }
-        );
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404);
+            return next(new Error('User not found'));
+        }
+
+        // --- Asset Hygiene: Delete old Cloudinary image if it exists ---
+        if (user.avatar && user.avatar.includes('cloudinary.com')) {
+            try {
+                // Extracts "klivra/avatars/XXXXXX" from the URL
+                const parts = user.avatar.split('/');
+                const publicIdWithExt = parts.slice(-3).join('/'); // [folder, subfolder, filename.ext]
+                const publicId = publicIdWithExt.split('.')[0];
+                
+                await cloudinary.uploader.destroy(publicId);
+                console.log(`[STORAGE] Deleted old avatar asset: ${publicId}`);
+            } catch (err) {
+                console.warn('[STORAGE] Failed to delete old avatar asset:', err.message);
+                // We don't block the upload if deletion fails
+            }
+        }
+
+        user.avatar = req.file.path;
+        await user.save();
 
         res.status(200).json({
             status: 'success',
@@ -99,17 +117,29 @@ const updateProfile = async (req, res, next) => {
 // @access  Private
 const removeAvatar = async (req, res, next) => {
     try {
-        const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        const user = await User.findByIdAndUpdate(
-            req.user._id,
-            { avatar: defaultAvatar },
-            { new: true, runValidators: true }
-        );
-
+        const user = await User.findById(req.user._id);
         if (!user) {
             res.status(404);
             return next(new Error('User not found'));
         }
+
+        // --- Asset Hygiene: Delete Cloudinary image if it exists ---
+        if (user.avatar && user.avatar.includes('cloudinary.com')) {
+            try {
+                const parts = user.avatar.split('/');
+                const publicIdWithExt = parts.slice(-3).join('/');
+                const publicId = publicIdWithExt.split('.')[0];
+                
+                await cloudinary.uploader.destroy(publicId);
+                console.log(`[STORAGE] Deleted avatar asset on removal: ${publicId}`);
+            } catch (err) {
+                console.warn('[STORAGE] Failed to delete avatar asset on removal:', err.message);
+            }
+        }
+
+        const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        user.avatar = defaultAvatar;
+        await user.save();
 
         res.status(200).json({
             status: 'success',

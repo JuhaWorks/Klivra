@@ -23,9 +23,9 @@ const protect = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = await User.findById(decoded.id).select('-password');
 
-        if (!req.user || req.user.isActive === false) {
+        if (!req.user || req.user.isActive === false || req.user.isBanned) {
             res.status(401);
-            return next(new Error('Not authorized, user not found or account deactivated'));
+            return next(new Error(req.user?.isBanned ? 'Your account has been suspended' : 'Not authorized, user not found or account deactivated'));
         }
 
         next();
@@ -59,6 +59,9 @@ const optionalProtect = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = await User.findById(decoded.id).select('-password');
+        if (req.user && (req.user.isActive === false || req.user.isBanned)) {
+            req.user = null;
+        }
         next();
     } catch (error) {
         req.user = null;
@@ -122,7 +125,8 @@ const authorizeProjectAccess = (roles = []) => async (req, res, next) => {
         }
 
         const member = project.members.find(m => m.userId.toString() === req.user._id.toString());
-        const hasAccess = (member && (roles.length === 0 || roles.includes(member.role))) || req.user.role === 'Admin';
+        const isMember = member && member.status === 'active';
+        const hasAccess = isMember || req.user.role === 'Admin';
 
         if (!hasAccess) {
             res.status(403);

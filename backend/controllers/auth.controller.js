@@ -268,10 +268,10 @@ const refreshTokenUser = async (req, res, next) => {
 
         // Find user and their tokens
         const user = await User.findById(decoded.id);
-        if (!user || user.isActive === false) {
+        if (!user || user.isActive === false || user.isBanned) {
             res.clearCookie('refreshToken', getCookieOptions());
             res.status(401);
-            return next(new Error('Not authorized, user not found or deactivated'));
+            return next(new Error(user?.isBanned ? 'Your account has been suspended' : 'Not authorized, user not found or deactivated'));
         }
 
         // --- Refresh Token Rotation Logic (Security Hardening) ---
