@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { api } from '../../store/useAuthStore';
 import { motion } from 'framer-motion';
 import { Rocket, Info, Calendar } from 'lucide-react';
 import Card from '../ui/Card';
@@ -14,56 +14,11 @@ const ApodWidget = () => {
     const { data: apodData, isLoading, isError } = useQuery({
         queryKey: ['apod'],
         queryFn: async () => {
-            const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
-            
-            const formatData = (data) => ({
-                title: data.title,
-                explanation: data.explanation,
-                author: data.copyright || 'NASA',
-                url: data.media_type === 'video' ? data.thumbnail_url || 'https://picsum.photos/seed/space/600/400' : data.url,
-                date: data.date,
-            });
-
-            const getDateStr = (offsetDays) => {
-                const d = new Date();
-                d.setDate(d.getDate() - offsetDays);
-                return d.toISOString().split('T')[0];
-            };
-
-            const fetchApod = (offset) => {
-                return axios.get('https://api.nasa.gov/planetary/apod', {
-                    params: {
-                        api_key: apiKey,
-                        thumbs: true,
-                        date: offset ? getDateStr(offset) : undefined,
-                    },
-                    timeout: 10000,
-                });
-            };
-
-            for (let i = 0; i <= 3; i++) {
-                try {
-                    const res = await fetchApod(i);
-                    if (res?.data) {
-                        return formatData(res.data);
-                    }
-                } catch (err) {
-                    const status = err?.response?.status || 'network error';
-                    console.warn(`NASA APOD request failed (${status}) for offset ${i} - trying fallback...`);
-                }
-            }
-
-            // Ultimate fallback if NASA is unavailable
-            return {
-                title: 'System Insight',
-                explanation: 'Waiting for NASA telemetry...',
-                author: 'System',
-                url: 'https://picsum.photos/seed/system/600/400',
-                date: new Date().toISOString().split('T')[0],
-            };
+            const res = await api.get('/tools/apod');
+            return res.data.data;
         },
-        staleTime: 1000 * 60 * 5, // cache for 5 minutes instead of 24h so we don't get stuck on old images
-        retry: 0,
+        staleTime: 1000 * 60 * 60 * 6, // 6h cache to match backend
+        retry: 1,
         refetchOnWindowFocus: false,
     });
 

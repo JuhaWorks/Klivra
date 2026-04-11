@@ -144,6 +144,7 @@ app.use('/api/search', require('./routes/search.routes'));
 app.use('/api/audit', require('./routes/audit.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/connections', require('./routes/connection.routes'));
+app.use('/api/tools', require('./routes/tool.routes'));
 
 const cluster = require('cluster');
 const os = require('os');
