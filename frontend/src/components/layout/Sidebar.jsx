@@ -14,6 +14,8 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { cn } from '../../utils/cn';
 import GlassSurface from '../ui/GlassSurface';
 import { getOptimizedAvatar } from '../../utils/avatar';
+import { useSocketStore } from '../../store/useSocketStore';
+import { toast } from 'react-hot-toast';
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/', labelDescription: 'Project Overview' },
@@ -54,7 +56,7 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
             <span className={cn(
                 "absolute inset-0 transition-opacity duration-150",
                 isCollapsed ? "rounded-2xl" : "rounded-xl",
-                "bg-white/5",
+                "bg-sunken",
                 isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
             )} />
 
@@ -104,6 +106,7 @@ const SidebarComponent = () => {
     const location = useLocation();
     const queryClient = useQueryClient();
     const { mode, setMode } = useTheme();
+    const isDark = mode === MODES.DARK;
     
     // Responsive Detection
     const isMobile = useMediaQuery('(max-width: 1024px)');
@@ -118,6 +121,34 @@ const SidebarComponent = () => {
         }
     }, [isTablet, isCollapsed, setCollapsed]);
 
+    // Gamification Global Listener
+    const { socket } = useSocketStore();
+    useEffect(() => {
+        if (!socket) return;
+        const handleGamification = (data) => {
+            if (data.type === 'xp_gained') {
+                toast.success(`+${data.xpGained} XP Earned!`, { icon: '✨', duration: 3000 });
+                queryClient.invalidateQueries({ queryKey: ['user-heatmap'] });
+                useAuthStore.getState().checkAuth(); // Force update global UI
+            } else if (data.type === 'xp_lost') {
+                toast.error(`-${data.xpLost} XP (Reverted Task)`, { icon: '📉', duration: 3000 });
+                if (data.leveledDown) {
+                     toast.error(`Leveled Down to L${data.newLevel}`, { icon: '⚠️', duration: 4000 });
+                }
+                queryClient.invalidateQueries({ queryKey: ['user-heatmap'] });
+                useAuthStore.getState().checkAuth(); 
+            } else if (data.type === 'level_up') {
+                toast.success(`Level Up! You reached Level ${data.newLevel}`, { icon: '🚀', duration: 5000 });
+                useAuthStore.getState().checkAuth(); 
+            } else if (data.type === 'badge_earned') {
+                toast.success(`Badge Earned: ${data.badge?.name}!`, { icon: '🏆', duration: 5000 });
+                useAuthStore.getState().checkAuth(); 
+            }
+        };
+        socket.on('gamification_update', handleGamification);
+        return () => socket.off('gamification_update', handleGamification);
+    }, [socket, queryClient]);
+
     const chunkMap = {
         '/': () => import('../../pages/Home'),
         '/projects': () => import('../../pages/Projects'),
@@ -125,7 +156,7 @@ const SidebarComponent = () => {
         '/networking': () => import('../../pages/Networking'),
         '/settings': () => import('../../pages/Settings'),
         '/profile': () => import('../../pages/Profile'),
-        '/whiteboard/main-workspace': () => import('../tools/Whiteboard'),
+        '/whiteboard/main-workspace': () => import('../../pages/ProjectWhiteboard'),
         '/admin': () => import('../../pages/AdminDashboard'),
         '/admin/security': () => import('../../pages/SecurityFeed'),
     };
@@ -134,7 +165,7 @@ const SidebarComponent = () => {
         chunkMap[path]?.();
         if (path === '/projects') {
             queryClient.prefetchQuery({
-                queryKey: ['projects'],
+                queryKey: ['projects', 'active'],
                 queryFn: async () => (await api.get('/projects')).data,
                 staleTime: 1000 * 60 * 5
             });
@@ -162,7 +193,7 @@ const SidebarComponent = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[80] lg:hidden pointer-events-auto" 
+                        className="fixed inset-0 bg-black/40 backdrop-blur-xl z-[80] lg:hidden pointer-events-auto" 
                         onClick={() => setSidebarExpanded(false)} 
                     />
                 )}
@@ -194,7 +225,7 @@ const SidebarComponent = () => {
                 <div className="absolute inset-0 z-0">
                     <GlassSurface 
                         width="100%" height="100%" borderRadius={0} displace={0.6} distortionScale={-60} 
-                        backgroundOpacity={mode === MODES.DARK ? 0.08 : 0.20} opacity={0.96} blur={24}
+                        backgroundOpacity={isDark ? 0.08 : 0.40} opacity={0.96} blur={24}
                     />
                 </div>
 
@@ -212,7 +243,7 @@ const SidebarComponent = () => {
                     {/* Logo */}
                     <div className={cn(
                         "shrink-0 rounded-xl overflow-hidden transition-all duration-200",
-                        "shadow-[0_2px_8px_rgba(0,0,0,0.24)] ring-1 ring-white/10",
+                        "shadow-elevation border border-glass",
                         effectiveCollapsed ? "w-9 h-9" : "w-8 h-8"
                     )}>
                         <img 
@@ -245,8 +276,8 @@ const SidebarComponent = () => {
                         className={cn(
                             "hidden lg:flex items-center justify-center shrink-0",
                             "w-7 h-7 rounded-lg transition-all duration-150",
-                            "text-tertiary hover:text-primary hover:bg-white/8",
-                            "border border-transparent hover:border-white/8",
+                            "text-tertiary hover:text-primary hover:bg-sunken",
+                            "border border-transparent hover:border-subtle",
                             effectiveCollapsed ? "ml-0" : "ml-auto"
                         )}
                         aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -261,7 +292,7 @@ const SidebarComponent = () => {
                     {isMobile && isSidebarExpanded && (
                         <button 
                             onClick={() => setSidebarExpanded(false)} 
-                            className="p-2 text-tertiary hover:text-primary hover:bg-white/8 rounded-xl transition-all active:scale-95 lg:hidden ml-auto"
+                            className="p-2 text-tertiary hover:text-primary hover:bg-sunken rounded-xl transition-all active:scale-95 lg:hidden ml-auto"
                             aria-label="Close menu"
                         >
                             <X className="w-4 h-4" />
@@ -520,8 +551,15 @@ const SidebarComponent = () => {
                                         {user?.name}
                                     </span>
                                     <span className="text-[10px] font-medium text-tertiary truncate leading-tight capitalize mt-0.5">
-                                        {user?.role}
+                                        {user?.role} • Lvl {user?.gamification?.level || 1}
                                     </span>
+                                    {/* XP Progress Bar Small */}
+                                    <div className="w-full h-1.5 mt-1.5 bg-black/20 rounded-full overflow-hidden border border-white/5 relative">
+                                        <div 
+                                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-theme to-theme-highlight rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(var(--theme-rgb),0.5)]"
+                                            style={{ width: `${Math.min(100, Math.max(5, ((user?.gamification?.xp || 0) % 500) / 500 * 100))}%` }}
+                                        />
+                                    </div>
                                 </Link>
                                 <button 
                                     onClick={handleLogout} 

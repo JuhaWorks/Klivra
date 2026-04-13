@@ -1,5 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState, useRef, useId, memo } from 'react';
+import { useTheme, MODES } from '../../store/useTheme';
 
 const GlassSurface = ({
   children,
@@ -25,8 +25,9 @@ const GlassSurface = ({
   className = '',
   style = {}
 }) => {
-  const isDark = document.documentElement.classList.contains('dark');
-  const defaultBrightness = isDark ? 10 : 95;
+  const { mode } = useTheme();
+  const isDark = mode === MODES.DARK;
+  const defaultBrightness = isDark ? 10 : 96;
   const effectiveBrightness = brightness !== undefined ? brightness : defaultBrightness;
   const uniqueId = useId().replace(/:/g, '-');
   const filterId = `glass-filter-${uniqueId}`;

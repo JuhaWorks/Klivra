@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useSuspenseQuery, useQuery } from '@tanstack/react-query';
 import { useSocketStore } from '../store/useSocketStore';
 import { api } from '../store/useAuthStore';
-import KanbanBoard from '../components/tools/KanbanBoard';
+import KanbanBoard from '../components/Kanban';
 import { 
     CheckSquare, Filter, Search, Plus, LayoutGrid, List, ChevronDown, Target, RefreshCw
 } from 'lucide-react';
@@ -172,12 +172,27 @@ export default function Tasks() {
         }
     });
 
-    // Compute Metrics
-    const activeTasksCount = rawTasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled').length;
-    const riskTasksCount = rawTasks.filter(t => 
-        (t.status !== 'Completed' && t.status !== 'Canceled') && 
-        (t.priority === 'Urgent' || t.priority === 'High' || (t.dueDate && new Date(t.dueDate) < new Date()))
-    ).length;
+    // Fetch workspace stats for global metrics
+    const { data: workspaceStats } = useQuery({
+        queryKey: ['workspace-stats'],
+        queryFn: async () => {
+            const res = await api.get('/projects/workspace/stats');
+            return res.data.data;
+        },
+        staleTime: 60000 // 1 minute
+    });
+
+    // Compute Metrics: Use project-specific rawTasks if projectId exists, otherwise use workspaceStats
+    const activeTasksCount = projectId 
+        ? rawTasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled').length
+        : (workspaceStats?.activeTasks || 0);
+
+    const riskTasksCount = projectId
+        ? rawTasks.filter(t => 
+            (t.status !== 'Completed' && t.status !== 'Canceled') && 
+            (t.priority === 'Urgent' || t.priority === 'High' || (t.dueDate && new Date(t.dueDate) < new Date()))
+          ).length
+        : (workspaceStats?.atRiskTasks || 0);
 
 
     return (

@@ -6,7 +6,7 @@ const { registerUser, loginUser, logoutUser, refreshTokenUser, oauthCallback, ve
 const { authLimiter } = require('../middlewares/security.middleware');
 const passport = require('passport');
 // reuse the helpers from user.controller to keep validation/upload logic in one place
-const { uploadAvatar, updateProfile, changePassword, removeAvatar } = require('../controllers/user.controller');
+const { uploadAvatar, uploadCoverImage, updateProfile, changePassword, removeAvatar } = require('../controllers/user.controller');
 
 // the upload middleware, validation schemas and controller logic live in user.controller.js
 // so we don't duplicate functionality here.  auth.routes is responsible only for
@@ -54,6 +54,14 @@ router.post('/profile/avatar', protect, /* multer middleware defined below */(re
     uploadSingle(req, res, (err) => {
         if (err) return next(err);
         uploadAvatar(req, res, next);
+    });
+});
+
+router.post('/profile/cover', protect, (req, res, next) => {
+    const { uploadSingle } = require('../middlewares/upload.middleware');
+    uploadSingle(req, res, (err) => {
+        if (err) return next(err);
+        uploadCoverImage(req, res, next);
     });
 });
 

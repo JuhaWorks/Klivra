@@ -169,7 +169,7 @@ const loginUser = async (req, res, next) => {
         if (user && (await user.matchPassword(password))) {
 
             if (user.isBanned) {
-                await logSecurityEvent(user._id, 'FAILED_LOGIN', {
+                await logSecurityEvent(user._id, 'AuthFailedLogin', {
                     email,
                     reason: 'Account Banned',
                     ipAddress: req.ip
@@ -200,7 +200,7 @@ const loginUser = async (req, res, next) => {
             user.status = 'Online';
             await user.save();
 
-            await logSecurityEvent(user._id, 'LOGIN_SUCCESS', {
+            await logSecurityEvent(user._id, 'AuthLogin', {
                 email,
                 ipAddress: req.ip,
                 method: 'local'
@@ -208,7 +208,7 @@ const loginUser = async (req, res, next) => {
 
             await sendTokenResponse(user, 200, res, rememberMe);
         } else {
-            await logSecurityEvent(null, 'FAILED_LOGIN', {
+            await logSecurityEvent(null, 'AuthFailedLogin', {
                 email,
                 reason: 'Invalid Credentials',
                 ipAddress: req.ip
@@ -237,7 +237,7 @@ const logoutUser = async (req, res, next) => {
                 user.status = 'Offline';
                 await user.save();
                 
-                await logSecurityEvent(user._id, 'LOGOUT', {
+                await logSecurityEvent(user._id, 'AuthLogout', {
                     ipAddress: req.ip
                 });
             }
@@ -287,7 +287,7 @@ const refreshTokenUser = async (req, res, next) => {
             user.status = 'Offline';
             await user.save();
 
-            await logSecurityEvent(user._id, 'TOKEN_REUSE_DETECTED', {
+            await logSecurityEvent(user._id, 'TokenAbuseDetected', {
                 ipAddress: req.ip,
                 action: 'Automatic session revocation triggered'
             });
@@ -302,7 +302,7 @@ const refreshTokenUser = async (req, res, next) => {
         user.refreshTokens.splice(tokenIndex, 1);
 
         // Issue new tokens (sendTokenResponse handles hashing/saving the new one)
-        await logSecurityEvent(user._id, 'TOKEN_REFRESH', {
+        await logSecurityEvent(user._id, 'TokenRefresh', {
             ipAddress: req.ip
         });
 
@@ -335,7 +335,7 @@ const oauthCallback = async (req, res) => {
     
     await user.save();
 
-    await logSecurityEvent(user._id, 'LOGIN_SUCCESS', {
+    await logSecurityEvent(user._id, 'AuthLogin', {
         method: 'oauth',
         ipAddress: req.ip
     });
@@ -386,7 +386,7 @@ const verifyEmail = async (req, res, next) => {
         user.emailVerificationExpires = undefined;
         await user.save();
 
-        await logSecurityEvent(user._id, 'EMAIL_VERIFIED', {
+        await logSecurityEvent(user._id, 'EmailVerifyRequest', {
             ipAddress: req.ip
         });
 

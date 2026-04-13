@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../store/useAuthStore';
+import { api } from '../../../store/useAuthStore';
 import { motion } from 'framer-motion';
 import { Rocket, Info, Calendar } from 'lucide-react';
-import Card from '../ui/Card';
-import { Skeleton } from '../ui/PremiumLoaders';
+import Card from '../../ui/Card';
+import { Skeleton } from '../../ui/PremiumLoaders';
 
 /**
  * Modern 2026 APOD Widget

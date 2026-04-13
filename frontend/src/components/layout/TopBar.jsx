@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useUIStore } from '../../store/useUIStore';
+import { useTheme, MODES } from '../../store/useTheme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -24,6 +25,8 @@ const STATUS_COLOR = {
 const TopBar = () => {
     const { user, logout } = useAuthStore();
     const { toggleSidebar, isSidebarExpanded } = useUIStore();
+    const { mode } = useTheme();
+    const isDark = mode === MODES.DARK;
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     
@@ -42,8 +45,8 @@ const TopBar = () => {
 
     return (
         <header className="h-16 transition-all duration-300 relative z-50 rounded-b-[3.15rem]">
-            <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[3.15rem] backdrop-blur-2xl bg-black/40">
-                <GlassSurface width="100%" height="100%" borderRadius="0 0 3.15rem 3.15rem" displace={0.5} distortionScale={-20} backgroundOpacity={0.04} opacity={0.93} />
+            <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[3.15rem] backdrop-blur-2xl bg-base/40">
+                <GlassSurface width="100%" height="100%" borderRadius="0 0 3.15rem 3.15rem" displace={0.5} distortionScale={-20} backgroundOpacity={isDark ? 0.04 : 0.3} opacity={0.93} />
             </div>
             
             <div className="w-full h-full flex items-center justify-between px-4 sm:px-6 lg:px-10 relative z-10">

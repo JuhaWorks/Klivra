@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { useSocketStore } from '../store/useSocketStore';
 import { Navigate, Link } from 'react-router-dom';
 import IPBlacklistModal from '../components/layout/IPBlacklistModal';
+import { renderActivityNarrative } from '../utils/activityNarrative';
 
 const SecurityFeed = () => {
     const { user } = useAuthStore();
@@ -17,13 +18,11 @@ const SecurityFeed = () => {
     const queryClient = useQueryClient();
     const { socket } = useSocketStore();
 
-    // Real-time listener: when any admin action logs a security event,
-    // prepend it to the cached query data immediately (page 1 only)
+    // Real-time listener: when any admin action logs a security event
     useEffect(() => {
         if (!socket) return;
 
         const handleSecurityEvent = (newLog) => {
-            // Only update the visible first page so new events appear at top
             queryClient.setQueryData(['securityLogs', 1], (old) => {
                 if (!old) return old;
                 const updatedLogs = [newLog, ...(old.data || [])].slice(0, 20);
@@ -36,7 +35,6 @@ const SecurityFeed = () => {
                     }
                 };
             });
-            // If on page >1, refetch page 1 instead
             if (page !== 1) {
                 queryClient.invalidateQueries({ queryKey: ['securityLogs', 1] });
             }
@@ -57,76 +55,6 @@ const SecurityFeed = () => {
 
     const logs = logsData?.data || [];
     const pagination = logsData?.pagination || { page: 1, pages: 1, total: 0 };
-
-    const renderActionNarrative = (log) => {
-        const actor = log.user?.name || 'System';
-        const details = log.details || {};
-        const action = log.action;
-
-        switch (action) {
-            case 'PROJECT_DELETED':
-                return (
-                    <>
-                        <span className="text-emerald-400 font-bold">{actor}</span> deleted project
-                        <span className="text-primary font-bold ml-1.5 px-2 py-0.5 bg-surface rounded-lg border border-default">{details.name || 'Unknown'}</span>
-                    </>
-                );
-            case 'ROLE_UPDATED':
-                return (
-                    <>
-                        <span className="text-emerald-400 font-bold">{actor}</span> changed role of
-                        <span className="text-primary font-bold mx-1.5">{details.targetUserName || 'User'}</span> to
-                        <span className="text-amber-400 font-bold ml-1.5 px-2 py-0.5 bg-amber-400/10 rounded-lg border border-amber-400/20">{details.newRole}</span>
-                    </>
-                );
-            case 'USER_BANNED':
-                return (
-                    <>
-                        <span className="text-emerald-400 font-bold">{actor}</span> blacklisted
-                        <span className="text-rose-500 font-bold mx-1.5">{details.targetUserName || 'User'}</span> from the platform
-                    </>
-                );
-            case 'USER_UNBANNED':
-                return (
-                    <>
-                        <span className="text-emerald-400 font-bold">{actor}</span> restored access for
-                        <span className="text-emerald-400 font-bold mx-1.5">{details.targetUserName || 'User'}</span>
-                    </>
-                );
-            case 'MEMBER_ADDED':
-                return (
-                    <>
-                        <span className="text-emerald-400 font-bold">{actor}</span> added
-                        <span className="text-primary font-bold mx-1.5">{details.memberName || 'Member'}</span> as
-                        <span className="text-emerald-400 font-bold mx-1.5">{details.role}</span> to
-                        <span className="text-primary font-bold ml-1.5 px-2 py-0.5 bg-surface rounded-lg border border-default">{details.projectName || 'Project'}</span>
-                    </>
-                );
-            case 'MEMBER_REMOVED':
-                return (
-                    <>
-                        <span className="text-emerald-400 font-bold">{actor}</span> removed
-                        <span className="text-primary font-bold mx-1.5">{details.targetUserName || 'Member'}</span> from
-                        <span className="text-primary font-bold ml-1.5 px-2 py-0.5 bg-surface rounded-lg border border-default">{details.projectName || 'Project'}</span>
-                    </>
-                );
-            case 'FAILED_LOGIN':
-                return (
-                    <>
-                        Failed login attempt detected for
-                        <span className="text-rose-400 font-bold mx-1.5">{details.email}</span>
-                        <span className="text-gray-500 text-[10px] ml-1 uppercase tracking-tighter">({details.reason})</span>
-                    </>
-                );
-            default:
-                return (
-                    <>
-                        <span className="text-emerald-400 font-bold">{actor}</span> performed
-                        <span className="text-primary font-bold mx-1.5">{action.replace(/_/g, ' ')}</span>
-                    </>
-                );
-        }
-    };
 
     return (
         <div className="p-8 lg:p-12 max-w-5xl mx-auto space-y-12 cv-auto">
@@ -197,7 +125,7 @@ const SecurityFeed = () => {
 
                                 <div className="flex-1 min-w-0 py-1">
                                     <h4 className="text-[15px] font-medium text-gray-300 leading-relaxed">
-                                        {renderActionNarrative(log)}
+                                        {renderActivityNarrative(log)}
                                     </h4>
 
                                     <div className="mt-4 flex flex-wrap items-center gap-4">

@@ -229,7 +229,7 @@ const toggleMaintenance = async (req, res, next) => {
                 },
                 updatedBy: req.user._id
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         await logActivity(null, req.user._id, !!enabled ? 'MAINTENANCE_ENABLED' : 'MAINTENANCE_DISABLED', {
@@ -283,7 +283,7 @@ const updateBlockedIps = async (req, res, next) => {
         const config = await SystemConfig.findOneAndUpdate(
             { key: 'blocked_ips' },
             { value: ips, updatedBy: req.user._id },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         await logActivity(null, req.user._id, 'IP_BLOCKED', {
@@ -352,7 +352,7 @@ const Audit = require('../models/audit.model');
 
 // @desc    Get paginated audit/activity logs
 // @route   GET /api/audit
-// @access  Private (Admin/Manager)
+// @access  Private
 const getLogs = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page, 10) || 1;
@@ -360,22 +360,45 @@ const getLogs = async (req, res, next) => {
         const skip = (page - 1) * limit;
         const entityId = req.query.entityId;
 
-        let logs, total;
+        let query = {};
 
-        if (entityId) {
-            // Unified query to Audit (Project logs)
-            total = await Audit.countDocuments({ entityId: entityId, entityType: 'Project' });
-            logs = await Audit.find({ entityId: entityId, entityType: 'Project' })
-                .populate('user', 'name email avatar')
-                .sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+        // Security: If not Admin/Manager, restrict to projects the user belongs to
+        if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
+            const userProjects = await Project.find({ 
+                'members.userId': req.user._id, 
+                'members.status': 'active' 
+            }).select('_id').lean();
+            
+            const projectIds = userProjects.map(p => p._id);
+            
+            if (entityId) {
+                // If requesting specific entity, check if it's in their projects
+                if (!projectIds.map(id => id.toString()).includes(entityId.toString())) {
+                    res.status(403);
+                    throw new Error('You do not have permission to view activity for this entity.');
+                }
+                query.entityId = entityId;
+            } else {
+                // Return all activity across projects they are members of
+                query.entityId = { $in: projectIds };
+                query.entityType = 'Project';
+            }
         } else {
-            // General system audit logs
-            const query = req.query.type ? { entityType: req.query.type } : {};
-            total = await Audit.countDocuments(query);
-            logs = await Audit.find(query)
-                .populate('user', 'name email avatar')
-                .sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+            // Admin/Manager can see everything or filter by entityId
+            if (entityId) {
+                query.entityId = entityId;
+            } else if (req.query.type) {
+                query.entityType = req.query.type;
+            }
         }
+
+        const total = await Audit.countDocuments(query);
+        const logs = await Audit.find(query)
+            .populate('user', 'name email avatar')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
         res.status(200).json({
             status: 'success',

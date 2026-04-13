@@ -1,4 +1,4 @@
-import React, { useState, useTransition, useMemo, memo } from 'react';
+import React, { useState, useTransition, useMemo, memo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { 
@@ -18,7 +18,7 @@ import {
     SearchX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import ProjectCreationModal from '../components/projects/ProjectCreationModal';
 import ProjectImage from '../components/projects/ProjectImage';
 import DeadlinePopup from '../components/projects/DeadlinePopup';
@@ -39,6 +39,27 @@ const Projects = () => {
     const [isPending, startTransition] = useTransition();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // ── NOTIFICATION HANDLER (From Email Links) ──
+    useEffect(() => {
+        const inviteStatus = searchParams.get('invite_status');
+        const message = searchParams.get('message');
+
+        if (inviteStatus) {
+            if (inviteStatus === 'success') {
+                toast.success(message || 'Invitation processed successfully!');
+            } else {
+                toast.error(message || 'Failed to process invitation.');
+            }
+
+            // Cleanup URL after showing toast to prevent re-triggering on refresh
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('invite_status');
+            newParams.delete('message');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
 
     const { data: activeRes, isLoading: loadingActive } = useQuery({
         queryKey: ['projects', 'active'],
@@ -106,8 +127,8 @@ const Projects = () => {
             case 'Active': return 'text-accent bg-accent/10 border-accent';
             case 'Paused': return 'text-warning bg-warning/10 border-warning/20';
             case 'Completed': return 'text-success bg-success/10 border-success/20';
-            case 'Archived': return 'text-tertiary bg-sunken border-default';
-            default: return 'text-tertiary bg-sunken border-default';
+            case 'Archived': return 'text-tertiary bg-glass-heavy border-glass';
+            default: return 'text-tertiary bg-glass-heavy border-glass';
         }
     };
 
@@ -136,11 +157,11 @@ const Projects = () => {
 
                     <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                         {/* Segmented Control */}
-                        <div className="flex p-1.5 glass-2 bg-sunken/50 border-subtle rounded-[1.75rem] sm:rounded-[2rem]">
+                        <div className="flex p-1.5 glass-2 bg-sunken border-glass rounded-[1.75rem] sm:rounded-[2rem]">
                             {[
-                                { id: 'active', label: 'Active', count: activeProjects.length, icon: Box },
-                                { id: 'archived', label: 'Archived', count: archivedProjects.length, icon: Trash2 },
-                                { id: 'invitations', label: 'Invites', count: invitedProjects.length, icon: Target }
+                                { id: 'active', label: 'Active', count: activeProjects.length || 0, icon: Box },
+                                { id: 'archived', label: 'Archived', count: archivedProjects.length || 0, icon: Trash2 },
+                                { id: 'invitations', label: 'Invites', count: invitedProjects.length || 0, icon: Target }
                             ].map(tab => (
                                 <button
                                     key={tab.id}
@@ -153,7 +174,7 @@ const Projects = () => {
                                     {view === tab.id && (
                                         <motion.div 
                                             layoutId="project-tab"
-                                            className="absolute inset-0 bg-surface border border-subtle rounded-2xl shadow-sm shadow-black/20"
+                                            className="absolute inset-0 bg-surface border border-glass rounded-2xl shadow-glass"
                                             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                         />
                                     )}
@@ -161,7 +182,7 @@ const Projects = () => {
                                     <span className="relative z-10 uppercase tracking-widest">{tab.label}</span>
                                     <span className={twMerge(clsx(
                                         "relative z-10 px-1.5 py-0.5 rounded-lg text-[9px] font-mono",
-                                        view === tab.id ? "bg-theme/10 text-theme" : "bg-sunken text-tertiary"
+                                        view === tab.id ? "bg-theme/10 text-theme" : "bg-glass text-tertiary"
                                     ))}>{tab.count}</span>
                                 </button>
                             ))}
@@ -172,7 +193,7 @@ const Projects = () => {
                                 size="lg"
                                 onClick={() => setIsCreateModalOpen(true)}
                                 leftIcon={Plus}
-                                className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-xl shadow-theme/10 w-full sm:w-auto"
+                                className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-theme-slight w-full sm:w-auto"
                             >
                                 New Project
                             </Button>
@@ -189,7 +210,7 @@ const Projects = () => {
                         leftIcon={Search}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="rounded-2xl sm:rounded-[2.5rem] h-12 sm:h-14 bg-sunken border-subtle"
+                        className="rounded-2xl sm:rounded-[2.5rem] h-12 sm:h-14 bg-surface border-glass"
                     />
                 </div>
             </div>
@@ -210,7 +231,7 @@ const Projects = () => {
                             return (
                                 <Card 
                                     key={project._id} 
-                                    className="group h-full flex flex-col rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden border-subtle hover:border-theme/30 transition-all duration-500"
+                                    className="group h-full flex flex-col rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden border-glass hover:border-theme/30 transition-all duration-500"
                                     padding="p-0"
                                 >
 
@@ -218,7 +239,7 @@ const Projects = () => {
                                     <div className="relative mb-4 sm:mb-8">
                                         <ProjectImage
                                             project={project}
-                                            className="rounded-[2rem] sm:rounded-[2.5rem] border border-subtle aspect-video object-cover"
+                                            className="rounded-[2rem] sm:rounded-[2.5rem] border border-glass aspect-video object-cover"
                                         />
                                         <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
                                             <div className={twMerge(clsx(
@@ -240,7 +261,7 @@ const Projects = () => {
                                             </p>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 sm:gap-8 pt-4 border-t border-subtle/50">
+                                        <div className="grid grid-cols-2 gap-4 sm:gap-8 pt-4 border-t border-glass">
                                             <div className="space-y-1">
                                                 <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Deadline</span>
                                                 <div className="flex items-center gap-2 text-primary">
@@ -254,16 +275,16 @@ const Projects = () => {
                                                 <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Team Members</span>
                                                 <div className="flex items-center gap-2 text-primary">
                                                     <Users className="w-3.5 h-3.5 text-theme/60" />
-                                                    <span className="text-[11px] sm:text-sm font-bold font-mono truncate">{project.members?.length || 0} MEMBERS</span>
+                                                    <span className="text-[11px] sm:text-sm font-bold font-mono truncate">{(project.members?.length || 0)} MEMBERS</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-auto px-4 sm:px-8 py-4 sm:py-8 border-t border-subtle bg-sunken/30 flex items-center justify-between gap-4">
+                                    <div className="mt-auto px-4 sm:px-8 py-4 sm:py-8 border-t border-glass bg-glass-heavy flex items-center justify-between gap-4">
                                         <div className="flex -space-x-2.5">
                                             {project.members?.slice(0, 4).map((m, i) => (
-                                                <div key={i} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-base bg-sunken flex items-center justify-center overflow-hidden transition-all group-hover:scale-110 hover:z-10 shadow-lg">
+                                                <div key={i} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-base bg-glass flex items-center justify-center overflow-hidden transition-all group-hover:scale-110 hover:z-10 shadow-lg">
                                                     {m.userId?.avatar ? (
                                                         <img src={m.userId.avatar} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                                     ) : (
@@ -302,7 +323,7 @@ const Projects = () => {
                                                                 }}
                                                                 leftIcon={Trash2}
                                                                 isLoading={purgeMutation.isPending}
-                                                                className="w-10 h-10 p-0 flex items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border-red-500/20"
+                                                                className="w-10 h-10 p-0 flex items-center justify-center rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border-rose-500/20"
                                                             />
                                                             <Button
                                                                 size="md"
@@ -317,7 +338,7 @@ const Projects = () => {
                                                         </>
                                                     )}
                                                     {!isOwner && (
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-tertiary/50 italic px-4 py-2 bg-sunken rounded-lg border border-subtle">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-tertiary/50 italic px-4 py-2 bg-glass rounded-lg border border-glass">
                                                             Archived (ReadOnly)
                                                         </span>
                                                     )}
@@ -353,8 +374,8 @@ const Projects = () => {
                     </AnimatePresence>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-40 sm:py-60 text-center glass-2 border-dashed border-subtle rounded-[5rem] sm:rounded-[8rem] px-8">
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[3rem] sm:rounded-[4rem] bg-sunken border border-subtle flex items-center justify-center mb-10 sm:mb-12 shadow-inner">
+                <div className="flex flex-col items-center justify-center py-40 sm:py-60 text-center glass-2 border-dashed border-glass rounded-[5rem] sm:rounded-[8rem] px-8">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[3rem] sm:rounded-[4rem] bg-glass border border-glass flex items-center justify-center mb-10 sm:mb-12 shadow-inner">
                         <SearchX className="w-10 h-10 sm:w-14 sm:h-14 text-tertiary/40" />
                     </div>
                     <h2 className="text-4xl sm:text-6xl font-black text-primary tracking-tighter mb-4 leading-none">No Projects Found.</h2>

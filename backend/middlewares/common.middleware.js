@@ -27,7 +27,10 @@ const globalErrorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    const statusCode = (res.statusCode !== 200 ? res.statusCode : (error.statusCode || err.statusCode || 500));
+    // Prioritize statusCode set in middleware, then error object, then default to 500
+    const statusCode = (res.statusCode && res.statusCode !== 200) 
+        ? res.statusCode 
+        : (error.statusCode || err.statusCode || 500);
     if (statusCode !== 404) {
         logger.error(`${statusCode} - ${error.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
     }
@@ -44,6 +47,12 @@ const globalErrorHandler = (err, req, res, next) => {
     } else if (err.name === 'ZodError') {
         error = new Error(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
         error.statusCode = 400;
+    } else if (err.name === 'TokenExpiredError' || err.message === 'TokenExpiredError') {
+        error = new Error('Your session has expired. Please login again.');
+        error.statusCode = 401;
+    } else if (err.name === 'JsonWebTokenError' || err.message === 'JsonWebTokenError') {
+        error = new Error('Invalid session. Please login again.');
+        error.statusCode = 401;
     }
 
     const finalStatusCode = error.statusCode || 500;

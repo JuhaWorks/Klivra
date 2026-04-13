@@ -9,6 +9,7 @@ const ProjectMemberService = require('../services/projectMember.service');
 const catchAsync = require('../utils/catchAsync');
 const { checkSingleProject } = require('../cron/deadlineCheck');
 const { clearUserCache } = require('../utils/redis');
+const { getFrontendUrl } = require('../utils/helpers');
 
 // --- Core Project Operations ---
 
@@ -39,7 +40,10 @@ const getProjects = async (req, res, next) => {
         }));
 
         res.status(200).json({ status: 'success', results: formattedProjects.length, data: formattedProjects });
-    } catch (error) { next(error); }
+    } catch (error) { 
+        logger.error(`Critical 500 in getProjects: ${error.stack}`);
+        next(error); 
+    }
 };
 
 const getProject = async (req, res, next) => {
@@ -54,7 +58,7 @@ const getProject = async (req, res, next) => {
             throw new Error('Project not found or has been deleted.');
         }
 
-        const memberData = project.members.find(m => m.userId?._id.toString() === req.user._id.toString());
+        const memberData = project.members.find(m => (m.userId?._id?.toString() || m.userId?.toString()) === req.user._id.toString());
         const isMember = memberData && memberData.status !== 'pending' && memberData.status !== 'rejected';
         
         if (!isMember && req.user.role !== 'Admin') {
@@ -78,7 +82,7 @@ const createProject = async (req, res, next) => {
         // Invalidate cache so user sees new project immediately
         await clearUserCache('projects_list', req.user._id);
         
-        await logActivity(project._id, req.user._id, 'PROJECT_CREATED', { name });
+        await logActivity(project._id, req.user._id, 'EntityCreate', { name });
         res.status(201).json({ status: 'success', data: project });
     } catch (error) { next(error); }
 };
@@ -92,9 +96,11 @@ const updateProject = async (req, res, next) => {
         }
 
         // Strict Optimistic Concurrency Control
+        // If the client provides __v, we MUST match it. 
+        // If you want to force OCC always, you would check if req.body.__v is missing here.
         if (req.body.__v !== undefined && project.__v !== req.body.__v) {
             res.status(409);
-            throw new Error('Concurrency Conflict: This project was updated by another user.');
+            throw new Error('Concurrency Conflict: This project was updated by another user. Please refresh and try again.');
         }
 
         if (req.body.coverImageUrl !== undefined && req.body.coverImageUrl !== project.coverImageUrl) {
@@ -129,12 +135,10 @@ const updateProject = async (req, res, next) => {
             throw saveError;
         }
 
-        await logActivity(project._id, req.user._id, 'PROJECT_UPDATED', req.body);
+        await logActivity(project._id, req.user._id, 'EntityUpdate', req.body);
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, update: req.body });
         req.io.to(`project_${project._id}`).emit('projectActivity', { userName: req.user.name, action: 'updated the project details' });
 
-        // Instantly trigger deadline check if endDate or status was part of this update.
-        // Fire-and-forget (no await) so the API response is never delayed.
         // Instantly trigger deadline check if endDate or status was part of this update.
         // Fire-and-forget (no await) so the API response is never delayed.
         if (req.body.endDate !== undefined || req.body.status !== undefined) {
@@ -169,9 +173,11 @@ const deleteProject = async (req, res, next) => {
         project.status = 'Archived';
         await project.save();
 
+        req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, status: 'Archived', deletedAt: project.deletedAt });
+
         // Hard Delete tasks associated with the project as requested by user
         await Task.deleteMany({ project: req.params.id });
-        await logActivity(project._id, req.user._id, 'PROJECT_DELETED', { name: project.name, ipAddress: req.ip }, 'Security');
+        await logActivity(project._id, req.user._id, 'EntityDelete', { name: project.name, ipAddress: req.ip }, 'Security');
 
         // Clear cache
         await clearUserCache('projects_list', req.user._id);
@@ -204,7 +210,7 @@ const purgeProject = async (req, res, next) => {
         // Final Deletion
         await Project.findByIdAndDelete(project._id);
 
-        await logActivity(project._id, req.user._id, 'PROJECT_PURGED', { name: project.name }, 'Security');
+        await logActivity(project._id, req.user._id, 'EntityPurge', { name: project.name }, 'Security');
         
         // Clear cache
         await clearUserCache('projects_list', req.user._id);
@@ -220,7 +226,9 @@ const restoreProject = async (req, res, next) => {
         project.deletedAt = null;
         project.status = 'Active';
         await project.save();
-        await logActivity(project._id, req.user._id, 'PROJECT_RESTORED');
+
+        req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, status: 'Active', deletedAt: null });
+        await logActivity(project._id, req.user._id, 'EntityRestore');
 
         // Clear cache
         await clearUserCache('projects_list', req.user._id);
@@ -238,7 +246,7 @@ const uploadProjectImage = async (req, res, next) => {
         project.coverImageUrl = req.file.path;
         project.coverImageId = req.file.filename;
         await project.save();
-        await logActivity(project._id, req.user._id, 'PROJECT_UPDATED', { coverImageUrl: project.coverImageUrl });
+        await logActivity(project._id, req.user._id, 'EntityUpdate', { coverImageUrl: project.coverImageUrl });
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, update: { coverImageUrl: project.coverImageUrl } });
         req.io.to(`project_${project._id}`).emit('projectActivity', { userName: req.user.name, action: 'changed the project cover image' });
         res.status(200).json({ status: 'success', data: project });
@@ -250,7 +258,7 @@ const dismissDeadlineAlert = async (req, res, next) => {
         const { type } = req.body;
         if (!['approaching', 'exceeded'].includes(type)) { res.status(400); throw new Error('Invalid alert type'); }
         const updateField = type === 'approaching' ? 'deadlineNotified.approachingDismissedBy' : 'deadlineNotified.exceededDismissedBy';
-        const project = await Project.findOneAndUpdate({ _id: req.params.id }, { $addToSet: { [updateField]: req.user._id } }, { new: true });
+        const project = await Project.findOneAndUpdate({ _id: req.params.id }, { $addToSet: { [updateField]: req.user._id } }, { returnDocument: 'after' });
         if (!project) { res.status(404); throw new Error('Project not found'); }
         res.status(200).json({ status: 'success', message: 'Alert dismissed' });
     } catch (error) { next(error); }
@@ -279,9 +287,9 @@ const getProjectInsights = async (req, res, next) => {
             { $match: { _id: new mongoose.Types.ObjectId(id) } },
             {
                 $lookup: {
-                    from: 'activities',
+                    from: 'audits', // Fixed from 'activities' to match Audit model collection
                     let: { projectId: '$_id' },
-                    pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$projectId', '$$projectId'] }, { $gte: ['$createdAt', new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)] }] } } }],
+                    pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$entityId', '$$projectId'] }, { $eq: ['$entityType', 'Project'] }, { $gte: ['$createdAt', new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)] }] } } }],
                     as: 'recentActivities'
                 }
             },
@@ -301,13 +309,31 @@ const getProjectInsights = async (req, res, next) => {
 
 const getWorkspaceStats = async (req, res, next) => {
     try {
+        const userId = req.user._id;
+        
+        // 1. Fetch Projects user is associated with
         const projects = await Project.find({ 
-            'members.userId': req.user._id, 
-            'members.status': { $in: ['active', null] }, // Only active or legacy null status
+            'members.userId': userId, 
+            'members.status': { $in: ['active', 'pending'] },
             deletedAt: null 
         }).select('_id status').lean();
 
-        const projectIds = projects.map(p => p._id);
+        if (!projects || projects.length === 0) {
+            return res.status(200).json({
+                status: 'success',
+                data: {
+                    activeProjects: 0, archivedProjects: 0, totalProjects: 0,
+                    totalTasks: 0, completedTasks: 0, inProgressTasks: 0,
+                    pendingTasks: 0, activeTasks: 0, atRiskTasks: 0, completionPct: 0
+                }
+            });
+        }
+
+        // 2. Prepare IDs for aggregation (Explicitly cast to ObjectId for aggregate pipeline)
+        const projectIds = projects.map(p => new mongoose.Types.ObjectId(p._id));
+        const now = new Date();
+
+        // 3. Aggregate Task Statistics
         const taskStats = await Task.aggregate([
             { $match: { project: { $in: projectIds } } },
             {
@@ -316,25 +342,59 @@ const getWorkspaceStats = async (req, res, next) => {
                     totalTasks: { $sum: 1 },
                     completedTasks: { $sum: { $cond: [{ $eq: ['$status', 'Completed'] }, 1, 0] } },
                     inProgressTasks: { $sum: { $cond: [{ $eq: ['$status', 'In Progress'] }, 1, 0] } },
-                    pendingTasks: { $sum: { $cond: [{ $eq: ['$status', 'Pending'] }, 1, 0] } }
+                    pendingTasks: { $sum: { $cond: [{ $eq: ['$status', 'Pending'] }, 1, 0] } },
+                    canceledTasks: { $sum: { $cond: [{ $eq: ['$status', 'Canceled'] }, 1, 0] } },
+                    atRiskTasks: { 
+                        $sum: { 
+                            $cond: [
+                                { 
+                                    $and: [
+                                        { $not: { $in: ['$status', ['Completed', 'Canceled']] } },
+                                        { 
+                                            $or: [
+                                                { $in: ['$priority', ['Urgent', 'High']] },
+                                                {
+                                                    $and: [
+                                                        { $ne: ['$dueDate', null] }, 
+                                                        { $lt: ['$dueDate', now] }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ] 
+                                }, 
+                                1, 0
+                            ] 
+                        } 
+                    }
                 }
             }
         ]);
-        const stats = taskStats[0] || { totalTasks: 0, completedTasks: 0, inProgressTasks: 0, pendingTasks: 0 };
+
+        const stats = taskStats[0] || { 
+            totalTasks: 0, completedTasks: 0, inProgressTasks: 0, 
+            pendingTasks: 0, canceledTasks: 0, atRiskTasks: 0 
+        };
+
         res.status(200).json({
             status: 'success',
             data: {
                 activeProjects: projects.filter(p => p.status === 'Active').length,
                 archivedProjects: projects.filter(p => p.status === 'Archived').length,
                 totalProjects: projects.length,
-                totalTasks: stats.totalTasks,
-                completedTasks: stats.completedTasks,
-                inProgressTasks: stats.inProgressTasks,
-                pendingTasks: stats.pendingTasks,
+                totalTasks: (stats.totalTasks || 0),
+                completedTasks: (stats.completedTasks || 0),
+                inProgressTasks: (stats.inProgressTasks || 0),
+                pendingTasks: (stats.pendingTasks || 0),
+                activeTasks: (stats.totalTasks || 0) - (stats.completedTasks || 0) - (stats.canceledTasks || 0),
+                atRiskTasks: (stats.atRiskTasks || 0),
                 completionPct: stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0
             }
         });
-    } catch (error) { next(error); }
+    } catch (error) {
+        logger.error(`Workspace Stats Error: ${error.message}`);
+        next(error); 
+    }
 };
 
 // --- Member Management ---
@@ -434,10 +494,36 @@ const respondToProjectInvite = catchAsync(async (req, res) => {
     res.status(200).json(result);
 });
 
+const respondToInviteByToken = catchAsync(async (req, res) => {
+    const { token, status } = req.query;
+    const frontendUrl = getFrontendUrl();
+
+    if (!token || !status) {
+        return res.redirect(`${frontendUrl}/projects?invite_status=error&message=Invalid+request+parameters`);
+    }
+
+    try {
+        const result = await ProjectMemberService.respondViaToken({ 
+            token, 
+            responseStatus: status, 
+            io: req.io 
+        });
+
+        // Clear cache for the accepted member and the project list
+        await clearUserCache('projects_list', result.userId);
+
+        const statusMsg = status === 'active' ? 'accepted' : 'declined';
+        res.redirect(`${frontendUrl}/projects?invite_status=success&message=Successfully+${statusMsg}+invitation+for+${encodeURIComponent(result.projectName)}`);
+    } catch (error) {
+        const errorMessage = encodeURIComponent(error.message || 'Verification failed');
+        res.redirect(`${frontendUrl}/projects?invite_status=error&message=${errorMessage}`);
+    }
+});
+
 module.exports = {
     getProjects, getProject, createProject, updateProject, deleteProject, restoreProject,
     uploadProjectImage, dismissDeadlineAlert, getProjectActivity, getProjectInsights,
     getWorkspaceStats, addMember, updateMemberRole, removeMember, globalSearch,
-    getProjectInvitations, respondToProjectInvite, purgeProject
+    getProjectInvitations, respondToProjectInvite, purgeProject, respondToInviteByToken
 };
 

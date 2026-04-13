@@ -1,5 +1,6 @@
 const cron = require('node-cron');
-const fs = require('fs');
+const fs = require('fs').promises;
+const { existsSync } = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
 
@@ -20,21 +21,21 @@ const startRedundancyCleanup = () => {
         const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
         for (const targetDir of cleanupTargets) {
-            if (fs.existsSync(targetDir)) {
+            if (existsSync(targetDir)) {
                 try {
-                    const files = fs.readdirSync(targetDir);
+                    const files = await fs.readdir(targetDir);
                     let deletedCount = 0;
 
                     for (const file of files) {
                         const filePath = path.join(targetDir, file);
-                        const stats = fs.statSync(filePath);
+                        const stats = await fs.stat(filePath);
 
                         // If file/folder hasn't been modified in 7 days, it's redundant
                         if (stats.mtimeMs < sevenDaysAgo) {
                             if (stats.isDirectory()) {
-                                fs.rmSync(filePath, { recursive: true, force: true });
+                                await fs.rm(filePath, { recursive: true, force: true });
                             } else {
-                                fs.unlinkSync(filePath);
+                                await fs.unlink(filePath);
                             }
                             deletedCount++;
                         }

@@ -108,7 +108,7 @@ const sanitizationMiddleware = (req, res, next) => {
  */
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 2000, // Scaled for high-interactivity SPA with polling
     standardHeaders: true,
     legacyHeaders: false,
     message: { status: 'error', message: 'Too many requests from this IP, please try again after 15 minutes' }
@@ -116,7 +116,7 @@ const apiLimiter = rateLimit({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 50,
     standardHeaders: true,
     legacyHeaders: false,
     message: { status: 'error', message: 'Too many login attempts from this IP, please try again after 15 minutes' }

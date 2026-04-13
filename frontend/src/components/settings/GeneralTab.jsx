@@ -17,7 +17,6 @@ import GlassSurface from '../ui/GlassSurface';
 
 const generalSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    customMessage: z.string().max(250, 'Bio cannot exceed 250 characters').optional(),
 });
 
 export default function GeneralTab({ showOnlyAppearance = false }) {
@@ -31,11 +30,10 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
         resolver: zodResolver(generalSchema),
         defaultValues: {
             name: user?.name || '',
-            customMessage: user?.customMessage || '',
         },
     });
 
-    const bioValue = watch('customMessage') || '';
+
 
     const updateMutation = useMutation({
         mutationFn: async (data) => {
@@ -120,27 +118,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                         {errors.name && <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-rose-500 font-semibold mt-1.5">{errors.name.message}</p>}
                                     </div>
 
-                                    {/* Bio Field */}
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="block font-mono text-[9px] tracking-[0.16em] uppercase text-tertiary font-semibold">Bio</label>
-                                            <span className={twMerge(clsx(
-                                                "font-mono text-[9px] tracking-[0.12em] uppercase font-semibold",
-                                                bioValue.length >= 250 ? 'text-rose-500' : 'text-tertiary'
-                                            ))}>
-                                                {bioValue.length} / 250
-                                            </span>
-                                        </div>
-                                        <div className="relative group">
-                                            <FileText size={13} className="absolute top-4 left-3.5 w-4 h-4 text-disabled group-focus-within:text-theme transition-colors" />
-                                            <textarea
-                                                rows={1}
-                                                placeholder="Tell us about yourself..."
-                                                {...register('customMessage')}
-                                                className="w-full bg-surface border border-default rounded-lg pl-9 pr-4 py-3 text-primary text-sm font-medium placeholder:text-disabled outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/40 resize-none h-[46px]"
-                                            />
-                                        </div>
-                                    </div>
+
                                 </div>
 
                                 <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-default gap-6">

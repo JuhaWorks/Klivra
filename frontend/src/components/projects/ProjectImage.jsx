@@ -64,7 +64,7 @@ const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
                         <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
                         
                         {/* Grainy Texture */}
-                        <div className="absolute inset-0 opacity-[0.03] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] blend-overlay pointer-events-none" />
+                        <div className="absolute inset-0 opacity-[0.03] grayscale bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')] blend-overlay pointer-events-none" />
 
                         <div className="relative z-10 flex flex-col items-center">
                             <span className="text-white font-black text-6xl uppercase tracking-tighter drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">

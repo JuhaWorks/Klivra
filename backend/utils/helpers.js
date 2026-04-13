@@ -25,7 +25,10 @@ const formatUserResponse = (user) => {
         avatar: user.avatar,
         isEmailVerified: user.isEmailVerified,
         status: user.status,
-        customMessage: user.customMessage
+        customMessage: user.customMessage,
+        location: user.location,
+        timezoneOffset: user.timezoneOffset,
+        timezoneName: user.timezoneName
     };
 };
 

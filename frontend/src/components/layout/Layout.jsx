@@ -9,7 +9,8 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useSocketStore } from '../../store/useSocketStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Bell } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -51,8 +52,8 @@ class GlobalErrorBoundary extends React.Component {
 
 // ── Zero-CLS Core Skeleton ──
 const PageSkeleton = () => (
-    <div className="w-full h-full min-height-[calc(100vh-140px)] rounded-[3rem] border border-[oklch(100%_0_0/0.05)] bg-[oklch(100%_0_0/0.01)] animate-pulse shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] flex items-center justify-center p-10" aria-hidden="true">
-        <div className="w-full h-full rounded-[2rem] bg-[oklch(100%_0_0/0.02)] border border-[oklch(100%_0_0/0.03)]" />
+    <div className="w-full h-full min-height-[calc(100vh-140px)] rounded-[3rem] border border-subtle bg-surface animate-pulse flex items-center justify-center p-10" aria-hidden="true">
+        <div className="w-full h-full rounded-[2rem] bg-sunken border border-subtle" />
     </div>
 );
 
@@ -77,6 +78,32 @@ const Layout = ({ checkingAuth }) => {
         }
         if (!accessToken && socket) {
             disconnect();
+        }
+
+        // Global Notification Listeners
+        if (socket) {
+            const handleMention = (data) => {
+                toast((t) => (
+                    <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-theme/10 flex items-center justify-center shrink-0">
+                            <Bell className="w-5 h-5 text-theme" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs font-black uppercase text-primary">New Mention</span>
+                            <span className="text-[11px] text-tertiary leading-tight">
+                                <span className="font-bold text-white">{data.fromUser}</span> mentioned you in <span className="font-bold text-theme">{data.taskTitle}</span>
+                            </span>
+                        </div>
+                    </div>
+                ), { 
+                    duration: 5000, 
+                    position: 'top-right', 
+                    style: { background: 'rgba(9,9,11,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '12px' } 
+                });
+            };
+
+            socket.on('newMention', handleMention);
+            return () => socket.off('newMention', handleMention);
         }
     }, [accessToken, socket, connect, disconnect]);
 
@@ -134,9 +161,9 @@ const Layout = ({ checkingAuth }) => {
     ), [location.pathname, isPending, isActuallyCheckingAuth]);
 
     return (
-        <div className="flex min-h-screen bg-[#09090b] relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
+        <div className="flex min-h-screen bg-base relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
             {/* ── VISUAL ELEMENTS ────────────────────────────────────────── */}
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-[#09090b]">
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-base">
                 {/* Simplified Grid */}
                 <div className="absolute inset-0 opacity-[0.03]" 
                     style={{ 
@@ -183,8 +210,8 @@ const Layout = ({ checkingAuth }) => {
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 8px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: oklch(100% 0 0 / 0.1); border-radius: 100px; border: 2px solid transparent; background-clip: padding-box; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: oklch(100% 0 0 / 0.2); }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 100px; border: 2px solid transparent; background-clip: padding-box; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
             `}</style>
         </div>
     );

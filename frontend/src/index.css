@@ -60,6 +60,8 @@
 @property --border-default { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.08); }
 @property --border-strong { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.15); }
 @property --border-subtle { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.04); }
+@property --bg-shimmer { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.5); }
+@property --bg-glass-heavy { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.7); }
 @property --accent-bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --accent-border { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --accent-glow { syntax: "<color>"; inherits: true; initial-value: transparent; }
@@ -218,21 +220,27 @@
   --bg-base: oklch(0.98 0.005 240);
   --bg-surface: oklch(1 0 0 / 0.70); /* Slightly more transparent */
   --bg-elevated: oklch(1 0 0 / 0.90);
-  --bg-sunken: oklch(0.92 0.01 240 / 0.40); /* Darker sunken */
-  --text-primary: oklch(0.12 0.015 240); /* Darker primary */
-  --text-secondary: oklch(0.25 0.015 240); /* Darker secondary */
-  --text-tertiary: oklch(0.40 0.015 240); /* Darker tertiary */
-  --text-disabled: oklch(0.60 0.01 240);
-  --border-default: oklch(0.12 0.015 240 / 0.12); /* Stronger default border */
-  --border-strong: oklch(0.12 0.015 240 / 0.20);
-  --border-subtle: oklch(0.12 0.015 240 / 0.06);
-  --bg-glass: rgba(255, 255, 255, 0.40);
-  --border-glass: rgba(0, 0, 0, 0.12); /* Stronger glass border */
-  --bg-hue-1: color-mix(in oklab, var(--accent-500) 5%, transparent);
-  --bg-hue-2: oklch(0.72 0.15 240 / 0.04);
-  --bg-hue-3: oklch(0.65 0.18 300 / 0.03);
-  --shadow-elevation: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --grid-line: oklch(0 0 0 / 0.05);
+  --bg-sunken: oklch(0.94 0.01 240 / 0.60);
+  --bg-shimmer: oklch(0 0 0 / 0.03);
+  --bg-glass-heavy: oklch(1 0 0 / 0.85);
+
+  --text-primary: oklch(0.15 0.01 240);
+  --text-secondary: oklch(0.35 0.01 240);
+  --text-tertiary: oklch(0.50 0.01 240);
+  --text-disabled: oklch(0.70 0.005 240);
+  
+  --border-default: oklch(0 0 0 / 0.08);
+  --border-strong: oklch(0 0 0 / 0.15);
+  --border-subtle: oklch(0 0 0 / 0.03);
+  --bg-glass: rgba(255, 255, 255, 0.65);
+  --border-glass: rgba(0, 0, 0, 0.08); 
+  
+  --bg-hue-1: oklch(0.55 0.20 162 / 0.04);
+  --bg-hue-2: oklch(0.55 0.20 200 / 0.04);
+  --bg-hue-3: oklch(0.55 0.20 280 / 0.04);
+  
+  --shadow-elevation: 0 2px 10px -2px rgba(0,0,0,0.05);
+  --grid-line: oklch(0 0 0 / 0.04);
   color-scheme: light;
 
   /* Universal transition for theme variables */
@@ -266,24 +274,26 @@
   --bg-base: oklch(0.06 0.002 247);
   --bg-surface: oklch(1 0 0 / 0.04);
   --bg-elevated: oklch(1 0 0 / 0.07);
-  --bg-sunken: oklch(0 0 0 / 0.35);
+  --bg-sunken: oklch(0 0 0 / 0.45);
+  --bg-shimmer: oklch(1 0 0 / 0.03);
+  --bg-glass-heavy: oklch(0.05 0.005 247 / 0.95);
 
-  --text-primary: oklch(0.935 0.005 247);
-  --text-secondary: oklch(0.65 0.009 247);
-  --text-tertiary: oklch(0.45 0.007 247);
-  --text-disabled: oklch(0.28 0.005 247);
-  --bg-glass: rgba(15, 15, 15, 0.85);
-  --border-glass: rgba(255, 255, 255, 0.12);
+  --text-primary: oklch(0.94 0.005 247);
+  --text-secondary: oklch(0.70 0.005 247);
+  --text-tertiary: oklch(0.50 0.005 247);
+  --text-disabled: oklch(0.30 0.005 247);
+  --bg-glass: rgba(10, 10, 12, 0.75);
+  --border-glass: rgba(255, 255, 255, 0.10);
 
-  --border-default: oklch(1 0 0 / 0.08);
+  --border-default: oklch(1 0 0 / 0.07);
   --border-strong: oklch(1 0 0 / 0.15);
   --border-subtle: oklch(1 0 0 / 0.04);
 
-  --bg-hue-1: color-mix(in oklab, var(--accent-500) 6%, transparent);
-  --bg-hue-2: oklch(0.72 0.15 240 / 0.03);
-  --bg-hue-3: oklch(0.65 0.18 300 / 0.02);
-  --shadow-elevation: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-  --grid-line: oklch(1 0 0 / 0.07);
+  --bg-hue-1: oklch(0.72 0.20 162 / 0.03);
+  --bg-hue-2: oklch(0.78 0.18 200 / 0.02);
+  --bg-hue-3: oklch(0.70 0.24 280 / 0.02);
+  --shadow-elevation: 0 20px 40px -4px rgba(0,0,0,0.5);
+  --grid-line: oklch(1 0 0 / 0.06);
   color-scheme: dark;
 }
 

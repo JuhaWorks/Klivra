@@ -107,8 +107,85 @@ export const useSocketStore = create((set, get) => ({
             }
         });
 
+        // ── GLOBAL DYNAMIC CACHE SYNCHRONIZATION ──
+        // This eliminates the need for manual reloads by automatically refreshing 
+        // relevant data when socket events arrive from teammates.
+        
+        socket.on('taskUpdated', (task) => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['tasks'] });
+                queryClient.invalidateQueries({ queryKey: ['workspace-stats'] });
+                if (task?._id) queryClient.invalidateQueries({ queryKey: ['task', task._id] });
+            }
+        });
+
+        socket.on('taskDeleted', () => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['tasks'] });
+                queryClient.invalidateQueries({ queryKey: ['workspace-stats'] });
+            }
+        });
+
+        socket.on('projectUpdated', () => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                queryClient.invalidateQueries({ queryKey: ['project-detail'] });
+                queryClient.invalidateQueries({ queryKey: ['workspace-stats'] });
+            }
+        });
+
+        // ── WHITEBOARD GRANULAR SYNC ──
+        // This surgical approach avoids full refetches, preventing flickering 
+        // and cursor jumps while teammates are collaborating.
+        
+        socket.on('whiteboard:noteCreated', (newNote) => {
+            const queryClient = get().queryClient;
+            if (!queryClient) return;
+            
+            queryClient.setQueryData(['whiteboard-notes', newNote.projectId], (oldNotes) => {
+                if (!oldNotes) return [newNote];
+                // Avoid duplicates if we created it locally first
+                if (oldNotes.some(n => n._id === newNote._id)) return oldNotes;
+                return [...oldNotes, newNote];
+            });
+        });
+
+        socket.on('whiteboard:noteUpdated', (updatedNote) => {
+            const queryClient = get().queryClient;
+            if (!queryClient) return;
+
+            queryClient.setQueryData(['whiteboard-notes', updatedNote.projectId], (oldNotes) => {
+                if (!oldNotes) return [updatedNote];
+                return oldNotes.map(n => n._id === updatedNote._id ? updatedNote : n);
+            });
+        });
+
+        socket.on('whiteboard:noteDeleted', (noteId) => {
+            const queryClient = get().queryClient;
+            if (!queryClient) return;
+
+            // Note: noteDeleted event needs to know which project it belonged to, 
+            // but we can look through all whiteboard caches or just rely on the fact 
+            // that we have the projekt ID from the current navigation state
+            // For now, we'll look for any cache that contains this note ID.
+            const queryCache = queryClient.getQueryCache();
+            const whiteboardQueries = queryCache.findAll({ queryKey: ['whiteboard-notes'] });
+            
+            whiteboardQueries.forEach(query => {
+                queryClient.setQueryData(query.queryKey, (oldNotes) => {
+                    if (!oldNotes) return [];
+                    return oldNotes.filter(n => n._id !== noteId);
+                });
+            });
+        });
+
         set({ socket });
     },
+
+    setQueryClient: (queryClient) => set({ queryClient }),
 
 
     toggleGlobalPresence: (visible, context = null) => {

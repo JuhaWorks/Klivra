@@ -1,12 +1,18 @@
 const cron = require('node-cron');
 const User = require('../models/user.model');
 const logger = require('../utils/logger');
+const { captureProjectSnapshots } = require('../services/analytics.service');
 
 // Run every night at 3:00 AM
 const startGarbageCollection = () => {
     cron.schedule('0 3 * * *', async () => {
-        logger.info('🗑️ Starting Database Garbage Collection...');
+        logger.info('🗑️ Starting Database Garbage Collection & Forensic Snapshots...');
         try {
+            // 0. CAPTURE FORENSIC SNAPSHOTS BEFORE PURGE
+            // This ensures 180-day trends are maintained even if raw logs are purged.
+            await captureProjectSnapshots();
+            logger.info('🏛️ Forensic snapshots secured in warehouse.');
+
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
             const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 

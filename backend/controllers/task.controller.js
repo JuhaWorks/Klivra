@@ -2,6 +2,34 @@ const Task = require('../models/task.model');
 const Project = require('../models/project.model');
 const Audit = require('../models/audit.model');
 const socket = require('../utils/socket');
+const { logActivity } = require('../utils/activityLogger');
+
+/**
+ * Helper to detect circular dependencies
+ * Uses BFS to check if 'targetId' can reach 'startId'
+ */
+const detectCircularDependency = async (startId, targetId) => {
+    if (startId.toString() === targetId.toString()) return true;
+    
+    const visited = new Set();
+    const queue = [targetId];
+    
+    while (queue.length > 0) {
+        const currentId = queue.shift();
+        if (visited.has(currentId.toString())) continue;
+        visited.add(currentId.toString());
+        
+        const task = await Task.findById(currentId).select('dependencies').lean();
+        if (!task || !task.dependencies || !task.dependencies.blockedBy) continue;
+        
+        for (const depId of task.dependencies.blockedBy) {
+            if (!depId) continue;
+            if (depId.toString() === startId.toString()) return true;
+            queue.push(depId);
+        }
+    }
+    return false;
+};
 
 const getTasks = async (req, res, next) => {
     try {
@@ -17,7 +45,7 @@ const getTasks = async (req, res, next) => {
 
             // Verify user is in project
             const isMember = project.members.some(
-                (member) => member.userId.toString() === req.user._id.toString() && member.status === 'active'
+                (member) => member.userId?.toString() === req.user._id.toString() && member.status === 'active'
             );
 
             if (!isMember && req.user.role !== 'Admin') {
@@ -58,10 +86,13 @@ const getTasks = async (req, res, next) => {
             .limit(limit)
             .lean();
 
-        // Migration logic on-the-fly for old tasks
+        // Standardize assignees for legacy support
         const migratedTasks = tasks.map(task => {
             if (task.assignee && (!task.assignees || task.assignees.length === 0)) {
                 task.assignees = [task.assignee];
+            }
+            if (!task.assignee && task.assignees?.length > 0) {
+                task.assignee = task.assignees[0];
             }
             return task;
         });
@@ -110,17 +141,22 @@ const createTask = async (req, res, next) => {
             throw new Error('User not authorized to create a task in this project');
         }
 
+        const projectStartDate = new Date(project.startDate);
         const projectEndDate = new Date(project.endDate);
-        const now = new Date();
-        
-        if (now > projectEndDate) {
-            res.status(403);
-            throw new Error('Cannot add new tasks; the project deadline has already passed.');
+
+        if (startDate && new Date(startDate) < projectStartDate) {
+            res.status(400);
+            throw new Error(`Task start date (${new Date(startDate).toLocaleDateString()}) cannot be before the project's start date (${projectStartDate.toLocaleDateString()}).`);
         }
 
         if (dueDate && new Date(dueDate) > projectEndDate) {
             res.status(400);
-            throw new Error('Task deadline cannot exceed the project end date.');
+            throw new Error(`Task deadline (${new Date(dueDate).toLocaleDateString()}) cannot exceed the project's end date (${projectEndDate.toLocaleDateString()}).`);
+        }
+
+        if (startDate && dueDate && new Date(startDate) > new Date(dueDate)) {
+            res.status(400);
+            throw new Error('Task start date cannot be after the due date.');
         }
 
         // Handle both single and multiple assignees for flexibility
@@ -148,8 +184,17 @@ const createTask = async (req, res, next) => {
             .populate('project', 'name color')
             .lean();
 
+        // Log Activity
+        await logActivity(req.params.projectId, req.user._id, 'EntityCreate', {
+            title: task.title,
+            priority: task.priority,
+            status: task.status,
+            type: task.type
+        }, 'Task', task._id);
+
         // Emit real-time WebSocket event
-        socket.getIO().to(req.params.projectId).emit('taskUpdated', populatedTask);
+        const room = task.project?._id?.toString() || task.project?.toString();
+        socket.getIO().to(room).emit('taskUpdated', populatedTask);
 
         res.status(201).json({ status: 'success', data: populatedTask });
     } catch (error) {
@@ -172,11 +217,11 @@ const updateTask = async (req, res, next) => {
         const project = await Project.findById(task.project).lean();
 
         // Check if user is assigned to this task, or is an active manager in the project
-        const isAssignee = (task.assignees && task.assignees.some(a => a.toString() === req.user._id.toString())) || 
+        const isAssignee = (task.assignees && task.assignees.some(a => a?.toString() === req.user._id.toString())) || 
                          (task.assignee && task.assignee.toString() === req.user._id.toString());
         
         const isManager = project.members.some(
-            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager' && m.status === 'active'
+            (m) => m.userId?.toString() === req.user._id.toString() && m.role === 'Manager' && m.status === 'active'
         );
 
         if (!isAssignee && !isManager && req.user.role !== 'Admin') {
@@ -184,12 +229,30 @@ const updateTask = async (req, res, next) => {
             throw new Error('User not authorized to update this task');
         }
 
-        if (req.body.dueDate && new Date(req.body.dueDate) > new Date(project.endDate)) {
+        const projectStartDate = new Date(project.startDate);
+        const projectEndDate = new Date(project.endDate);
+
+        const currentStartDate = req.body.startDate || task.startDate;
+        const currentDueDate = req.body.dueDate || task.dueDate;
+
+        if (req.body.startDate && new Date(req.body.startDate) < projectStartDate) {
             res.status(400);
-            throw new Error('Task deadline cannot exceed the project end date.');
+            throw new Error(`Task start date cannot be before the project's start date (${projectStartDate.toLocaleDateString()}).`);
+        }
+
+        if (req.body.dueDate && new Date(req.body.dueDate) > projectEndDate) {
+            res.status(400);
+            throw new Error(`Task due date cannot exceed the project's end date (${projectEndDate.toLocaleDateString()}).`);
+        }
+
+        if (currentStartDate && currentDueDate && new Date(currentStartDate) > new Date(currentDueDate)) {
+            res.status(400);
+            throw new Error('Task start date cannot be after the due date.');
         }
 
         const oldStatus = task.status;
+        const oldBlockedBy = task.dependencies?.blockedBy?.map(id => id.toString()) || [];
+        const oldBlocking = task.dependencies?.blocking?.map(id => id.toString()) || [];
         
         // Sync legacy assignee if assignees changed
         if (req.body.assignees) {
@@ -198,40 +261,158 @@ const updateTask = async (req, res, next) => {
 
         // Clean up dependencies if they are coming as IDs
         if (req.body.dependencies) {
-            if (req.body.dependencies.blockedBy) task.dependencies.blockedBy = req.body.dependencies.blockedBy;
-            if (req.body.dependencies.blocking) task.dependencies.blocking = req.body.dependencies.blocking;
+            const newBlockedBy = req.body.dependencies.blockedBy || [];
+            const newBlocking = req.body.dependencies.blocking || [];
+
+            // 1. Check for circular dependencies in NEW blockedBy links
+            for (const depId of newBlockedBy) {
+                if (!depId) continue;
+                if (!oldBlockedBy.includes(depId.toString())) {
+                    const isCircular = await detectCircularDependency(task._id, depId);
+                    if (isCircular) {
+                        res.status(400);
+                        throw new Error(`Adding dependency for task ${depId} would create a circular loop.`);
+                    }
+                }
+            }
+
+            // 1.b Check for circular dependencies in NEW blocking links
+            // If Task A blocks Task B, it's the same as Task B being blocked by Task A.
+            for (const targetId of newBlocking) {
+                if (!targetId) continue;
+                if (!oldBlocking.includes(targetId.toString())) {
+                    const isCircular = await detectCircularDependency(targetId, task._id);
+                    if (isCircular) {
+                        res.status(400);
+                        throw new Error(`Setting this task to block ${targetId} would create a circular loop.`);
+                    }
+                }
+            }
+
+            // 2. Handle Reciprocity: added/removed blockedBy
+            const addedBlockedBy = newBlockedBy.filter(id => !oldBlockedBy.includes(id.toString()));
+            const removedBlockedBy = oldBlockedBy.filter(id => !newBlockedBy.map(d => d.toString()).includes(id));
+
+            for (const id of addedBlockedBy) {
+                const other = await Task.findByIdAndUpdate(id, { $addToSet: { 'dependencies.blocking': task._id } }, { returnDocument: 'after' }).select('dependencies project');
+                if (other) {
+                    const roomId = other.project?._id?.toString() || other.project?.toString() || task.project?._id?.toString() || task.project?.toString();
+                    socket.getIO().to(roomId).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+                }
+            }
+            for (const id of removedBlockedBy) {
+                const other = await Task.findByIdAndUpdate(id, { $pull: { 'dependencies.blocking': task._id } }, { returnDocument: 'after' }).select('dependencies project');
+                if (other) {
+                    const roomId = other.project?._id?.toString() || other.project?.toString() || task.project?._id?.toString() || task.project?.toString();
+                    socket.getIO().to(roomId).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+                }
+            }
+
+            // 3. Handle Reciprocity: added/removed blocking
+            const addedBlocking = newBlocking.filter(id => !oldBlocking.includes(id.toString()));
+            const removedBlocking = oldBlocking.filter(id => !newBlocking.map(d => d.toString()).includes(id));
+
+            for (const id of addedBlocking) {
+                const other = await Task.findByIdAndUpdate(id, { $addToSet: { 'dependencies.blockedBy': task._id } }, { returnDocument: 'after' }).select('dependencies');
+                if (other) socket.getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+            }
+            for (const id of removedBlocking) {
+                const other = await Task.findByIdAndUpdate(id, { $pull: { 'dependencies.blockedBy': task._id } }, { returnDocument: 'after' }).select('dependencies');
+                if (other) socket.getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+            }
+
+            task.dependencies.blockedBy = newBlockedBy;
+            task.dependencies.blocking = newBlocking;
             delete req.body.dependencies;
         }
 
         task = await Task.findByIdAndUpdate(req.params.id, { $set: { ...req.body, dependencies: task.dependencies } }, {
-            new: true,
+            returnDocument: 'after',
             runValidators: true,
-        });
+        }).populate('assignees', 'name email avatar')
+          .populate('project', 'name color');
 
         // Log state changes
         const changes = [];
-        if (req.body.status && oldStatus !== req.body.status) changes.push(`status to ${req.body.status}`);
-        if (req.body.priority && task.priority !== req.body.priority) changes.push(`priority to ${req.body.priority}`);
-        if (req.body.dueDate && task.dueDate !== req.body.dueDate) changes.push(`deadline to ${new Date(req.body.dueDate).toLocaleDateString()}`);
+        if (req.body.status && oldStatus !== req.body.status) {
+            changes.push(`status from ${oldStatus} to ${req.body.status}`);
+        }
+        if (req.body.priority && task.priority !== req.body.priority) {
+            changes.push(`priority to ${req.body.priority}`);
+        }
+        
+        // Check for subtask toggles
+        if (req.body.subtasks && Array.isArray(req.body.subtasks)) {
+            const oldCompleted = task.subtasks?.filter(s => s.completed).length || 0;
+            const newCompleted = req.body.subtasks.filter(s => s.completed).length || 0;
+            if (oldCompleted !== newCompleted) {
+                changes.push(newCompleted > oldCompleted ? 'completed a subtask' : 'unchecked a subtask');
+            }
+        }
 
         if (changes.length > 0) {
-            await Audit.create({
-                entityType: 'Task',
-                entityId: task._id,
-                action: 'Update',
-                details: {
+            await logActivity(task.project._id || task.project, req.user._id, 'EntityUpdate', {
+                title: task.title,
+                summary: `Updated ${changes.join(', ')}`,
+                details: changes
+            }, 'Task', task._id);
+        }
+        
+        // Also log a dedicated SubtaskToggle event if applicable for specific filtering
+        if (req.body.subtasks && JSON.stringify(task.subtasks) !== JSON.stringify(req.body.subtasks)) {
+            // Only log if it was purely a subtask change or part of a targetted update
+            if (changes.some(c => c.includes('subtask'))) {
+                await logActivity(task.project._id || task.project, req.user._id, 'SubtaskToggle', {
                     title: task.title,
-                    summary: `Updated ${changes.join(', ')}`,
-                    oldStatus,
-                    newStatus: req.body.status || oldStatus
-                },
-                user: req.user._id,
-                ipAddress: req.ip || 'Unknown'
-            });
+                    subtasks: req.body.subtasks
+                }, 'Task', task._id);
+            }
         }
 
         // Emit real-time WebSocket event
-        socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+        const projectRoom = task.project?._id?.toString() || task.project?.toString();
+        socket.getIO().to(projectRoom).emit('taskUpdated', task);
+
+        // --- Gamification Engine Hook ---
+        if (oldStatus !== 'Completed' && req.body.status === 'Completed') {
+            console.log(`[GAMIFICATION] Task ${task._id} marked COMPLETED. Starting award flow.`);
+            const gamification = require('../services/gamification.service');
+            const xpToAward = gamification.calculateTaskXP(task);
+            console.log(`[GAMIFICATION] Calculated XP: ${xpToAward}`);
+            
+            // Award to all assignees if multiple, or the single legacy assignee
+            let usersToReward = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
+            
+            // Ensure the user actually doing the work gets the credit!
+            const completerId = req.user._id.toString();
+            const hasCompleter = usersToReward.some(u => (u._id?.toString() || u.toString()) === completerId);
+            if (!hasCompleter) {
+                usersToReward.push(req.user._id);
+            }
+
+            for (const assignedUser of usersToReward) {
+                const userId = assignedUser._id || assignedUser;
+                // Run gamification async so it doesn't block the API response
+                gamification.awardXP(userId, xpToAward, task).catch(err => console.error("Gamification Error:", err));
+            }
+        } 
+        // Hook for Un-completing tasks
+        else if (oldStatus === 'Completed' && req.body.status && req.body.status !== 'Completed') {
+            const gamification = require('../services/gamification.service');
+            let usersToRevoke = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
+            const completerId = req.user._id.toString();
+            const hasCompleter = usersToRevoke.some(u => (u._id?.toString() || u.toString()) === completerId);
+            if (!hasCompleter) {
+                usersToRevoke.push(req.user._id);
+            }
+
+            for (const assignedUser of usersToRevoke) {
+                const userId = assignedUser._id || assignedUser;
+                if (gamification.revokeXP) {
+                    gamification.revokeXP(userId, task).catch(err => console.error("Gamification Error:", err));
+                }
+            }
+        }
 
         res.status(200).json({ status: 'success', data: task });
     } catch (error) {
@@ -262,6 +443,11 @@ const deleteTask = async (req, res, next) => {
         }
 
         await task.deleteOne();
+
+        // Log Deletion
+        await logActivity(task.project.toString(), req.user._id, 'EntityDelete', {
+            title: task.title
+        }, 'Task', task._id);
 
         // Emit real-time WebSocket deletion signal (passing deleted ID)
         socket.getIO().to(task.project.toString()).emit('taskDeleted', task._id);
@@ -365,17 +551,106 @@ const bulkUpdateTasks = async (req, res, next) => {
 
         // Perform updates
         const updatePromises = taskIds.map(id => {
-            return Task.findByIdAndUpdate(id, { $set: safeUpdates }, { new: true }).lean();
+            return Task.findByIdAndUpdate(id, { $set: safeUpdates }, { returnDocument: 'after' }).lean();
         });
 
         const updatedTasks = await Promise.all(updatePromises);
 
         // Audit & Socket events
+        const { calculateTaskXP, awardXP } = require('../services/gamification.service');
+        
         updatedTasks.forEach(task => {
             socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+            
+            // --- Gamification Engine Hook for Bulk ---
+            const originalTask = tasks.find(t => t._id.toString() === task._id.toString());
+            if (originalTask && originalTask.status !== 'Completed' && task.status === 'Completed') {
+                console.log(`[GAMIFICATION-BULK] Task ${task._id} marked COMPLETED. Starting award flow.`);
+                const xpToAward = calculateTaskXP(task);
+                console.log(`[GAMIFICATION-BULK] Calculated XP: ${xpToAward}`);
+                let usersToReward = task.assignees?.length > 0 ? [...task.assignees] : (task.assignee ? [task.assignee] : []);
+                
+                const completerId = req.user._id.toString();
+                const hasCompleter = usersToReward.some(u => (u._id?.toString() || u.toString()) === completerId);
+                if (!hasCompleter) {
+                    usersToReward.push(req.user._id);
+                }
+
+                for (const assignedUser of usersToReward) {
+                    const userId = assignedUser._id || assignedUser;
+                    console.log(`[GAMIFICATION-BULK] Calling awardXP for User ${userId}`);
+                    awardXP(userId, xpToAward, task).catch(err => console.error("Bulk Gamification Error:", err));
+                }
+            }
         });
 
         res.status(200).json({ status: 'success', count: updatedTasks.length, data: updatedTasks });
+    } catch (error) { next(error); }
+};
+
+const startTimer = async (req, res, next) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (!task) { res.status(404); throw new Error('Task not found'); }
+
+        // Check if there's already an open session for this user
+        const openSession = task.timeSessions.find(
+            s => s.user.toString() === req.user._id.toString() && !s.endedAt
+        );
+        if (openSession) {
+            return res.status(200).json({ status: 'success', message: 'Timer already running', data: task });
+        }
+
+        task.timeSessions.push({
+            user: req.user._id,
+            startedAt: new Date(),
+        });
+        await task.save();
+
+        socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+
+        // Log Timer Start
+        await logActivity(task.project.toString(), req.user._id, 'TimerStart', {
+            title: task.title,
+            startedAt: new Date()
+        }, 'Task', task._id);
+
+        res.status(200).json({ status: 'success', data: task });
+    } catch (error) { next(error); }
+};
+
+const stopTimer = async (req, res, next) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (!task) { res.status(404); throw new Error('Task not found'); }
+
+        const openSession = task.timeSessions.find(
+            s => s.user.toString() === req.user._id.toString() && !s.endedAt
+        );
+
+        if (!openSession) {
+            return res.status(200).json({ status: 'success', message: 'No active session found' });
+        }
+
+        const endedAt = new Date();
+        const duration = Math.round((endedAt.getTime() - openSession.startedAt.getTime()) / 1000); // seconds
+        openSession.endedAt = endedAt;
+        openSession.duration = duration;
+
+        // Accumulate into actualTime (convert seconds to hours)
+        task.actualTime = (task.actualTime || 0) + duration / 3600;
+        await task.save();
+
+        // Log Timer Stop
+        await logActivity(task.project.toString(), req.user._id, 'TimerStop', {
+            title: task.title,
+            duration: `${Math.round(duration / 60)} minutes`,
+            totalActualTime: task.actualTime
+        }, 'Task', task._id);
+
+        socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+
+        res.status(200).json({ status: 'success', data: { duration, actualTime: task.actualTime } });
     } catch (error) { next(error); }
 };
 
@@ -385,6 +660,8 @@ module.exports = {
     updateTask,
     deleteTask,
     getTaskActivity,
-    bulkUpdateTasks
+    bulkUpdateTasks,
+    startTimer,
+    stopTimer
 };
 

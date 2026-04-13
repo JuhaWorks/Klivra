@@ -6,12 +6,15 @@ const {
     updateTask,
     deleteTask,
     getTaskActivity,
-    bulkUpdateTasks
+    bulkUpdateTasks,
+    startTimer,
+    stopTimer
 } = require('../controllers/task.controller');
 const {
     getTaskComments,
     addTaskComment,
-    deleteTaskComment
+    deleteTaskComment,
+    toggleReaction
 } = require('../controllers/taskComment.controller');
 const { protect } = require('../middlewares/access.middleware');
 const { cacheMiddleware } = require('../utils/redis');
@@ -38,5 +41,10 @@ router.route('/:taskId/comments')
     .post(addTaskComment);
 
 router.delete('/comments/:commentId', deleteTaskComment);
+router.patch('/:taskId/comments/:commentId/react', toggleReaction);
+
+// Timer routes
+router.post('/:id/timer/start', startTimer);
+router.post('/:id/timer/stop', stopTimer);
 
 module.exports = router;

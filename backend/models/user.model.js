@@ -56,14 +56,24 @@ const userSchema = new mongoose.Schema(
             enum: ['Online', 'Away', 'Do Not Disturb', 'Offline'],
             default: 'Online',
         },
-        customMessage: {
-            type: String,
-            maxlength: [150, 'Custom message cannot exceed 150 characters'],
-            default: '',
-        },
+
         skills: {
             type: [String],
             default: [],
+        },
+        location: {
+            type: String,
+            trim: true,
+            maxlength: [100, 'Location cannot exceed 100 characters'],
+            default: '',
+        },
+        timezoneOffset: {
+            type: Number, // Offset in seconds from UTC
+            default: 0,
+        },
+        timezoneName: {
+            type: String,
+            default: 'UTC',
         },
         totalConnections: {
             type: Number,
@@ -84,6 +94,48 @@ const userSchema = new mongoose.Schema(
         deactivationDuration: {
             type: Number,
             default: null, // Number of days, null means deactivated indefinitely
+        },
+
+        // --- Professional Identity ---
+        coverImage: {
+            type: String,
+            default: null,
+        },
+        bio: {
+            type: String,
+            maxlength: [1000, 'Bio cannot exceed 1000 characters'],
+            default: '',
+        },
+
+        // --- Gamification & Progression ---
+        gamification: {
+            xp: { type: Number, default: 0 },
+            level: { type: Number, default: 1 },
+            badges: [{ 
+                name: { type: String, required: true },
+                icon: { type: String, default: 'award' },
+                description: { type: String, default: '' },
+                awardedAt: { type: Date, default: Date.now }
+            }],
+            // Experience per category for Radar Chart
+            specialties: {
+                Task: { type: Number, default: 0 },
+                Bug: { type: Number, default: 0 },
+                Feature: { type: Number, default: 0 },
+                Maintenance: { type: Number, default: 0 },
+                Research: { type: Number, default: 0 }
+            },
+            // Engagement streaks
+            streaks: {
+                current: { type: Number, default: 0 },
+                longest: { type: Number, default: 0 },
+                lastActivity: { type: Date, default: null }
+            },
+            // Unlocked UI Frames/Decals
+            frames: {
+                type: [String],
+                default: ['standard']
+            }
         },
 
         // --- Email Verification ---

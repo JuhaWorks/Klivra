@@ -16,6 +16,7 @@ import Counter from '../components/ui/Counter';
 import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
 import NetworkingSkeleton from '../components/networking/NetworkingSkeleton';
+import UserProfileModal from '../components/networking/UserProfileModal';
 import { API_BASE } from '../components/auth/AuthLayout';
 import { getOptimizedAvatar } from '../utils/avatar';
 
@@ -65,23 +66,30 @@ const Avatar = ({ user, size = 'md' }) => {
     }, [user?.name]);
 
     return (
-        <div className={`${sizes[size]} rounded-2xl bg-gradient-to-br from-theme/10 to-theme/20 border border-default flex-shrink-0 flex items-center justify-center overflow-hidden relative`}>
-            {avatarUrl && !isError ? (
-                <img 
-                    src={avatarUrl} 
-                    alt="" 
-                    width={pxSizes[size]}
-                    height={pxSizes[size]}
-                    referrerPolicy="no-referrer"
-                    onError={() => setIsError(true)}
-                    className="w-full h-full object-cover" 
-                    loading="lazy" 
-                    decoding="async" 
-                />
-            ) : (
-                <span className={`${textSizes[size]} font-black text-theme tracking-tight`}>
-                    {initials}
-                </span>
+        <div className="relative">
+            <div className={`${sizes[size]} rounded-2xl bg-gradient-to-br from-theme/10 to-theme/20 border border-default flex-shrink-0 flex items-center justify-center overflow-hidden relative`}>
+                {avatarUrl && !isError ? (
+                    <img 
+                        src={avatarUrl} 
+                        alt="" 
+                        width={pxSizes[size]}
+                        height={pxSizes[size]}
+                        referrerPolicy="no-referrer"
+                        onError={() => setIsError(true)}
+                        className="w-full h-full object-cover" 
+                        loading="lazy" 
+                        decoding="async" 
+                    />
+                ) : (
+                    <span className={`${textSizes[size]} font-black text-theme tracking-tight`}>
+                        {initials}
+                    </span>
+                )}
+            </div>
+            {user?.gamification?.level && size !== 'sm' && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-lg bg-base border border-default flex items-center justify-center shadow-lg">
+                    <span className="text-[8px] font-black text-primary">L{user.gamification.level}</span>
+                </div>
             )}
         </div>
     );
@@ -115,13 +123,13 @@ const SocialStats = ({ count }) => {
 };
 
 // ── Connection Card (Compact) ────────────────────────────────────────────────
-const ConnectionCard = ({ connection, onRemove }) => {
+const ConnectionCard = ({ connection, onRemove, onViewProfile }) => {
     const user = connection.user;
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
             <Card variant="glass" padding="p-0" className="group hover:border-theme/20 transition-all duration-300">
                 <div className="p-3.5 flex items-start gap-3">
-                    <div className="relative">
+                    <div className="relative cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
                         <Avatar user={user} size="sm" />
                         <div className="absolute -bottom-0.5 -right-0.5">
                             <StatusDot status={user?.status} />
@@ -129,14 +137,17 @@ const ConnectionCard = ({ connection, onRemove }) => {
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                            <h4 className="text-[13px] font-black text-primary truncate">{user?.name}</h4>
+                            <h4 
+                                className="text-[13px] font-black text-primary truncate cursor-pointer hover:text-theme transition-colors"
+                                onClick={() => onViewProfile && onViewProfile(user._id)}
+                            >
+                                {user?.name}
+                            </h4>
                             <RoleBadge role={user?.role} />
                         </div>
                         <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
                         <SocialStats count={user?.totalConnections} />
-                        {user?.customMessage && (
-                            <p className="text-[11px] text-secondary mt-1.5 italic truncate opacity-80">"{user.customMessage}"</p>
-                        )}
+
                         {connection.labels?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">
                                 {connection.labels.map((label, i) => (
@@ -254,7 +265,7 @@ const SentRequestCard = ({ request, onWithdraw }) => {
 };
 
 // ── Discovery / Search Card ──────────────────────────────────────────────────
-const DiscoverCard = ({ user, onConnect }) => {
+const DiscoverCard = ({ user, onConnect, onViewProfile }) => {
     const [showNote, setShowNote] = useState(false);
     const [note, setNote] = useState('');
     const [sending, setSending] = useState(false);
@@ -302,7 +313,7 @@ const DiscoverCard = ({ user, onConnect }) => {
             <Card variant="glass" padding="p-0" className="hover:border-theme/15 transition-all duration-300">
                 <div className="p-3.5">
                     <div className="flex items-start gap-3">
-                        <div className="relative">
+                        <div className="relative cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
                             <Avatar user={user} size="sm" />
                             <div className="absolute -bottom-0.5 -right-0.5">
                                 <StatusDot status={user?.status} />
@@ -310,14 +321,17 @@ const DiscoverCard = ({ user, onConnect }) => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                                <h4 className="text-[13px] font-black text-primary truncate">{user?.name}</h4>
+                                <h4 
+                                    className="text-[13px] font-black text-primary truncate cursor-pointer hover:text-theme transition-colors"
+                                    onClick={() => onViewProfile && onViewProfile(user._id)}
+                                >
+                                    {user?.name}
+                                </h4>
                                 <RoleBadge role={user?.role} />
                             </div>
                             <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
                             <SocialStats count={user?.totalConnections} />
-                            {user?.customMessage && (
-                                <p className="text-[11px] text-secondary mt-1.5 italic truncate opacity-80">"{user.customMessage}"</p>
-                            )}
+
                             {user?.reason && (
                                 <div className="flex items-start gap-1.5 mt-2 p-1.5 rounded-lg bg-theme/5 border border-theme/10">
                                     <Sparkles className="w-2.5 h-2.5 text-theme shrink-0 mt-0.5" />
@@ -397,7 +411,9 @@ const Networking = () => {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('network');
     const [searchQuery, setSearchQuery] = useState('');
+    const [skillQuery, setSkillQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const [selectedUserForModal, setSelectedUserForModal] = useState(null);
     const { socket } = useSocketStore();
 
     // ── Real-time Listeners ──────────────────────────────────────────────────
@@ -507,14 +523,15 @@ const Networking = () => {
     });
 
     const { data: searchRes, isFetching: searching } = useQuery({
-        queryKey: ['connections', 'search', searchQuery, roleFilter],
+        queryKey: ['connections', 'search', searchQuery, skillQuery, roleFilter],
         queryFn: async ({ signal }) => {
             const params = new URLSearchParams({ q: searchQuery });
             if (roleFilter) params.append('role', roleFilter);
+            if (skillQuery) params.append('skill', skillQuery);
             return (await api.get(`/connections/search?${params}`, { signal })).data;
         },
         staleTime: 1000 * 30,
-        enabled: activeTab === 'discover' && searchQuery.length >= 2,
+        enabled: activeTab === 'discover' && (searchQuery.length >= 2 || skillQuery.length >= 2),
     });
 
     const connections = useMemo(() => connectionsRes?.pages?.flatMap(page => page.data) || [], [connectionsRes]);
@@ -523,6 +540,8 @@ const Networking = () => {
     const stats = statsRes?.data || { connectionCount: 0, pendingCount: 0, sentCount: 0 };
     const suggestions = suggestionsRes?.data || [];
     const searchResults = searchRes?.data || [];
+
+    const isSearching = searchQuery.length >= 2 || skillQuery.length >= 2;
 
     // ── Mutations ────────────────────────────────────────────────────────────
     const invalidateAll = () => {
@@ -671,7 +690,7 @@ const Networking = () => {
         { label: 'Sent', value: stats.sentCount, icon: Send, accent: 'oklch(0.72 0.15 60)', glow: 'oklch(0.72 0.15 60 / 0.10)' },
     ];
 
-    const discoverData = searchQuery.length >= 2 ? searchResults : suggestions;
+    const discoverData = isSearching ? searchResults : suggestions;
 
     // ── Virtualization for My Network ────────────────────────────────────────
     const parentRef = React.useRef(null);
@@ -792,18 +811,33 @@ const Networking = () => {
                     {activeTab === 'discover' && (
                         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={EASE} className="mb-10">
                             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                                <div className="flex-1 flex items-center gap-4 px-6 py-4 rounded-[2rem] bg-sunken/50 border border-subtle focus-within:border-theme/30 focus-within:ring-4 focus-within:ring-theme/5 transition-all shadow-inner">
-                                    <Search className="w-5 h-5 text-tertiary shrink-0" />
+                                <div className="flex-1 flex items-center gap-4 px-6 py-4 rounded-[2rem] bg-sunken/50 border border-subtle focus-within:border-theme/30 focus-within:ring-4 focus-within:ring-theme/5 transition-all shadow-inner group">
+                                    <Search className="w-5 h-5 text-tertiary group-focus-within:text-theme transition-colors shrink-0" />
                                     <input
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Connect with other professionals..."
-                                        className="w-full bg-transparent text-sm font-medium text-primary placeholder-tertiary outline-none"
+                                        placeholder="Search by name..."
+                                        className="w-full bg-transparent text-sm font-black text-primary placeholder-tertiary outline-none"
                                     />
-                                    {searching && <Loader2 className="w-5 h-5 text-theme animate-spin shrink-0" />}
                                     {searchQuery && (
                                         <button onClick={() => setSearchQuery('')} className="p-1.5 rounded-xl text-tertiary hover:text-primary transition-colors">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex-1 flex items-center gap-4 px-6 py-4 rounded-[2rem] bg-sunken/50 border border-subtle focus-within:border-theme/30 focus-within:ring-4 focus-within:ring-theme/5 transition-all shadow-inner group">
+                                    <Filter className="w-5 h-5 text-tertiary group-focus-within:text-theme transition-colors shrink-0" />
+                                    <input
+                                        type="text"
+                                        value={skillQuery}
+                                        onChange={(e) => setSkillQuery(e.target.value)}
+                                        placeholder="Filter by skill..."
+                                        className="w-full bg-transparent text-sm font-black text-primary placeholder-tertiary outline-none"
+                                    />
+                                    {searching && <Loader2 className="w-5 h-5 text-theme animate-spin shrink-0" />}
+                                    {skillQuery && (
+                                        <button onClick={() => setSkillQuery('')} className="p-1.5 rounded-xl text-tertiary hover:text-primary transition-colors">
                                             <X className="w-4 h-4" />
                                         </button>
                                     )}
@@ -856,7 +890,7 @@ const Networking = () => {
                                                     }}
                                                 >
                                                     {rowItems.map(conn => (
-                                                        <ConnectionCard key={conn._id} connection={conn} onRemove={(id) => removeMutation.mutate(id)} />
+                                                        <ConnectionCard key={conn._id} connection={conn} onRemove={(id) => removeMutation.mutate(id)} onViewProfile={setSelectedUserForModal} />
                                                     ))}
                                                 </div>
                                             );
@@ -962,7 +996,7 @@ const Networking = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 relative">
                                         <AnimatePresence mode="popLayout">
                                             {discoverData.map(u => (
-                                                <DiscoverCard key={u._id} user={u} onConnect={handleConnect} />
+                                                <DiscoverCard key={u._id} user={u} onConnect={handleConnect} onViewProfile={setSelectedUserForModal} />
                                             ))}
                                         </AnimatePresence>
                                     </div>
@@ -972,6 +1006,12 @@ const Networking = () => {
                     </AnimatePresence>
                 </div>
             </article>
+
+            <UserProfileModal 
+                isOpen={!!selectedUserForModal} 
+                onClose={() => setSelectedUserForModal(null)} 
+                userId={selectedUserForModal} 
+            />
         </>
     );
 };

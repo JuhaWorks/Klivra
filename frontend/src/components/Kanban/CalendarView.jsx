@@ -76,14 +76,21 @@ const CalendarView = ({ tasks, onOpenTask }) => {
         return matrix;
     }, [currentDate]);
 
-    const getTasksForDate = (d, m, y) => {
-        return tasks.filter(t => {
-            if (!t.dueDate) return false;
-            const taskDate = new Date(t.dueDate);
-            return taskDate.getDate() === d && 
-                   taskDate.getMonth() === m && 
-                   taskDate.getFullYear() === y;
+    // Pre-calculate tasks by date string for O(1) loop lookup (O(N) total)
+    const tasksByDate = useMemo(() => {
+        const map = {};
+        tasks.forEach(task => {
+            if (!task.dueDate) return;
+            const d = new Date(task.dueDate);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            if (!map[key]) map[key] = [];
+            map[key].push(task);
         });
+        return map;
+    }, [tasks]);
+
+    const getTasksForDate = (d, m, y) => {
+        return tasksByDate[`${y}-${m}-${d}`] || [];
     };
 
     const isToday = (d, m, y) => {

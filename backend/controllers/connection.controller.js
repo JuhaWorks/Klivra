@@ -181,7 +181,7 @@ const respondToRequest = async (req, res, next) => {
                 status: action === 'accept' ? 'accepted' : 'declined',
                 respondedAt: new Date()
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!updatedConnection) {
@@ -588,23 +588,27 @@ const getMutualConnections = async (req, res, next) => {
 // @access  Private
 const searchUsers = async (req, res, next) => {
     try {
-        const { q, role } = req.query;
+        const { q, role, skill } = req.query;
         const userId = req.user._id;
-
-        if (!q || q.trim().length < 2) {
-            return res.status(200).json({ status: 'success', data: [] });
-        }
 
         const filter = {
             _id: { $ne: userId },
             isActive: { $ne: false },
             isBanned: { $ne: true },
             role: { $ne: 'Admin' },
-            $or: [
+        };
+
+        if (q && q.trim().length >= 2) {
+            filter.$or = [
                 { name: { $regex: q, $options: 'i' } },
                 { email: { $regex: q, $options: 'i' } },
-            ],
-        };
+                { skills: { $regex: q, $options: 'i' } },
+            ];
+        }
+
+        if (skill) {
+            filter.skills = { $regex: skill, $options: 'i' };
+        }
 
         if (role && ['Manager', 'Developer'].includes(role)) {
             filter.role = role; // This is safe because both Manager and Developer are non-Admin

@@ -55,6 +55,12 @@ const taskSchema = new mongoose.Schema(
         },
         estimatedTime: { type: Number, default: 0 }, // In hours
         actualTime: { type: Number, default: 0 }, // In hours
+        timeSessions: [{
+            user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            startedAt: { type: Date },
+            endedAt: { type: Date },
+            duration: { type: Number, default: 0 } // seconds
+        }],
         startDate: { type: Date },
         dueDate: { type: Date },
         isRecurring: {
@@ -73,7 +79,10 @@ const taskSchema = new mongoose.Schema(
             {
                 title: { type: String, required: true, trim: true },
                 completed: { type: Boolean, default: false },
-                id: { type: String, required: true } // Internal ID for frontend tracking
+                id: { type: String, required: true }, // Internal ID for frontend tracking
+                assignee: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+                dueDate: { type: Date, default: null },
+                priority: { type: String, enum: ['Low', 'Medium', 'High', 'Urgent'], default: 'Medium' }
             }
         ]
     },

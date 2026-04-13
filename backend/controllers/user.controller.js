@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const axios = require('axios');
 const { z } = require('zod');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -11,7 +12,13 @@ const { logSecurityEvent } = require('../utils/activityLogger');
 const updateProfileSchema = z.object({
     name: z.string().min(1, 'Name cannot be empty').max(50, 'Name must be 50 characters or fewer').optional(),
     status: z.enum(['Online', 'Away', 'Do Not Disturb', 'Offline']).optional(),
-    customMessage: z.string().max(150, 'Custom message must be 150 characters or fewer').optional(),
+
+    location: z.string().max(100, 'Location must be 100 characters or fewer').optional(),
+    lat: z.number().optional(),
+    lon: z.number().optional(),
+    bio: z.string().max(1000, 'Bio must be 1000 characters or fewer').optional(),
+    skills: z.array(z.string()).optional(),
+    coverImage: z.string().optional(),
 });
 
 const changePasswordSchema = z.object({
@@ -71,6 +78,49 @@ const uploadAvatar = async (req, res, next) => {
     }
 };
 
+// @desc    Upload / replace cover banner
+// @route   POST /api/users/profile/cover
+// @access  Private
+const uploadCoverImage = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            const msg = req.fileValidationError || 'Please upload an image file';
+            res.status(400);
+            return next(new Error(msg));
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404);
+            return next(new Error('User not found'));
+        }
+
+        // --- Asset Hygiene: Delete old Cloudinary image if it exists ---
+        if (user.coverImage && user.coverImage.includes('cloudinary.com')) {
+            try {
+                const parts = user.coverImage.split('/');
+                const publicIdWithExt = parts.slice(-3).join('/');
+                const publicId = publicIdWithExt.split('.')[0];
+                
+                await cloudinary.uploader.destroy(publicId);
+                console.log(`[STORAGE] Deleted old cover asset: ${publicId}`);
+            } catch (err) {
+                console.warn('[STORAGE] Failed to delete old cover asset:', err.message);
+            }
+        }
+
+        user.coverImage = req.file.path;
+        await user.save();
+
+        res.status(200).json({
+            status: 'success',
+            data: formatUserResponse(user),
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // @desc    Update profile info (name, status, customMessage)
 // @route   PUT /api/users/profile
 // @access  Private
@@ -84,13 +134,39 @@ const updateProfile = async (req, res, next) => {
             return next(new Error(message));
         }
 
-        const { name, status, customMessage } = parsed.data;
+        const { name, status, location, lat, lon } = parsed.data;
 
         // Build update object with only the fields that were provided
         const updates = {};
         if (name !== undefined) updates.name = name;
         if (status !== undefined) updates.status = status;
-        if (customMessage !== undefined) updates.customMessage = customMessage;
+
+        
+        if (location !== undefined) {
+            updates.location = location;
+            // Automatic Timezone Resolution
+            if (process.env.OPENWEATHER_API_KEY) {
+                try {
+                    // Use coordinates for high precision if available, else fall back to city name
+                    const params = (lat && lon) 
+                        ? { lat, lon, appid: process.env.OPENWEATHER_API_KEY }
+                        : { q: location, appid: process.env.OPENWEATHER_API_KEY };
+
+                    const weatherRes = await axios.get('https://api.openweathermap.org/data/2.5/weather', { params });
+                    
+                    if (weatherRes.data && weatherRes.data.timezone !== undefined) {
+                        updates.timezoneOffset = weatherRes.data.timezone; // Offset in seconds
+                        updates.timezoneName = weatherRes.data.name; 
+                    }
+                } catch (err) {
+                    console.warn(`[TIMEZONE] Failed to resolve timezone for ${location}: ${err.message}`);
+                }
+            }
+        }
+
+        if (req.body.bio !== undefined) updates.bio = req.body.bio;
+        if (req.body.skills !== undefined) updates.skills = req.body.skills;
+        if (req.body.coverImage !== undefined) updates.coverImage = req.body.coverImage;
 
         if (Object.keys(updates).length === 0) {
             res.status(400);
@@ -100,7 +176,7 @@ const updateProfile = async (req, res, next) => {
         const user = await User.findByIdAndUpdate(
             req.user._id,
             updates,
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         res.status(200).json({
@@ -179,8 +255,9 @@ const changePassword = async (req, res, next) => {
         user.password = newPassword;
         await user.save();
 
-        await logSecurityEvent(user._id, 'PASSWORD_CHANGE', {
-            ipAddress: req.ip
+        await logSecurityEvent(user._id, 'SecurityAlert', {
+            ipAddress: req.ip,
+            action: 'PASSWORD_CHANGE'
         });
 
         res.status(200).json({
@@ -325,7 +402,7 @@ const confirmEmailChange = async (req, res, next) => {
 
         await user.save();
 
-        await logSecurityEvent(user._id, 'EMAIL_CHANGE_SUCCESS', {
+        await logSecurityEvent(user._id, 'EmailChangeSuccess', {
             oldEmail,
             newEmail: user.email,
             ipAddress: req.ip
@@ -353,12 +430,124 @@ const confirmEmailChange = async (req, res, next) => {
     }
 };
 
+// @desc    Get public profile for networking
+// @route   GET /api/users/public/:id
+// @access  Private
+const getPublicProfile = async (req, res, next) => {
+    try {
+        const userToView = await User.findById(req.params.id)
+            .select('name avatar role location status bio skills coverImage gamification lastActive')
+            .lean();
+            
+        if (!userToView) {
+            res.status(404);
+            return next(new Error('User not found'));
+        }
+
+        const currentUserId = req.user._id;
+        let connectionCount = 0;
+        let mutualProjects = 0;
+        let mutualTasks = 0;
+
+        try {
+            const Connection = require('../models/connection.model');
+            const Project = require('../models/project.model');
+            const Task = require('../models/task.model');
+
+            connectionCount = await Connection.countDocuments({
+                $or: [{ requester: userToView._id }, { recipient: userToView._id }],
+                status: 'accepted'
+            });
+
+            mutualProjects = await Project.countDocuments({
+                'members.userId': { $all: [currentUserId, userToView._id] },
+                status: { $ne: 'Archived' }
+            });
+
+            mutualTasks = await Task.countDocuments({
+                assignees: { $all: [currentUserId, userToView._id] },
+                status: 'Completed'
+            });
+        } catch(err) {}
+
+        userToView.totalConnections = connectionCount;
+        userToView.mutualStats = {
+            projects: mutualProjects,
+            tasks: mutualTasks
+        };
+
+        res.status(200).json({
+            status: 'success',
+            data: userToView
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Get activity heatmap data
+// @route   GET /api/users/profile/heatmap
+// @access  Private
+const getHeatmap = async (req, res, next) => {
+    try {
+        const Audit = require('../models/audit.model');
+        const ninetyEightDaysAgo = new Date();
+        ninetyEightDaysAgo.setDate(ninetyEightDaysAgo.getDate() - 98);
+
+        // Fetch all Audit logs where this exact user triggered an update on a Task
+        const completionLogs = await Audit.find({
+            user: req.user._id,
+            entityType: 'Task',
+            createdAt: { $gte: ninetyEightDaysAgo }
+        }).lean();
+
+        // Look for exact transitions to Completed
+        const validCompletions = completionLogs.filter(log => {
+             if (log.action === 'EntityUpdate' && log.details?.summary?.includes('to Completed')) return true;
+             if (log.action === 'StatusChange' && log.details?.newStatus === 'Completed') return true;
+             return false;
+        });
+
+        // Group by day of week and week
+        const heatmap = Array(14).fill(0).map(() => Array(7).fill(0));
+        
+        const now = new Date();
+        now.setHours(23, 59, 59, 999);
+
+        // Populate heatmap based on EXACT time of completion
+        validCompletions.forEach(log => {
+            const date = new Date(log.createdAt);
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 98) {
+                const weekIndex = 13 - Math.floor(diffDays / 7);
+                const dayIndex = 6 - (diffDays % 7);
+                
+                if (weekIndex >= 0 && weekIndex < 14 && dayIndex >= 0 && dayIndex < 7) {
+                    heatmap[weekIndex][dayIndex] += 1;
+                }
+            }
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: heatmap
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     uploadAvatar,
+    uploadCoverImage,
     updateProfile,
     changePassword,
     removeAvatar,
     requestEmailChangeOTP,
     verifyEmailChangeOTP,
-    confirmEmailChange
+    confirmEmailChange,
+    getPublicProfile,
+    getHeatmap
 };

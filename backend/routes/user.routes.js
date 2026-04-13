@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { protect } = require('../middlewares/access.middleware');
 const { uploadSingle } = require('../middlewares/upload.middleware');
-const { uploadAvatar, updateProfile, changePassword, removeAvatar, requestEmailChangeOTP, verifyEmailChangeOTP, confirmEmailChange } = require('../controllers/user.controller');
+const { uploadAvatar, updateProfile, changePassword, removeAvatar, requestEmailChangeOTP, verifyEmailChangeOTP, confirmEmailChange, getPublicProfile, getHeatmap } = require('../controllers/user.controller');
 
 // POST   /api/users/profile/avatar  — upload / replace profile picture
 router.post('/profile/avatar', protect, uploadSingle, uploadAvatar);
@@ -14,8 +14,14 @@ router.delete('/profile/avatar', protect, removeAvatar);
 // PUT    /api/users/profile          — update name, status, customMessage
 router.put('/profile', protect, updateProfile);
 
+// GET    /api/users/profile/heatmap  — get user completed tasks heatmap data
+router.get('/profile/heatmap', protect, getHeatmap);
+
 // PUT    /api/users/profile/password — change password (requires current password)
 router.put('/profile/password', protect, changePassword);
+
+// GET    /api/users/public/:id       — get public profile for networking
+router.get('/public/:id', protect, getPublicProfile);
 
 // ─── Secure Email Change Flow ────────────────────────────────────────────────
 

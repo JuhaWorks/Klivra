@@ -18,8 +18,8 @@ const Card = ({
     ...props
 }) => {
     const variants = {
-        glass: 'glass-card border-default/10 dark:border-white/10 shadow-float dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]',
-        solid: 'bg-[var(--bg-surface)] border-default shadow-card',
+        glass: 'glass-card border-glass shadow-elevation',
+        solid: 'bg-surface border-default shadow-card',
         outline: 'bg-transparent border-default'
     };
 

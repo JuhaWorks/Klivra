@@ -5,6 +5,6 @@ const { protect, authorizeRoles } = require('../middlewares/access.middleware');
 
 // Protect all audit routes
 router.use(protect);
-router.get('/', authorizeRoles('Admin', 'Manager'), getLogs);
+router.get('/', getLogs);
 
 module.exports = router;

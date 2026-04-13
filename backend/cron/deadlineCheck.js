@@ -106,15 +106,25 @@ const checkDeadlines = async () => {
         }).populate('members.userId', 'email name');
 
         let emailsSent = 0;
+        let successCount = 0;
+        let failCount = 0;
+
         for (const project of projects) {
-            emailsSent += await checkProjectDeadline(project);
+            try {
+                const count = await checkProjectDeadline(project);
+                emailsSent += count;
+                successCount++;
+            } catch (err) {
+                failCount++;
+                logger.error(`❌ Error checking deadline for project ${project._id}: ${err.message}`);
+            }
         }
 
-        if (emailsSent > 0) {
-            logger.info(`⏰ Deadline Checker: Processed alerts and sent ${emailsSent} emails.`);
+        if (emailsSent > 0 || failCount > 0) {
+            logger.info(`⏰ Deadline Checker: Processed ${successCount} projects, ${failCount} failed. Total emails: ${emailsSent}.`);
         }
     } catch (error) {
-        logger.error(`❌ Deadline Checker Error: ${error.message}`);
+        logger.error(`❌ Global Deadline Checker Error: ${error.message}`);
     }
 };
 

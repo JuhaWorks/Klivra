@@ -22,6 +22,7 @@ const startGarbageCollection = require('./cron/gc');
 const startDeadlineChecker = require('./cron/deadlineCheck');
 const startSocialCleanup = require('./cron/socialCleanup');
 const startRedundancyCleanup = require('./cron/redundancyCleanup');
+const { captureGlobalSnapshots, startSnapshotCron } = require('./cron/projectSnapshotter');
 
 // 1. Redis Initialization (Optional performance enhancement)
 const { initRedis } = require('./utils/redis');
@@ -34,8 +35,7 @@ if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
   logger.info('ℹ️ Redis URL not found, skipping cache initialization (Optional for Dev)');
 }
 
-// Start Background Integrity Jobs
-startSocialCleanup();
+// Start Background Integrity Jobs moved to worker for clustering safety
 
 app.set('trust proxy', 1);
 const server = http.createServer(app);
@@ -70,8 +70,8 @@ app.use(cors({
     // 2. Check if origin is in the allowed list
     if (allowedOrigins.has(origin)) return cb(null, true);
 
-    // 3. Allow Vercel preview deployments (regex match)
-    if (origin.endsWith('.vercel.app')) return cb(null, true);
+    // 3. Allow Vercel preview deployments for this specific project
+    if (origin.endsWith('.vercel.app') && origin.includes('klivra')) return cb(null, true);
 
     // 4. Otherwise, block
     logger.warn(`🚫 CORS blocked origin: ${origin}`);
@@ -144,6 +144,7 @@ app.use('/api/search', require('./routes/search.routes'));
 app.use('/api/audit', require('./routes/audit.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/connections', require('./routes/connection.routes'));
+app.use('/api/endorsements', require('./routes/endorsement.routes'));
 app.use('/api/tools', require('./routes/tool.routes'));
 
 const cluster = require('cluster');
@@ -157,7 +158,7 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
   const numCPUs = os.cpus().length;
   const isRender = process.env.RENDER || process.env.NODE_ENV === 'production';
   const workerLimit = isRender ? 1 : Math.min(numCPUs, 1);
-  
+
   logger.info(`🔥 Global Cluster Manager (PID ${process.pid}) initializing...`);
   logger.info(`Detected ${numCPUs} CPUs. Spawning ${workerLimit} worker(s) to maintain <512MB memory footprint.`);
 
@@ -182,11 +183,15 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
   }).then(async () => {
     logger.info(`✅ MongoDB Connected in Worker ${process.pid}!`);
 
-    // Only run Cron Jobs on the first worker to avoid duplication
     if (!enableCluster || cluster.worker.id === 1) {
       startGarbageCollection();
       startDeadlineChecker();
       startRedundancyCleanup();
+      startSocialCleanup(); 
+      startSnapshotCron();
+      
+      // Trigger an immediate capture for development reality
+      captureGlobalSnapshots().catch(err => logger.error(`Initial Snapshot Error: ${err.message}`));
     }
 
     // Verify Brevo email service at startup

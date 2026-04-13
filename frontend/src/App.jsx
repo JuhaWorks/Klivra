@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'rea
 import { useEffect, lazy, Suspense } from 'react';
 import { useAuthStore } from './store/useAuthStore';
 import { useTheme } from './store/useTheme';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSocketStore } from './store/useSocketStore';
 import Layout from './components/layout/Layout';
 import MaintenanceNotice from './components/layout/MaintenanceNotice';
 import CommandPalette from './components/ui/CommandPalette';
@@ -9,13 +11,14 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './pages/Login';
 import RequireVerification from './components/auth/RequireVerification';
 import { Toaster } from 'react-hot-toast';
+import TaskTimer from './components/tools/Widgets/TaskTimer';
 
 // Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage'));
 const Profile = lazy(() => import('./pages/Profile'));
-const Whiteboard = lazy(() => import('./components/tools/Whiteboard'));
+const ProjectWhiteboard = lazy(() => import('./pages/ProjectWhiteboard'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Projects = lazy(() => import('./pages/Projects'));
 const ProjectSettings = lazy(() => import('./components/projects/ProjectSettingsDashboard'));
@@ -43,21 +46,24 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Wrapper specifically for the whiteboard to pass down the URL parameter as roomId
-const WhiteboardWrapper = () => {
-  const { roomId } = useParams();
-  return <Whiteboard roomId={roomId} />;
-};
-
 // Initialize theme immediately so there's no flash of green on reload
 useTheme.getState().initTheme();
 
 function App() {
   const { checkAuth, isCheckingAuth, isAuthenticated } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { setQueryClient } = useSocketStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Connect Socket to React Query for zero-reload synchronized updates
+  useEffect(() => {
+    if (queryClient) {
+      setQueryClient(queryClient);
+    }
+  }, [queryClient, setQueryClient]);
 
   // Zero-LCP Refactor: Render the Layout shell even during auth checks
   // This allows the browser to paint the UI structure (LCP) while waiting for the network.
@@ -65,6 +71,7 @@ function App() {
     <Router>
       <Toaster position="top-right" toastOptions={{ style: { background: '#09090b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
       <CommandPalette />
+      <TaskTimer />
       <MaintenanceNotice />
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -99,7 +106,8 @@ function App() {
             <Route path="admin" element={<AdminDashboard />} />
             <Route path="admin/security" element={<SecurityFeed />} />
 
-            <Route path="whiteboard/:roomId" element={<WhiteboardWrapper />} />
+            <Route path="whiteboard" element={<ProjectWhiteboard />} />
+            <Route path="whiteboard/main-workspace" element={<ProjectWhiteboard />} />
           </Route>
 
           {/* Catch all unmatched routes */}

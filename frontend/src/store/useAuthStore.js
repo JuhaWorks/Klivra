@@ -276,6 +276,18 @@ export const useAuthStore = create(
                 return response.data;
             },
 
+            // 5.2. Upload cover banner
+            uploadCoverImage: async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                const response = await api.post('/auth/profile/cover', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                set((state) => ({ user: { ...state.user, ...response.data.data } }));
+                return response.data;
+            },
+
+
             // 5.5. Remove avatar image
             removeAvatar: async () => {
                 const response = await api.delete('/auth/profile/avatar');

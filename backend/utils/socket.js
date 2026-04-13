@@ -250,6 +250,39 @@ module.exports = {
                 socket.volatile.to(`whiteboard_${roomId}`).emit('draw-line', lineData);
             });
             socket.on('clear-board', (roomId) => socket.to(`whiteboard_${roomId}`).emit('clear-board'));
+
+            // ── CURSOR SHARING (throttled, volatile) ──────────────────────
+            const cursorThrottle = new Map();
+            socket.on('cursorMove', ({ projectId, x, y }) => {
+                const now = Date.now();
+                const last = cursorThrottle.get(userId) || 0;
+                if (now - last < 50) return; // 20fps max
+                cursorThrottle.set(userId, now);
+
+                // volatile: auto-dropped if subscriber's buffer is full — prevents backpressure
+                socket.volatile.to(`project_${projectId}`).emit('cursorMove', {
+                    userId,
+                    name: socket.user.name,
+                    avatar: socket.user.avatar,
+                    x,
+                    y,
+                });
+            });
+
+            // ── MENTION NOTIFICATION ─────────────────────────────────────
+            socket.on('mentionUsers', ({ mentionedUserIds, taskId, taskTitle }) => {
+                if (!Array.isArray(mentionedUserIds)) return;
+                mentionedUserIds.forEach(uid => {
+                    if (uid !== userId) {
+                        io.to(uid).emit('newMention', {
+                            fromUser: socket.user.name,
+                            taskId,
+                            taskTitle,
+                            timestamp: new Date().toISOString(),
+                        });
+                    }
+                });
+            });
         });
 
         return io;
