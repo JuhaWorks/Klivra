@@ -274,7 +274,7 @@ const ChatMessageComponent = ({
                     </span>
                 )}
 
-                <div className={cn('flex items-end gap-1.5 w-full', isMe ? 'flex-row' : 'flex-row-reverse')}>
+                <div className={cn('flex items-end gap-1.5 w-full', isMe ? 'flex-row-reverse' : 'flex-row')}>
                     {/* Action Buttons (Hover State) - Shifted up to align with bubble center better */}
                     <AnimatePresence>
                         {hovering && !isDeleted && (

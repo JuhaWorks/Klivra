@@ -271,14 +271,20 @@ module.exports = {
 
             // ── MENTION NOTIFICATION ─────────────────────────────────────
             socket.on('mentionUsers', ({ mentionedUserIds, taskId, taskTitle }) => {
-                if (!Array.isArray(mentionedUserIds)) return;
-                mentionedUserIds.forEach(uid => {
-                    if (uid !== userId) {
-                        io.to(uid).emit('newMention', {
-                            fromUser: socket.user.name,
-                            taskId,
-                            taskTitle,
-                            timestamp: new Date().toISOString(),
+                        });
+                    }
+                });
+            });
+
+            // ── CHAT TYPING INDICATORS ───────────────────────────────────
+            socket.on('typing', ({ chatId, isTyping, participantIds }) => {
+                if (!chatId || !Array.isArray(participantIds)) return;
+                participantIds.forEach(pId => {
+                    if (pId !== userId) {
+                        io.to(pId).emit('typing', {
+                            chat: chatId,
+                            userId,
+                            isTyping
                         });
                     }
                 });

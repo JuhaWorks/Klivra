@@ -62,7 +62,8 @@ class NotificationService {
                 'Deadline': 'deadlines',
                 'StatusUpdate': 'statusUpdates',
                 'MetadataUpdate': 'updates',
-                'Comment': 'comments'
+                'Comment': 'comments',
+                'Chat': 'messages'
             };
             const prefKey = CATEGORY_MAP[type];
 

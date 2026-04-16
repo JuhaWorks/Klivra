@@ -3,6 +3,9 @@ import { Send, Plus, Smile, ThumbsUp, X, Reply, Film, FileText, ImageIcon, Loade
 import EmojiPicker from 'emoji-picker-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import { useSocketStore } from '../../store/useSocketStore';
+import { useChatStore } from '../../store/useChatStore';
+import { useAuthStore } from '../../store/useAuthStore';
 
 // ─── Client-side image compression (no extra deps) ───────────────────────────
 const MAX_IMAGE_PX = 1200;
@@ -51,6 +54,44 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
     const emojiRef = useRef(null);
+
+    const { socket } = useSocketStore();
+    const { activeChat } = useChatStore();
+    const { user } = useAuthStore();
+    const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
+
+    // Typing emission logic
+    const emitTyping = useCallback((isTyping) => {
+        if (!socket || !activeChat) return;
+        const participantIds = activeChat.participants.map(p => p._id || p);
+        socket.emit('typing', {
+            chatId: activeChat._id,
+            isTyping,
+            participantIds
+        });
+        isTypingRef.current = isTyping;
+    }, [socket, activeChat]);
+
+    useEffect(() => {
+        if (!input.trim()) {
+            if (isTypingRef.current) emitTyping(false);
+            return;
+        }
+
+        if (!isTypingRef.current) {
+            emitTyping(true);
+        }
+
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+            emitTyping(false);
+        }, 3000);
+
+        return () => {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        };
+    }, [input, emitTyping]);
 
     // Auto-resize
     useEffect(() => {
@@ -132,6 +173,7 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
             setAttachments([]);
             setShowEmoji(false);
             setUploading(false);
+            if (isTypingRef.current) emitTyping(false);
         }
     };
 

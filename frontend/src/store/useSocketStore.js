@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from './useAuthStore';
+import { useChatStore } from './useChatStore';
 import { startTransition } from 'react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 
@@ -180,6 +181,18 @@ export const useSocketStore = create((set, get) => ({
                     return oldNotes.filter(n => n._id !== noteId);
                 });
             });
+        });
+
+        socket.on('typing', ({ chat, userId, isTyping }) => {
+            useChatStore.getState().setTyping(chat, userId, isTyping);
+        });
+
+        socket.on('newNotification', (notification) => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['notifications'] });
+                queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+            }
         });
 
         set({ socket });

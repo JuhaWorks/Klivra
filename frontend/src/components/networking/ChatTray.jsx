@@ -671,8 +671,10 @@ const ChatBox = ({ chat, onBack, isBubbleMode }) => {
         const groups = [];
         chatMessages.forEach((msg, idx) => {
             const prevMsg = chatMessages[idx - 1];
-            const isMe = msg.sender?._id === user?._id || msg.sender === user?._id;
-            const sameSenderAsPrev = prevMsg && (prevMsg.sender?._id || prevMsg.sender) === (msg.sender?._id || msg.sender);
+            const senderId = (msg.sender?._id || msg.sender)?.toString();
+            const myId = user?._id?.toString();
+            const isMe = !!(senderId && myId && senderId === myId);
+            const sameSenderAsPrev = prevMsg && (prevMsg.sender?._id || prevMsg.sender)?.toString() === senderId;
             
             const showDate = !prevMsg || !isSameDay(new Date(prevMsg.createdAt), new Date(msg.createdAt));
             if (showDate) {

@@ -2,6 +2,7 @@ const Chat = require('../models/chat.model');
 const Message = require('../models/message.model');
 const User = require('../models/user.model');
 const socketUtil = require('../utils/socket');
+const notificationService = require('../services/notification.service');
 const logger = require('../utils/logger');
 
 // @desc    Get all chats for current user
@@ -126,6 +127,25 @@ const sendMessage = async (req, res, next) => {
                 });
             });
         }
+
+        // 5. Create Database Notifications
+        const otherParticipants = chat.participants.filter(p => p.toString() !== req.user._id.toString());
+        otherParticipants.forEach(async (pId) => {
+            try {
+                await notificationService.notify({
+                    recipientId: pId,
+                    senderId: req.user._id,
+                    type: 'Chat',
+                    priority: 'Medium',
+                    title: `New message from ${req.user.name}`,
+                    message: content ? (content.length > 50 ? content.substring(0, 47) + '...' : content) : (type === 'image' ? 'Sent a photo' : 'Sent an attachment'),
+                    link: '/chat',
+                    metadata: { chatId: targetChatId }
+                });
+            } catch (err) {
+                logger.error(`Failed to dispatch chat notification: ${err.message}`);
+            }
+        });
 
         res.status(201).json({ status: 'success', data: populatedMessage });
     } catch (error) { next(error); }
