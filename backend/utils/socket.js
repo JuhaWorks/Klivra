@@ -271,6 +271,14 @@ module.exports = {
 
             // ── MENTION NOTIFICATION ─────────────────────────────────────
             socket.on('mentionUsers', ({ mentionedUserIds, taskId, taskTitle }) => {
+                if (!Array.isArray(mentionedUserIds)) return;
+                mentionedUserIds.forEach(uid => {
+                    if (uid !== userId) {
+                        io.to(uid).emit('newMention', {
+                            fromUser: socket.user.name,
+                            taskId,
+                            taskTitle,
+                            timestamp: new Date().toISOString(),
                         });
                     }
                 });
