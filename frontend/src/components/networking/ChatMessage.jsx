@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, animate } from 'framer-motion';
 import {
     Check, CheckCheck, Clock, AlertCircle,
     Trash2, CornerUpLeft, FileText, Download,
@@ -233,6 +233,26 @@ const ChatMessageComponent = ({
             );
         }
     }, [isMe, isFirstInGroup, isLastInGroup]);
+    
+    // Swipe to Reply Logic
+    const x = useMotionValue(0);
+    const snapX = useSpring(x, { stiffness: 600, damping: 40 });
+    
+    // Icon animation values
+    const threshold = 60;
+    const iconScale = useTransform(x, [0, threshold], [0.5, 1.2]);
+    const iconOpacity = useTransform(x, [0, threshold / 2, threshold], [0, 0, 1]);
+    const iconRotate = useTransform(x, [0, threshold], [-45, 0]);
+
+    const handleDragEnd = (_, info) => {
+        if (info.offset.x > threshold && onReply && !isDeleted) {
+            onReply(message);
+            // Visual feedback "pop"
+            animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
+        } else {
+            animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
+        }
+    };
 
     return (
         <motion.div
@@ -325,32 +345,64 @@ const ChatMessageComponent = ({
                             </div>
                         )}
 
-                        {/* Main Bubble Content */}
-                        {isDeleted ? (
-                            <div className="px-4 py-2 rounded-[1.25rem] border border-glass/50 bg-sunken/50">
-                                <p className="text-[13px] italic text-tertiary">🚫 Message removed</p>
-                            </div>
-                        ) : isMedia ? (
-                            <div className={cn(
-                                'overflow-hidden shadow-sm transition-all',
-                                bubbleRadius,
-                                isMe
-                                    ? cn('bg-theme text-white', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                    : cn('bg-surface border border-glass text-primary', isError && 'ring-2 ring-danger')
-                            )}>
-                                <MediaContent message={message} isMe={isMe} />
-                            </div>
-                        ) : (
-                            <div className={cn(
-                                'px-4 py-2.5 text-[15px] leading-[1.4] transition-all',
-                                bubbleRadius,
-                                isMe
-                                    ? cn('bg-blue-600 text-white shadow-sm', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                    : cn('bg-gray-100 dark:bg-[#2A2B32] text-gray-900 dark:text-gray-100 shadow-sm', isError && 'ring-2 ring-danger')
-                            )}>
-                                <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                            </div>
-                        )}
+                        {/* Main Bubble Content Container with Drag */}
+                        <div className="relative group/bubble-container">
+                             {/* Under-layer Reply Icon */}
+                             {!isMe && !isDeleted && onReply && (
+                                <motion.div 
+                                    style={{ x: snapX, opacity: iconOpacity, scale: iconScale, rotate: iconRotate }}
+                                    className="absolute -left-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-theme"
+                                >
+                                    <CornerUpLeft className="w-5 h-5 shadow-glow-sm" />
+                                </motion.div>
+                             )}
+                             
+                             {/* Similar icon for Me messages (if we want swipe right-to-left) */}
+                             {/* But usually swipe-to-reply is always swipe-right regardless of side */}
+                             {isMe && !isDeleted && onReply && (
+                                <motion.div 
+                                    style={{ x: snapX, opacity: iconOpacity, scale: iconScale, rotate: iconRotate }}
+                                    className="absolute -left-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-theme"
+                                >
+                                    <CornerUpLeft className="w-5 h-5 shadow-glow-sm" />
+                                </motion.div>
+                             )}
+
+                            <motion.div
+                                drag="x"
+                                dragConstraints={{ left: 0, right: threshold + 20 }}
+                                dragElastic={0.15}
+                                style={{ x }}
+                                onDragEnd={handleDragEnd}
+                                className="cursor-grab active:cursor-grabbing touch-none"
+                            >
+                                {isDeleted ? (
+                                    <div className="px-4 py-2 rounded-[1.25rem] border border-glass/50 bg-sunken/50">
+                                        <p className="text-[13px] italic text-tertiary">🚫 Message removed</p>
+                                    </div>
+                                ) : isMedia ? (
+                                    <div className={cn(
+                                        'overflow-hidden shadow-sm transition-all',
+                                        bubbleRadius,
+                                        isMe
+                                            ? cn('bg-theme text-white', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
+                                            : cn('bg-surface border border-glass text-primary', isError && 'ring-2 ring-danger')
+                                    )}>
+                                        <MediaContent message={message} isMe={isMe} />
+                                    </div>
+                                ) : (
+                                    <div className={cn(
+                                        'px-4 py-2.5 text-[15px] leading-[1.4] transition-all',
+                                        bubbleRadius,
+                                        isMe
+                                            ? cn('bg-blue-600 text-white shadow-sm', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
+                                            : cn('bg-gray-100 dark:bg-[#2A2B32] text-gray-900 dark:text-gray-100 shadow-sm', isError && 'ring-2 ring-danger')
+                                    )}>
+                                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </div>
                     </div>
                 </div>
 

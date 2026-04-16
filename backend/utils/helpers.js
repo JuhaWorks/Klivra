@@ -61,13 +61,18 @@ const formatUserResponse = (userDoc) => {
     });
 
     // --- Absolute Strategic Maturity (Fixed Scaling) ---
-    // Instead of relative (axis/total), we use an absolute benchmark (e.g. 1,000 pts = 100% axis)
+    // Instead of relative (axis/total), we use an absolute benchmark (e.g. 500 pts = 100% axis)
     // This ensures the radar physically "shrinks" if points are revoked.
-    const RADAR_BENCHMARK = 1000;
+    const RADAR_BENCHMARK = 500; 
     const normalizedSpecialties = {};
     
+    // Explicitly handle specialties Map conversion to Object for safe spreading
+    const specialtiesObj = (gamification.specialties instanceof Map) 
+        ? Object.fromEntries(gamification.specialties) 
+        : (gamification.specialties || {});
+
     AXES.forEach(axis => {
-        const points = gamification.specialties[axis] || 0;
+        const points = specialtiesObj[axis] || 0;
         // Percentage of the absolute maturity benchmark, capped at 100
         const raw = Math.min(100, (points / RADAR_BENCHMARK) * 100);
         // Minimum 5% if points exist to maintain geometric shape, else 0
@@ -80,6 +85,9 @@ const formatUserResponse = (userDoc) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        coverImage: user.coverImage,
+        bio: user.bio,
+        skills: user.skills || [],
         isEmailVerified: user.isEmailVerified,
         status: user.status,
         customMessage: user.customMessage,
@@ -87,8 +95,11 @@ const formatUserResponse = (userDoc) => {
         timezoneOffset: user.timezoneOffset,
         timezoneName: user.timezoneName,
         interfacePrefs: user.interfacePrefs,
+        lastActive: user.lastActive,
+        totalConnections: user.totalConnections ?? 0,
         gamification: {
             ...gamification,
+            specialties: specialtiesObj, // Flattened POJO for frontend
             normalizedSpecialties // Injected for High-Accuracy Radar plotting
         }
     };

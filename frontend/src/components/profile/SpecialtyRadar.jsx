@@ -49,49 +49,51 @@ const SpecialtyRadar = memo(({
                 )}
             </AnimatePresence>
 
-            <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="65%" data={data}>
-                    <defs>
-                        <linearGradient id="radarGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--accent-500)" stopOpacity={0.6} />
-                            <stop offset="95%" stopColor="var(--accent-500)" stopOpacity={0.15} />
-                        </linearGradient>
-                    </defs>
-                    
-                    <PolarGrid 
-                        stroke="var(--border-strong)" 
-                        strokeOpacity={0.4} 
-                        gridType="polygon"
-                    />
-                    
-                    <PolarAngleAxis
-                        dataKey="subject"
-                        tick={{ 
-                            fontSize: 9, 
-                            fontWeight: 900, 
-                            fill: 'var(--text-tertiary)', 
-                            letterSpacing: '0.08em',
-                            textAnchor: 'middle'
-                        }}
-                    />
+            <div className="h-full min-h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="65%" data={data}>
+                        <defs>
+                            <linearGradient id="radarGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="var(--theme)" stopOpacity={0.6} />
+                                <stop offset="95%" stopColor="var(--theme)" stopOpacity={0.15} />
+                            </linearGradient>
+                        </defs>
+                        
+                        <PolarGrid 
+                            stroke="var(--border-strong)" 
+                            strokeOpacity={0.4} 
+                            gridType="polygon"
+                        />
+                        
+                        <PolarAngleAxis
+                            dataKey="subject"
+                            tick={{ 
+                                fontSize: 9, 
+                                fontWeight: 900, 
+                                fill: 'var(--text-tertiary)', 
+                                letterSpacing: '0.08em',
+                                textAnchor: 'middle'
+                            }}
+                        />
 
-                    <Radar
-                        name="Resource Allocation"
-                        dataKey="A"
-                        stroke="var(--accent-500)"
-                        strokeWidth={2.5}
-                        fill="url(#radarGradient)"
-                        fillOpacity={1}
-                        animationDuration={1200}
-                        animationBegin={200}
-                    />
-                </RadarChart>
-            </ResponsiveContainer>
+                        <Radar
+                            name="Resource Allocation"
+                            dataKey="A"
+                            stroke="var(--theme)"
+                            strokeWidth={2.5}
+                            fill="url(#radarGradient)"
+                            fillOpacity={1}
+                            animationDuration={1500}
+                            animationBegin={200}
+                        />
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
 
-            {/* Overlay indicators for professional feel */}
-            {!isProjectView && specialties.Velocity > (fullMark * 0.7) && (
-                <div className="absolute top-0 right-0 px-2 py-1 bg-theme/10 border border-theme/20 rounded-md text-[7px] font-black text-theme uppercase tracking-widest animate-pulse">
-                    High Velocity
+            {/* Overlay indicators - Dynamic Logic */}
+            {!isProjectView && Object.values(specialties).some(v => v > 80) && (
+                <div className="absolute top-2 right-2 px-2.5 py-1 bg-theme/10 border border-theme/20 rounded-lg text-[8px] font-black text-theme uppercase tracking-widest animate-pulse backdrop-blur-sm">
+                    Elite Maturity
                 </div>
             )}
         </div>
