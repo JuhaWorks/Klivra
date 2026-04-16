@@ -590,7 +590,6 @@ const AdminDashboard = () => {
                     </motion.div>
 
                         <StatCard label="Projects" value={stats.projects?.total ?? 0} color="var(--blue)" sub="Across all workspaces" delay={.21} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>} spark />
-                    </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 28, marginBottom: 28 }}>
                         {/* LEFT: TABLE PANEL */}
