@@ -251,10 +251,10 @@ const ChatMessageComponent = ({
         >
             {/* Avatar Column */}
             {!isMe && (
-                <div className="w-8 shrink-0 flex flex-col justify-end pb-0.5">
+                <div className="w-8 shrink-0 flex flex-col justify-end">
                     <div className={cn(
-                        'w-7 h-7 rounded-full overflow-hidden bg-surface shadow-sm transition-opacity duration-200',
-                        isLastInGroup ? 'opacity-100' : 'opacity-0' // Messenger places avatars at the *bottom* of the message group
+                        'w-7 h-7 rounded-full overflow-hidden bg-surface shadow-sm transition-opacity duration-200 mb-0.5',
+                        isLastInGroup ? 'opacity-100' : 'opacity-0'
                     )}>
                         <img
                             src={getOptimizedAvatar(message.sender?.avatar, 'sm', message.sender?.name)}
@@ -267,15 +267,15 @@ const ChatMessageComponent = ({
             )}
 
             {/* Message Column */}
-            <div className={cn('flex flex-col', isMe ? 'items-end' : 'items-start', 'max-w-[70%] sm:max-w-[65%]')}>
+            <div className={cn('flex flex-col flex-1', isMe ? 'items-end' : 'items-start', 'max-w-[85%]')}>
                 {showName && !isMe && isFirstInGroup && (
                     <span className="text-[11px] font-semibold text-tertiary mb-1 ml-1 tracking-wide">
                         {message.sender?.name}
                     </span>
                 )}
 
-                <div className={cn('flex items-center gap-1.5', isMe ? 'flex-row' : 'flex-row-reverse')}>
-                    {/* Action Buttons (Hover State) */}
+                <div className={cn('flex items-end gap-1.5 w-full', isMe ? 'flex-row' : 'flex-row-reverse')}>
+                    {/* Action Buttons (Hover State) - Shifted up to align with bubble center better */}
                     <AnimatePresence>
                         {hovering && !isDeleted && (
                             <motion.div
@@ -283,7 +283,7 @@ const ChatMessageComponent = ({
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: isMe ? 5 : -5 }}
                                 transition={{ duration: 0.15 }}
-                                className="flex items-center gap-1 shrink-0 px-1"
+                                className="flex items-center gap-1 shrink-0 px-1 mb-2"
                             >
                                 {onReply && (
                                     <button
@@ -308,7 +308,7 @@ const ChatMessageComponent = ({
                     </AnimatePresence>
 
                     {/* Chat Bubble Layout */}
-                    <div className="flex flex-col">
+                    <div className="flex flex-col max-w-[85%] sm:max-w-[75%]">
                         {/* Reply Quote Block */}
                         {message.replyTo && !isDeleted && (
                             <div className={cn(
@@ -342,37 +342,37 @@ const ChatMessageComponent = ({
                             </div>
                         ) : (
                             <div className={cn(
-                                'px-4 py-2.5 text-[15px] leading-[1.4] transition-all', // Slightly larger standard text
+                                'px-4 py-2.5 text-[15px] leading-[1.4] transition-all',
                                 bubbleRadius,
                                 isMe
-                                    ? cn('bg-blue-600 text-white shadow-sm', isSending && 'opacity-70', isError && 'ring-2 ring-danger') // Using strong brand color for sender
-                                    : cn('bg-gray-100 dark:bg-[#2A2B32] text-gray-900 dark:text-gray-100 shadow-sm', isError && 'ring-2 ring-danger') // Soft gray for receiver
+                                    ? cn('bg-blue-600 text-white shadow-sm', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
+                                    : cn('bg-gray-100 dark:bg-[#2A2B32] text-gray-900 dark:text-gray-100 shadow-sm', isError && 'ring-2 ring-danger')
                             )}>
                                 <p className="whitespace-pre-wrap break-words">{message.content}</p>
                             </div>
                         )}
-
-                        {/* Metadata (Time & Read Receipts) - Only visible on last message or hover */}
-                        <div className={cn(
-                            'flex items-center gap-1 mt-1 transition-opacity duration-300',
-                            isMe ? 'justify-end' : 'justify-start',
-                            (isLastInGroup || hovering) ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'
-                        )}>
-                            <span className="text-[10px] font-medium text-tertiary tracking-wide tabular-nums">
-                                {format(new Date(message.createdAt), 'h:mm a')}
-                            </span>
-                            {isMe && !isSending && !isDeleted && (
-                                <span className="ml-0.5">
-                                    {isRead
-                                        ? <CheckCheck className="w-3.5 h-3.5 text-blue-500" aria-label="Read" />
-                                        : <Check className="w-3.5 h-3.5 text-tertiary" aria-label="Delivered" />
-                                    }
-                                </span>
-                            )}
-                            {isSending && <Clock className="w-3 h-3 text-tertiary animate-spin-slow" />}
-                            {isError && <AlertCircle className="w-3.5 h-3.5 text-danger" title="Failed to send" />}
-                        </div>
                     </div>
+                </div>
+
+                {/* Metadata Column - Outside the bubble row for proper vertical alignment of avatar */}
+                <div className={cn(
+                    'flex items-center gap-1 mt-1 transition-opacity duration-300',
+                    isMe ? 'justify-end pr-1' : 'justify-start pl-1',
+                    (isLastInGroup || hovering) ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'
+                )} style={{ marginLeft: !isMe ? '0px' : 'auto' }}>
+                    <span className="text-[10px] font-medium text-tertiary tracking-wide tabular-nums">
+                        {format(new Date(message.createdAt), 'h:mm a')}
+                    </span>
+                    {isMe && !isSending && !isDeleted && (
+                        <span className="ml-0.5">
+                            {isRead
+                                ? <CheckCheck className="w-3.5 h-3.5 text-blue-500" aria-label="Read" />
+                                : <Check className="w-3.5 h-3.5 text-tertiary" aria-label="Delivered" />
+                            }
+                        </span>
+                    )}
+                    {isSending && <Clock className="w-3 h-3 text-tertiary animate-spin-slow" />}
+                    {isError && <AlertCircle className="w-3.5 h-3.5 text-danger" title="Failed to send" />}
                 </div>
             </div>
         </motion.div>
