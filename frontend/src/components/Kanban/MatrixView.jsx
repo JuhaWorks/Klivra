@@ -17,7 +17,8 @@ import {
 import { api } from '../../store/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { getOptimizedAvatar } from '../../utils/avatar';
-import SpecialtyRadar, { RADAR_SUBJECTS } from '../profile/SpecialtyRadar';
+import SpecialtyRadar from '../profile/SpecialtyRadar';
+import { RADAR_SUBJECTS } from '../profile/RadarConstants';
 
 // --- Shared Internal Components ---
 

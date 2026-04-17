@@ -15,8 +15,8 @@ import { cn } from '../../utils/cn';
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 const getLevelProgress = (xp, level) => {
-    const thresholds = { 1: 0, 2: 50, 3: 150, 4: 300, 5: 600, 6: 1000, 7: 1500, 8: 2200, 9: 3200, 10: 4500 };
-    const getReq = (lvl) => thresholds[lvl] ?? (thresholds[10] + (lvl - 10) * 5000);
+    // Sync with Backend: Math.floor(100 * Math.pow(lvl, 2.2))
+    const getReq = (lvl) => lvl <= 1 ? 0 : Math.floor(100 * Math.pow(lvl, 2.2));
     const baseXP = getReq(level), nextXP = getReq(level + 1);
     const progress = Math.min(100, Math.max(0, ((xp - baseXP) / (nextXP - baseXP)) * 100));
     return { progress, nextXP };
@@ -165,10 +165,10 @@ export default function UserProfileModal({ isOpen, onClose, userId }) {
     const streakPct = Math.min(100, (stats.streaks?.current || 0) * 10);
 
     const radarData = [
-        { subject: 'Strategic', A: user.gamification?.specialties?.Strategic || 0, fullMark: 1000 },
-        { subject: 'Engineering', A: user.gamification?.specialties?.Engineering || 0, fullMark: 1000 },
-        { subject: 'Sustainability', A: user.gamification?.specialties?.Sustainability || 0, fullMark: 1000 },
-        { subject: 'Operations', A: user.gamification?.specialties?.Operations || 0, fullMark: 1000 },
+        { subject: 'Strategic', A: user.gamification?.normalizedSpecialties?.Strategic || 0, fullMark: 100 },
+        { subject: 'Engineering', A: user.gamification?.normalizedSpecialties?.Engineering || 0, fullMark: 100 },
+        { subject: 'Sustainability', A: user.gamification?.normalizedSpecialties?.Sustainability || 0, fullMark: 100 },
+        { subject: 'Operations', A: user.gamification?.normalizedSpecialties?.Operations || 0, fullMark: 100 },
     ];
 
     /* ─── tab panels ─────────────────────────────────────────────────────── */
@@ -188,19 +188,19 @@ export default function UserProfileModal({ isOpen, onClose, userId }) {
                                 <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
                                     <defs>
                                         <linearGradient id="radarFill" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#0D6EFD" stopOpacity={0.35} />
-                                            <stop offset="100%" stopColor="#0D6EFD" stopOpacity={0.05} />
+                                            <stop offset="0%" stopColor="#7B52FF" stopOpacity={0.6} />
+                                            <stop offset="100%" stopColor="#0D6EFD" stopOpacity={0.2} />
                                         </linearGradient>
                                     </defs>
                                     <PolarGrid stroke="#1E2530" gridType="polygon" />
                                     <PolarAngleAxis
                                         dataKey="subject"
-                                        tick={{ fontSize: 8, fontWeight: 600, fill: '#3D4A5C', letterSpacing: '0.05em' }}
+                                        tick={{ fontSize: 8, fontWeight: 600, fill: '#8A95A8', letterSpacing: '0.05em' }}
                                     />
                                     <Radar
                                         dataKey="A"
-                                        stroke="#0D6EFD"
-                                        strokeWidth={1.5}
+                                        stroke="#7B52FF"
+                                        strokeWidth={2}
                                         fill="url(#radarFill)"
                                         fillOpacity={1}
                                         animationDuration={900}

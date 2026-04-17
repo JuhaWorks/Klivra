@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const Audit = require('../models/audit.model');
 const socketUtil = require('../utils/socket');
 const logger = require('../utils/logger');
+const { DOMAIN_MAPPING } = require('../utils/constants');
 
 const LEVEL_THRESHOLDS = {
     1: 0,
@@ -16,13 +17,8 @@ const LEVEL_THRESHOLDS = {
     10: 4500     // +900
 };
 
-// Strategic Domain Mapping (Executive Standard)
-const DOMAIN_MAPPING = {
-    Strategic: ['Epic', 'Feature', 'Story', 'Discovery', 'Research'],
-    Engineering: ['DevOps', 'Refactor', 'Technical Debt', 'QA', 'Performance', 'Engineering'],
-    Sustainability: ['Maintenance', 'Hygiene', 'Task', 'Sustainability'],
-    Operations: ['Bug', 'Security', 'Compliance', 'Meeting', 'Review', 'Support', 'Operations']
-};
+// Domains are defined in task.model.js and automated via pre-save hooks
+// Now unified via utils/constants.js
 
 /**
  * "Hard Mode" Exponential Scaling formula.
@@ -151,18 +147,27 @@ const awardXP = async (userId, xpData, sourceTask = null, context = {}) => {
 
         // Update Matured Specialty Axes
         if (sourceTask) {
-            const type = stats.breakdown.type;
             const q = Math.round(stats.breakdown.qualityXP * multiplier);
             const v = Math.round(stats.breakdown.velocityXP * multiplier);
             const s = Math.round(stats.breakdown.collabXP * multiplier);
 
-            // Distribute Quality points to relevant axis
-            Object.entries(DOMAIN_MAPPING).forEach(([axis, types]) => {
-                if (types.includes(type)) {
-                    const current = user.gamification.specialties.get(axis) || 0;
-                    user.gamification.specialties.set(axis, current + q);
+            // Distribute Quality points to the task's automated domain
+            let axis = sourceTask.domain;
+            
+            // --- Self-Healing Failover: If domain is missing, calculate on-the-fly ---
+            if (!axis && sourceTask.type) {
+                for (const [d, types] of Object.entries(DOMAIN_MAPPING)) {
+                    if (types.includes(sourceTask.type)) {
+                        axis = d;
+                        break;
+                    }
                 }
-            });
+            }
+
+            if (axis) {
+                const current = user.gamification.specialties.get(axis) || 0;
+                user.gamification.specialties.set(axis, current + q);
+            }
 
             // Reward Output Velocity and Synergy into the Operations Domain
             const currentOps = user.gamification.specialties.get('Operations') || 0;
@@ -236,17 +241,25 @@ const revokeXP = async (userId, task) => {
             ]);
         }
 
-        const type = stats.breakdown.type;
         const q = stats.breakdown.qualityXP;
         const v = stats.breakdown.velocityXP;
         const s = stats.breakdown.collabXP;
 
-        Object.entries(DOMAIN_MAPPING).forEach(([axis, types]) => {
-            if (types.includes(type)) {
-                const current = user.gamification.specialties.get(axis) || 0;
-                user.gamification.specialties.set(axis, Math.max(0, current - q));
+        // Distribute revocation based on domain
+        let axis = task.domain;
+        if (!axis && task.type) {
+            for (const [d, types] of Object.entries(DOMAIN_MAPPING)) {
+                if (types.includes(task.type)) {
+                    axis = d;
+                    break;
+                }
             }
-        });
+        }
+
+        if (axis) {
+            const current = user.gamification.specialties.get(axis) || 0;
+            user.gamification.specialties.set(axis, Math.max(0, current - q));
+        }
 
         // Revoke Velocity/Synergy from Operations
         const opsCurrent = user.gamification.specialties.get('Operations') || 0;

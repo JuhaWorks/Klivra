@@ -228,17 +228,27 @@ const logoutUser = async (req, res, next) => {
     try {
         const options = getCookieOptions();
         options.expires = new Date(Date.now() + 10 * 1000); // Expires in 10 seconds
+        
+        const refreshToken = req.cookies.refreshToken;
         res.cookie('refreshToken', 'none', options);
 
-        // Set status to Offline on logout
+        // Revoke the token in the database if the user is authenticated
         if (req.user) {
             const user = await User.findById(req.user._id);
             if (user) {
                 user.status = 'Offline';
+                
+                // --- Revoke specific token (Security Hardening) ---
+                if (refreshToken) {
+                    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+                    user.refreshTokens = user.refreshTokens.filter(t => t.token !== hashedToken);
+                }
+
                 await user.save();
                 
                 await logSecurityEvent(user._id, 'AuthLogout', {
-                    ipAddress: req.ip
+                    ipAddress: req.ip,
+                    tokenRevoked: !!refreshToken
                 });
             }
         }

@@ -281,8 +281,11 @@ userSchema.statics.deleteAndCleanUp = async function (userId) {
         );
 
         await Task.updateMany(
-            { assignee: userId },
-            { $set: { assignee: null } },
+            { $or: [{ assignee: userId }, { assignees: userId }] },
+            { 
+                $set: { assignee: null },
+                $pull: { assignees: userId }
+            },
             { session }
         );
 

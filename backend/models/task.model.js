@@ -95,18 +95,12 @@ const taskSchema = new mongoose.Schema(
     }
 );
 
-// --- Strategic Domain Automation ---
-const DOMAIN_MAP = {
-    Strategic: ['Epic', 'Feature', 'Story', 'Discovery', 'Research'],
-    Engineering: ['DevOps', 'Refactor', 'Technical Debt', 'QA', 'Performance', 'Engineering'],
-    Sustainability: ['Maintenance', 'Hygiene', 'Task', 'Sustainability'],
-    Operations: ['Bug', 'Security', 'Compliance', 'Meeting', 'Review', 'Support', 'Operations']
-};
+const { DOMAIN_MAPPING } = require('../utils/constants');
 
 taskSchema.pre('save', function() {
-    if (this.isModified('type') || this.isNew) {
-        let foundDomain = 'Operations'; // Default fallback
-        for (const [domain, types] of Object.entries(DOMAIN_MAP)) {
+    if (this.isModified('type') || this.isNew || !this.domain) {
+        let foundDomain = 'Operations'; // Standard Executive Fallback
+        for (const [domain, types] of Object.entries(DOMAIN_MAPPING)) {
             if (types.includes(this.type)) {
                 foundDomain = domain;
                 break;

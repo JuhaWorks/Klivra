@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { cn, getLevelProgress } from './ProfileUtils';
 import { BadgeIcon } from './ProfileHelpers';
-import SpecialtyRadar, { RADAR_SUBJECTS } from './SpecialtyRadar';
+import SpecialtyRadar from './SpecialtyRadar';
+import { RADAR_SUBJECTS } from './RadarConstants';
 
 // ----------------------------------------------------------------------
 // Hooks

@@ -4,6 +4,8 @@ const Audit = require('../models/audit.model');
 const socket = require('../utils/socket');
 const { logActivity } = require('../utils/activityLogger');
 const notificationService = require('../services/notification.service');
+const gamification = require('../services/gamification.service');
+const { DOMAIN_MAPPING } = require('../utils/constants');
 
 /**
  * Helper to detect circular dependencies
@@ -231,11 +233,10 @@ const createTask = async (req, res, next) => {
 
         // --- Gamification Hook for Created "Completed" tasks ---
         if (task.status === 'Completed') {
-            const { calculateTaskXP, awardXP } = require('../services/gamification.service');
-            const xp = calculateTaskXP(task, { wasBlocked: false });
+            const xp = gamification.calculateTaskXP(task, { wasBlocked: false });
             const assigneesToReward = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : [req.user._id]);
             for (const u of assigneesToReward) {
-                awardXP(u._id || u, xp, task).catch(err => console.error("Gamification Error:", err));
+                gamification.awardXP(u._id || u, xp, task).catch(err => console.error("Gamification Error:", err));
             }
         }
 
@@ -296,6 +297,12 @@ const updateTask = async (req, res, next) => {
         const oldStatus = task.status;
         const oldPriority = task.priority;
         const oldType = task.type || 'Task';
+        
+        // Capture XP to revoke BEFORE update if task is being un-completed
+        let preUpdateXpData = null;
+        if (oldStatus === 'Completed' && req.body.status && req.body.status !== 'Completed') {
+            preUpdateXpData = gamification.calculateTaskXP(task);
+        }
         const oldBlockedBy = task.dependencies?.blockedBy?.map(id => id.toString()) || [];
         const oldBlocking = task.dependencies?.blocking?.map(id => id.toString()) || [];
         
@@ -371,11 +378,23 @@ const updateTask = async (req, res, next) => {
             delete req.body.dependencies;
         }
 
-        task = await Task.findByIdAndUpdate(req.params.id, { $set: { ...req.body, dependencies: task.dependencies } }, {
-            returnDocument: 'after',
-            runValidators: true,
-        }).populate('assignees', 'name email avatar')
-          .populate('project', 'name color');
+        // 4. Execution: Sync fields and save
+        // We use .save() instead of findByIdAndUpdate to ensure pre-save hooks (like domain automation) trigger.
+        Object.assign(task, req.body);
+        
+        // Ensure dependencies are correctly set after reciprocity logic
+        if (req.body.dependencies === undefined) {
+             // We already handled reciprocity and adjusted task.dependencies.blockedBy/blocking
+             // No further manual assignment needed if logic above is robust.
+        }
+
+        await task.save();
+        
+        // Re-populate for consistent response signature
+        await task.populate([
+            { path: 'assignees', select: 'name email avatar' },
+            { path: 'project', select: 'name color' }
+        ]);
 
         // Log state changes
         const changes = [];
@@ -490,16 +509,14 @@ const updateTask = async (req, res, next) => {
             const oldCompleted = task.subtasks?.filter(s => s.completed).length || 0;
             const newCompleted = req.body.subtasks.filter(s => s.completed).length || 0;
             if (newCompleted > oldCompleted) {
-                const { awardXP } = require('../services/gamification.service');
                 const subtaskXP = (newCompleted - oldCompleted) * 15;
-                awardXP(req.user._id, subtaskXP, task).catch(err => console.error("Subtask XP Error:", err));
+                gamification.awardXP(req.user._id, subtaskXP, task).catch(err => console.error("Subtask XP Error:", err));
             }
         }
 
         // 2. Main Task status change XP
         if (oldStatus !== 'Completed' && req.body.status === 'Completed') {
             console.log(`[GAMIFICATION] Task ${task._id} marked COMPLETED. Starting award flow.`);
-            const gamification = require('../services/gamification.service');
             
             const wasBlocked = task.dependencies?.blockedBy?.length > 0;
             const xpToAward = gamification.calculateTaskXP(task, { wasBlocked });
@@ -522,8 +539,7 @@ const updateTask = async (req, res, next) => {
             }
         } 
         // Hook for Un-completing tasks
-        else if (oldStatus === 'Completed' && req.body.status && req.body.status !== 'Completed') {
-            const gamification = require('../services/gamification.service');
+        else if (preUpdateXpData) {
             let usersToRevoke = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
             const completerId = req.user._id.toString();
             const hasCompleter = usersToRevoke.some(u => (u._id?.toString() || u.toString()) === completerId);
@@ -534,7 +550,7 @@ const updateTask = async (req, res, next) => {
             for (const assignedUser of usersToRevoke) {
                 const userId = assignedUser._id || assignedUser;
                 if (gamification.revokeXP) {
-                    gamification.revokeXP(userId, task).catch(err => console.error("Gamification Error:", err));
+                    gamification.revokeXP(userId, task, preUpdateXpData).catch(err => console.error("Gamification Error:", err));
                 }
             }
         }
@@ -674,9 +690,15 @@ const bulkUpdateTasks = async (req, res, next) => {
             safeUpdates.assignee = safeUpdates.assignees.length > 0 ? safeUpdates.assignees[0] : null;
         }
 
-        // Perform updates
-        const updatePromises = taskIds.map(id => {
-            return Task.findByIdAndUpdate(id, { $set: safeUpdates }, { returnDocument: 'after' })
+        // Perform updates using .save() to trigger hooks correctly
+        const updatePromises = taskIds.map(async (id) => {
+            const task = await Task.findById(id);
+            if (!task) return null;
+            
+            Object.assign(task, safeUpdates);
+            await task.save();
+            
+            return await Task.findById(task._id)
                 .populate('assignees', 'name email avatar')
                 .populate('project', 'name color')
                 .lean();
@@ -744,9 +766,7 @@ const bulkUpdateTasks = async (req, res, next) => {
                 }
             }
 
-            // --- Gamification Revocation for Bulk ---
             if (isNowUncompleted) {
-                const { revokeXP } = require('../services/gamification.service');
                 let usersToRevoke = task.assignees?.length > 0 ? [...task.assignees] : (task.assignee ? [task.assignee] : []);
                 const completerId = req.user._id.toString();
                 const hasCompleter = usersToRevoke.some(u => (u._id?.toString() || u.toString()) === completerId);
@@ -756,7 +776,7 @@ const bulkUpdateTasks = async (req, res, next) => {
 
                 for (const assignedUser of usersToRevoke) {
                     const userId = assignedUser._id || assignedUser;
-                    revokeXP(userId, task).catch(err => console.error("Bulk Revocation Error:", err));
+                    gamification.revokeXP(userId, originalTask).catch(err => console.error("Bulk Revocation Error:", err));
                 }
             }
         }

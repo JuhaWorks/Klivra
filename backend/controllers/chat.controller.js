@@ -37,6 +37,15 @@ const getChatMessageHistory = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
 
+        // IDOR FIX: Verify membership BEFORE fetching history
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ status: 'error', message: 'Chat not found' });
+        
+        const isParticipant = chat.participants.some(p => p.toString() === req.user._id.toString());
+        if (!isParticipant && req.user.role !== 'Admin') {
+            return res.status(403).json({ status: 'error', message: 'Access denied. You are not a participant in this chat.' });
+        }
+
         const messages = await Message.find({ chat: chatId })
             .sort({ createdAt: -1 })
             .skip(skip)
@@ -100,6 +109,14 @@ const sendMessage = async (req, res, next) => {
 
         // 3. Update Chat state
         const chat = await Chat.findById(targetChatId);
+        if (!chat) return res.status(404).json({ status: 'error', message: 'Chat not found' });
+
+        // IDOR FIX: Verify membership BEFORE allowing message injection
+        const isParticipant = chat.participants.some(p => p.toString() === req.user._id.toString());
+        if (!isParticipant && req.user.role !== 'Admin') {
+            return res.status(403).json({ status: 'error', message: 'Access denied. You are not a participant in this chat.' });
+        }
+
         chat.lastMessage = message._id;
         
         // Increment unread for all participants except sender

@@ -21,7 +21,8 @@ const { uploadAvatar, uploadCoverImage, updateProfile, changePassword, removeAva
 router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, loginUser);
 router.post('/refresh', authLimiter, refreshTokenUser);
-router.get('/logout', logoutUser);
+router.get('/logout', protect, logoutUser); // Note: Keep GET for legacy support but add protect
+router.post('/logout', protect, logoutUser);
 router.get('/verify-email/:token', authLimiter, verifyEmail);
 router.post('/resend-verification', authLimiter, resendVerification);
 router.get('/me', optionalProtect, getMe);

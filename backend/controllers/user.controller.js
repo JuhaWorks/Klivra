@@ -495,7 +495,7 @@ const getPublicProfile = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            data: userToView
+            data: formatUserResponse(userToView)
         });
     } catch (error) {
         next(error);
