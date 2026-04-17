@@ -306,13 +306,13 @@ const ProjectWhiteboard = () => {
         <article className="h-screen flex flex-col overflow-hidden bg-base selection:bg-theme/30 transition-colors duration-500">
             {/* Header: Project Context & Global Actions */}
             <header className="shrink-0 z-[100] px-4 sm:px-8 py-3 sm:py-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-default bg-surface/40 backdrop-blur-3xl">
-                <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-6">
-                    <div className="space-y-1">
+                <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-6 min-w-0">
+                    <div className="space-y-1 shrink-0">
                         <div className="flex items-center gap-2 text-theme font-black text-[9px] uppercase tracking-[0.3em]">
                             <Sparkles className="w-3 h-3" />
                             <span>Brainstorm Hub</span>
                         </div>
-                        <h1 className="text-2xl font-black text-primary tracking-tighter">Whiteboard.</h1>
+                        <h1 className="text-xl sm:text-2xl font-black text-primary tracking-tighter">Whiteboard.</h1>
                     </div>
 
                     <div className="h-10 w-px bg-white/10 mx-2" />
@@ -324,7 +324,7 @@ const ProjectWhiteboard = () => {
                             className="h-10 sm:h-12 flex items-center gap-2 sm:gap-3 px-3 sm:px-5 bg-sunken rounded-xl sm:rounded-2xl border border-default hover:border-theme/40 transition-all group active:scale-95 shadow-lg shadow-black/5"
                         >
                             <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 group-hover:text-theme transition-colors" />
-                            <span className="text-[9px] sm:text-[11px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap max-w-[80px] sm:max-w-none truncate">
+                            <span className="text-[9px] sm:text-[11px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap max-w-[60px] xs:max-w-[100px] sm:max-w-none truncate">
                                 {activeProject ? activeProject.name : 'Select Project'}
                             </span>
                             <ChevronDown className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-600 transition-transform", isFilterOpen && "rotate-180")} />

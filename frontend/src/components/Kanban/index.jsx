@@ -205,7 +205,7 @@ const KanbanColumn = React.memo(({
     onToggleCompact,
 }) => {
     return (
-        <div className="flex flex-col h-full" style={{ minWidth: 280, flex: 1 }}>
+        <div className="flex flex-col h-full" style={{ minWidth: window.innerWidth < 768 ? '100%' : 280, flex: 1 }}>
             <ColumnHeader 
                 col={col} 
                 onQuickAdd={onQuickAddOpen} 
@@ -790,7 +790,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                     {/* Columns */}
                     <div className="flex-1 flex flex-col min-h-0" ref={boardRef}>
                         {filteredTasksByView.type === 'standard' ? (
-                            <div className="flex flex-1 gap-4 overflow-x-auto pb-4 items-stretch h-full px-1">
+                            <div className="flex flex-col md:flex-row flex-1 gap-6 md:gap-4 md:overflow-x-auto pb-4 items-stretch h-full px-1">
                                 {boardColumns.map(col => (
                                     <KanbanColumn
                                         key={col.id}

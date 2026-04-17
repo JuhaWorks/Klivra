@@ -908,8 +908,8 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                                 <p className="text-[8px] lg:text-[10px] font-black text-tertiary/40 tracking-[0.2em] lg:tracking-[0.6em] uppercase mt-2">Strategic Oversight Interface</p>
                             </div>
                         </div>
-                        <div className="flex items-center justify-between lg:justify-end gap-4">
-                             <div className="flex items-center gap-4 lg:gap-8 px-4 lg:px-8 py-3 bg-sunken border border-glass rounded-[1.5rem] overflow-x-auto">
+                        <div className="grid grid-cols-2 sm:flex sm:items-center justify-between lg:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
+                             <div className="col-span-2 flex items-center gap-4 lg:gap-8 px-4 lg:px-8 py-3 bg-sunken border border-glass rounded-[1.5rem] overflow-x-auto">
                                 {[
                                     { label: 'Total Tasks', value: filteredTasks.length, unit: 'Units' },
                                     { label: 'Capacity', value: project?.members?.length || 0, unit: 'Members' },
@@ -948,7 +948,7 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                     </div>
                 </header>
 
-                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-0 lg:overflow-hidden relative">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 min-h-0 lg:overflow-hidden relative">
                     {MATRIX_CONFIG.quadrants.map(q => (
                         <MatrixQuadrant key={q.id} quadrant={q} tasks={categorized[q.id]} onOpen={onOpenTask} onDrop={handleDrop} isBatchMode={isBatchMode} selectedIds={selectedIds} onSelect={(id) => setSelectedIds(pv => pv.includes(id) ? pv.filter(x => x !== id) : [...pv, id])} page={quadrantPages[q.id]} onPageChange={(p) => setQuadrantPages(pv => ({ ...pv, [q.id]: p }))} />
                     ))}

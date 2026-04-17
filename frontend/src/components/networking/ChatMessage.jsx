@@ -261,19 +261,19 @@ const ChatMessageComponent = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: 'spring', damping: 25, stiffness: 400 }}
             className={cn(
-                'group flex w-full gap-2 px-4 select-none',
+                'group flex w-full gap-2 px-3 sm:px-4 select-none',
                 isMe ? 'flex-row-reverse' : 'flex-row',
-                isFirstInGroup ? 'mt-3' : 'mt-[2px]',
-                isLastInGroup ? 'mb-1' : 'mb-0'
+                isFirstInGroup ? 'mt-2 sm:mt-3' : 'mt-[1.5px] sm:mt-[2px]',
+                isLastInGroup ? 'mb-0.5 sm:mb-1' : 'mb-0'
             )}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
         >
             {/* Avatar Column */}
             {!isMe && (
-                <div className="w-8 shrink-0 flex flex-col justify-end">
+                <div className="w-7 sm:w-8 shrink-0 flex flex-col justify-end">
                     <div className={cn(
-                        'w-7 h-7 rounded-full overflow-hidden bg-surface shadow-sm transition-opacity duration-200 mb-0.5',
+                        'w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden bg-surface shadow-sm transition-opacity duration-200 mb-0.5',
                         isLastInGroup ? 'opacity-100' : 'opacity-0'
                     )}>
                         <img
@@ -289,7 +289,7 @@ const ChatMessageComponent = ({
             {/* Message Column */}
             <div className={cn('flex flex-col flex-1', isMe ? 'items-end' : 'items-start', 'max-w-[85%]')}>
                 {showName && !isMe && isFirstInGroup && (
-                    <span className="text-[11px] font-semibold text-tertiary mb-1 ml-1 tracking-wide">
+                    <span className="text-[10px] sm:text-[11px] font-semibold text-tertiary mb-0.5 sm:mb-1 ml-1 tracking-wide">
                         {message.sender?.name}
                     </span>
                 )}
@@ -328,18 +328,18 @@ const ChatMessageComponent = ({
                     </AnimatePresence>
 
                     {/* Chat Bubble Layout */}
-                    <div className="flex flex-col max-w-[85%] sm:max-w-[75%]">
+                    <div className="flex flex-col max-w-[92%] sm:max-w-[75%]">
                         {/* Reply Quote Block */}
                         {message.replyTo && !isDeleted && (
                             <div className={cn(
-                                'px-3 py-2 rounded-xl mb-1 border-l-[3px] bg-theme/5 max-w-[240px]',
+                                'px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl mb-1 border-l-[3px] bg-theme/5 max-w-[240px]',
                                 isMe ? 'self-end border-theme/50' : 'self-start border-theme/30'
                             )}>
-                                <p className="text-[10px] font-bold text-theme uppercase tracking-wider mb-0.5 flex items-center gap-1">
-                                    <CornerUpLeft className="w-3 h-3" />
+                                <p className="text-[9px] sm:text-[10px] font-bold text-theme uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                                    <CornerUpLeft className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                     {message.replyTo.sender?.name || 'Reply'}
                                 </p>
-                                <p className="text-[12px] text-primary truncate opacity-80">
+                                <p className="text-[11px] sm:text-[12px] text-primary truncate opacity-80">
                                     {message.replyTo.deleted ? 'Message removed' : message.replyTo.content}
                                 </p>
                             </div>
@@ -392,13 +392,13 @@ const ChatMessageComponent = ({
                                     </div>
                                 ) : (
                                     <div className={cn(
-                                        'px-4 py-2.5 text-[15px] leading-[1.4] transition-all',
+                                        'px-3.5 py-1.5 sm:px-4 sm:py-2.5 text-[13.5px] sm:text-[15px] leading-[1.4] transition-all',
                                         bubbleRadius,
                                         isMe
-                                            ? cn('bg-blue-600 text-white shadow-sm', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                            : cn('bg-gray-100 dark:bg-[#2A2B32] text-gray-900 dark:text-gray-100 shadow-sm', isError && 'ring-2 ring-danger')
+                                            ? cn('bg-blue-600 text-white shadow-sm font-medium', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
+                                            : cn('bg-gray-100 dark:bg-[#2A2B32] text-gray-900 dark:text-gray-100 shadow-sm font-medium', isError && 'ring-2 ring-danger')
                                     )}>
-                                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                                        <p className="whitespace-pre-wrap break-words tracking-tight">{message.content}</p>
                                     </div>
                                 )}
                             </motion.div>

@@ -5,6 +5,7 @@ const ProjectInvitation = require('../models/projectInvitation.model');
 const crypto = require('crypto');
 const { logActivity } = require('../utils/activityLogger');
 const { sendStandardEmail, getFrontendUrl } = require('../utils/helpers');
+const notificationService = require('./notification.service');
 
 /**
  * Service to handle all project member related operations.
@@ -108,6 +109,22 @@ class ProjectMemberService {
                 role: finalRole,
                 status: 'pending'
             }, 'Security', { session });
+            
+            // ── SEND REAL-TIME NOTIFICATION (TOAST + HISTORY) ──
+            await notificationService.notify({
+                recipientId: userToAdd._id,
+                senderId: actorId,
+                type: 'Assignment', // Maps to project invitation/assignment
+                priority: 'High',
+                title: 'New Project Invitation',
+                message: `You've been invited to join the project "${project.name}" as a ${finalRole}.`,
+                link: '/projects?tab=invites',
+                metadata: {
+                    projectId: project._id,
+                    projectName: project.name,
+                    role: finalRole
+                }
+            }).catch(err => console.error(`[INVITE_NOTIFY_ERROR] ${err.message}`));
 
             // Prepare socket update
             result = {

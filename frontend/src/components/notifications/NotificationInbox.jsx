@@ -101,9 +101,27 @@ const NotificationInbox = ({ isOpen, onClose, onUnreadCountChange }) => {
         try {
             await api.patch(`/notifications/${id}/archive`);
             setNotifications(prev => prev.filter(n => n._id !== id));
-            // Trigger unread count recalculation if needed
         } catch (error) {
             console.error("Failed to archive notification:", error);
+        }
+    };
+
+    const handleInviteResponse = async (notificationId, projectId, status) => {
+        try {
+            // 1. Send the response to the project API
+            await api.post(`/projects/${projectId}/invitations/respond`, { status });
+            
+            // 2. Mark notification as read and archive/hide it
+            await markAsRead(notificationId);
+            
+            toast.success(`Invitation ${status === 'active' ? 'accepted' : 'declined'}!`, {
+                style: { borderRadius: '12px', background: '#09090b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }
+            });
+
+            // Refresh notifications to reflect changes
+            fetchNotifications();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Action failed");
         }
     };
 
@@ -234,14 +252,18 @@ const NotificationInbox = ({ isOpen, onClose, onUnreadCountChange }) => {
                                                     </p>
                                                     
                                                     <div className="flex items-center justify-between mt-4">
-                                                        {!n.isRead ? (
-                                                            <button 
-                                                                onClick={(e) => { e.preventDefault(); markAsRead(n._id); }}
-                                                                className="text-[10px] font-black text-theme hover:underline uppercase tracking-tighter"
-                                                            >
-                                                                Mark as read
-                                                            </button>
-                                                        ) : <div />}
+                                                        <div className="flex items-center gap-3">
+                                                            {!n.isRead ? (
+                                                                <button 
+                                                                    onClick={(e) => { e.preventDefault(); markAsRead(n._id); }}
+                                                                    className="text-[10px] font-black text-theme hover:underline uppercase tracking-tighter"
+                                                                >
+                                                                    Mark as read
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-[10px] font-bold text-tertiary/40 uppercase tracking-tighter">Read</span>
+                                                            )}
+                                                        </div>
                                                         
                                                         <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button 
@@ -253,6 +275,30 @@ const NotificationInbox = ({ isOpen, onClose, onUnreadCountChange }) => {
                                                             </button>
                                                         </div>
                                                     </div>
+
+                                                    {/* Inline Actions for Invitations */}
+                                                    {n.type === 'Assignment' && !n.isRead && n.metadata?.projectId && (
+                                                        <div className="mt-4 flex gap-2 border-t border-white/5 pt-4">
+                                                            <button
+                                                                onClick={(e) => { 
+                                                                    e.preventDefault(); 
+                                                                    handleInviteResponse(n._id, n.metadata.projectId, 'active'); 
+                                                                }}
+                                                                className="flex-1 py-2 rounded-xl bg-success/10 hover:bg-success/20 border border-success/20 text-[10px] font-black text-success uppercase tracking-widest transition-all"
+                                                            >
+                                                                Accept
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { 
+                                                                    e.preventDefault(); 
+                                                                    handleInviteResponse(n._id, n.metadata.projectId, 'rejected'); 
+                                                                }}
+                                                                className="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-black text-tertiary uppercase tracking-widest transition-all"
+                                                            >
+                                                                Decline
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 

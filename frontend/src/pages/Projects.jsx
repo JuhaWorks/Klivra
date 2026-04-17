@@ -156,7 +156,7 @@ const Projects = () => {
 
                     <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                         {/* Segmented Control */}
-                        <div className="flex p-1.5 glass-2 bg-sunken border-glass rounded-[1.75rem] sm:rounded-[2rem]">
+                        <div className="flex p-1.5 glass-2 bg-sunken border-glass rounded-[1.75rem] sm:rounded-[2rem] overflow-x-auto no-scrollbar max-w-full">
                             {[
                                 { id: 'active', label: 'Active', count: activeProjects.length || 0, icon: Box },
                                 { id: 'archived', label: 'Archived', count: archivedProjects.length || 0, icon: Trash2 },
@@ -166,7 +166,7 @@ const Projects = () => {
                                     key={tab.id}
                                     onClick={() => startTransition(() => setView(tab.id))}
                                     className={twMerge(clsx(
-                                        "flex items-center gap-3 px-4 sm:px-6 py-2.5 rounded-2xl text-[10px] sm:text-xs font-black transition-all relative overflow-hidden",
+                                        "flex items-center gap-2 sm:gap-3 px-3.5 sm:px-6 py-2.5 rounded-2xl text-[10px] sm:text-xs font-black transition-all relative overflow-hidden shrink-0",
                                         view === tab.id ? "text-theme" : "text-tertiary hover:text-secondary"
                                     ))}
                                 >

@@ -298,6 +298,7 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
     const [view, setView] = useState('list'); // 'list' | 'new'
     const [contextMenu, setContextMenu] = useState(null);
     const { user } = useAuthStore();
+    const { onlineUsers } = useSocketStore();
     const { archiveChat, deleteChat, sendMessage } = useChatStore();
     const menuRef = useRef(null);
     const memberInputRef = useRef(null);
@@ -462,6 +463,13 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
                         transition={{ duration: 0.18 }}
                         className="flex-1 flex flex-col min-h-0"
                     >
+                        {/* Online Now Pulse */}
+                        <OnlinePulse 
+                            users={onlineUsers} 
+                            currentUser={user}
+                            onSelectUser={handleStartNewConversation} 
+                        />
+
                         {/* Search bar */}
                         <div className="px-5 mb-3">
                             <div className="relative group">
@@ -606,11 +614,79 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
     );
 };
 
+// ─── Online Pulse ─────────────────────────────────────────────────────────────
+const OnlinePulse = ({ users, currentUser, onSelectUser }) => {
+    const displayUsers = users.filter(u => u.userId !== currentUser?._id);
+    
+    if (displayUsers.length === 0) return null;
+
+    return (
+        <div className="px-5 mb-4 shrink-0 transition-all animate-in fade-in slide-in-from-top-2 duration-500">
+            <h3 className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-3 opacity-30">Active Now</h3>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar py-1">
+                {displayUsers.map((u) => (
+                    <div key={u.userId} className="relative group/user">
+                        <button
+                            onClick={() => onSelectUser({ _id: u.userId, name: u.name, avatar: u.avatar })}
+                            className="flex flex-col items-center gap-2 group shrink-0"
+                        >
+                            <div className="relative">
+                                <div className="w-12 h-12 rounded-2xl overflow-hidden border-[2px] border-glass bg-sunken group-hover:border-theme/50 transition-all duration-300 group-active:scale-95 shadow-lg group-hover:shadow-theme/10">
+                                    <img 
+                                        src={getOptimizedAvatar(u.avatar, 'sm', u.name)} 
+                                        className="w-full h-full object-cover" 
+                                        referrerPolicy="no-referrer"
+                                        alt="" 
+                                    />
+                                </div>
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-[3px] border-surface shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-status-pulse" />
+                            </div>
+                            <span className="text-[9px] font-black text-primary truncate w-12 text-center opacity-60 group-hover:opacity-100 transition-opacity uppercase tracking-tighter">
+                                {u.name.split(' ')[0]}
+                            </span>
+                        </button>
+
+                        {/* Professional Quick Card on Hover */}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-40 z-50 opacity-0 pointer-events-none group-hover/user:opacity-100 group-hover/user:pointer-events-auto transition-all duration-300 translate-y-2 group-hover/user:translate-y-0">
+                            <div className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 shadow-huge overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-theme/5 to-transparent pointer-events-none" />
+                                <div className="relative z-10 flex flex-col items-center gap-2">
+                                    <p className="text-[11px] font-black text-white truncate w-full text-center">{u.name}</p>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 bg-success rounded-full animate-status-pulse" />
+                                        <span className="text-[9px] font-bold text-success uppercase tracking-wider">Active</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => onSelectUser({ _id: u.userId, name: u.name, avatar: u.avatar })}
+                                        className="mt-1 w-full py-1.5 rounded-xl bg-theme/10 hover:bg-theme/20 border border-theme/20 text-[9px] font-black text-theme uppercase tracking-wider transition-all"
+                                    >
+                                        Quick Message
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
 // ─── Helper: human-readable last message preview ─────────────────────────────
-const formatLastMessage = (msg, currentUserId) => {
+const formatLastMessage = (msg, currentUserId, chatType) => {
     if (!msg) return 'No messages yet.';
     const isMe = (msg.sender?._id || msg.sender) === currentUserId;
-    const prefix = isMe ? 'You: ' : '';
+    
+    let prefix = '';
+    if (isMe) {
+        prefix = 'You: ';
+    } else if (chatType === 'group') {
+        // Show first name of sender in group chats
+        const name = msg.sender?.name?.split(' ')[0] || 'Member';
+        prefix = `${name}: `;
+    }
+
     if (msg.deleted) return `${prefix}Message removed`;
     if (msg.type === 'image') return `${prefix}📷 Photo`;
     if (msg.type === 'video') return `${prefix}🎬 Video`;
@@ -620,11 +696,14 @@ const formatLastMessage = (msg, currentUserId) => {
 
 // ─── Chat List Item ────────────────────────────────────────────────────────────
 const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed }) => {
+    const { onlineUsers } = useSocketStore();
     const other = chat.type === 'private' 
         ? chat.participants.find(p => p._id !== user?._id)
         : null;
     const unreadCount = chat.unreadCounts?.[user?._id] || 0;
-    const isOnline = other?.status === 'Online';
+    
+    // Use ground-truth socket presence state
+    const isOnline = other && onlineUsers.some(u => u.userId === other._id);
 
 
     return (
@@ -664,7 +743,7 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed 
                 </div>
                 <div className="flex items-center justify-between">
                     <p className="text-[11px] truncate text-tertiary font-bold opacity-60 flex-1 pr-4">
-                        {formatLastMessage(chat.lastMessage, user?._id)}
+                        {formatLastMessage(chat.lastMessage, user?._id, chat.type)}
                     </p>
                     {unreadCount > 0 && (
                         <div className="px-1.5 py-0.5 min-w-[18px] h-[18px] bg-neutral-900 rounded-full flex items-center justify-center">
@@ -680,6 +759,7 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed 
 // ─── Chat Box ─────────────────────────────────────────────────────────────────
 const ChatBox = ({ chat, onBack, isBubbleMode }) => {
     const { user } = useAuthStore();
+    const { onlineUsers } = useSocketStore();
     const { messages, sendMessage, unsendMessage, toggleBubble, bubbledChatIds, typingUsers } = useChatStore();
     const { scrollRef, checkScroll, scrollToBottom } = useSmartScroll(messages[chat._id]);
     const [replyTo, setReplyTo] = useState(null);
@@ -687,6 +767,9 @@ const ChatBox = ({ chat, onBack, isBubbleMode }) => {
     const isBubbled = bubbledChatIds.includes(chat._id);
     const chatMessages = messages[chat._id] || [];
     const otherUser = chat.type === 'private' ? chat.participants.find(p => p._id !== user?._id) : null;
+    
+    // Status resolution
+    const isOnline = otherUser && onlineUsers.some(u => u.userId === otherUser._id);
     const typers = (typingUsers[chat._id] || []).filter(id => id !== user?._id);
 
     const groupedMessages = useMemo(() => {
@@ -740,7 +823,7 @@ const ChatBox = ({ chat, onBack, isBubbleMode }) => {
                             {chat.type === 'private' && (
                                 <div className={cn(
                                     "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-surface",
-                                    otherUser?.status === 'Online' ? "bg-success" : "bg-neutral-400"
+                                    isOnline ? "bg-success" : "bg-neutral-400"
                                 )} />
                             )}
                          </div>

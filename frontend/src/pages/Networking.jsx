@@ -764,7 +764,12 @@ const Networking = () => {
                 .net-scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
 
                 @media (max-width: 1024px) {
-                  .ent-header-hud { display: none !important; }
+                  .ent-header-hud { 
+                    display: flex !important; 
+                    flex-wrap: wrap; 
+                    gap: 16px;
+                    margin-top: 24px;
+                  }
                   .ent-h-metric { border: none !important; padding: 0 !important; }
                   .ent-greeting-area { flex-direction: column !important; align-items: flex-start !important; }
                 }
