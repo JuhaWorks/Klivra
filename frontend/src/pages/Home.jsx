@@ -16,6 +16,7 @@ import WeatherWidget from '../components/tools/Widgets/WeatherWidget';
 import GlobalClockWidget from '../components/tools/Widgets/GlobalClockWidget';
 import NotificationHistoryWidget from '../components/notifications/NotificationHistoryWidget';
 import QuoteWidget from '../components/tools/Widgets/QuoteWidget';
+import IntelligenceWidget from '../components/tools/Widgets/IntelligenceWidget';
 import { useSocketStore } from '../store/useSocketStore';
 import Button from '../components/ui/Button';
 import { DeadlinePopup } from '../components/projects/ProjectShared';
@@ -45,18 +46,8 @@ const Home = () => {
     const queryClient = useQueryClient();
     const canViewActivity = !!user;
 
-    const [liveActivity, setLiveActivity] = useState([]);
     const [selectedTask, setSelectedTask] = useState(null);
     const [expandedTaskId, setExpandedTaskId] = useState(null);
-    const [feedFilter, setFeedFilter] = useState('All');
-    const [intelMode, setIntelMode] = useState('workspace');
-
-    useEffect(() => {
-        if (!socket) return;
-        const handleRealTimeActivity = (event) => setLiveActivity(prev => [event, ...prev].slice(0, 50));
-        socket.on('workspace_activity', handleRealTimeActivity);
-        return () => socket.off('workspace_activity', handleRealTimeActivity);
-    }, [socket]);
 
     const [greeting, setGreeting] = useState('');
     useEffect(() => {
@@ -67,13 +58,6 @@ const Home = () => {
     }, []);
 
     const dateString = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-
-    const { data: actRes, isLoading: actLoading } = useQuery({
-        queryKey: ['activityFeed'],
-        queryFn: async ({ signal }) => (await api.get('/audit?limit=50', { signal })).data,
-        staleTime: 1000 * 60 * 5,
-        enabled: canViewActivity,
-    });
 
     const { data: projRes } = useQuery({
         queryKey: ['projects'],
@@ -109,16 +93,17 @@ const Home = () => {
         };
     }, [wsAnalytics]);
 
-    const initialActivity = actRes?.data || [];
-    const activity = useMemo(() => {
-        const combined = [...liveActivity, ...initialActivity];
-        const unique = Array.from(new Map(combined.map(item => [item._id, item])).values());
-        let filtered = unique.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        if (feedFilter === 'Tasks') filtered = filtered.filter(a => a.action?.startsWith('TASK_'));
-        else if (feedFilter === 'Security') filtered = filtered.filter(a => a.action?.includes('BANNED') || a.action?.includes('LOGIN') || a.action?.includes('ROLE'));
-        else if (feedFilter === 'Projects') filtered = filtered.filter(a => a.action?.startsWith('PROJECT_'));
-        return filtered;
-    }, [liveActivity, initialActivity, feedFilter]);
+
+    const taskStats = useMemo(() => {
+        const userId = user?._id;
+        const myTasks = allTasks.filter(t => t.assignee?._id === userId || t.assignees?.some(a => a._id === userId));
+        return {
+            total: myTasks.length,
+            pending: myTasks.filter(t => t.status === 'Pending').length,
+            active: myTasks.filter(t => t.status === 'In Progress').length,
+            urgent: myTasks.filter(t => (t.priority === 'Urgent' || (t.endDate && new Date(t.endDate) < new Date())) && t.status !== 'Completed').length
+        };
+    }, [allTasks, user]);
 
     const myFocusTasks = useMemo(() => {
         const userId = user?._id;
@@ -130,7 +115,7 @@ const Home = () => {
                 if (pMap[b.priority] !== pMap[a.priority]) return pMap[b.priority] - pMap[a.priority];
                 return (a.dueDate && b.dueDate) ? new Date(a.dueDate) - new Date(b.dueDate) : 0;
             })
-            .slice(0, 8);
+            .slice(0, 10);
     }, [allTasks, user]);
 
     const updateTaskMutation = useMutation({
@@ -188,190 +173,198 @@ const Home = () => {
                             {i < STATS.length - 1 && <div className="hidden md:block w-px h-6 bg-glass/5" />}
                         </div>
                     ))}
-                    <div className="ml-auto flex items-center pl-6 border-l border-glass/10 h-10">
-                        <Button variant="primary" leftIcon={Plus} as={Link} to="/projects" className="rounded-2xl h-11 px-8 shadow-glow-sm shadow-theme/10 font-black uppercase text-[10px] tracking-[0.2em] transition-all hover:scale-105 active:scale-95">
-                            New Project
-                        </Button>
-                    </div>
+                    {user?.role !== 'Admin' && (
+                        <div className="ml-auto flex items-center pl-6 border-l border-glass/10 h-10">
+                            <Button variant="primary" leftIcon={Plus} as={Link} to="/projects" className="rounded-2xl h-11 px-8 shadow-glow-sm shadow-theme/10 font-black uppercase text-[10px] tracking-[0.2em] transition-all hover:scale-105 active:scale-95">
+                                New Project
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                {/* PRIMARY BENTO BLOCK */}
-                <div className="col-span-12 lg:col-span-8 space-y-8">
-                    <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* COLUMN 1: ACTIVITY FEED (ADMIN FIXED VIEW) */}
+                {user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
+                    <div className="col-span-12 lg:col-span-3 space-y-6">
                         <div className="flex items-center justify-between px-2">
                             <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-theme shadow-glow-sm" />
-                                <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Critical Objects</h2>
+                                <div className="w-1 h-1 rounded-full bg-theme" />
+                                <h2 className="text-[9px] font-black text-primary uppercase tracking-[0.4em]">Activity Feed</h2>
                             </div>
-                            <span className="text-[8px] font-black text-tertiary/40 uppercase tracking-widest">{myFocusTasks.length} Live Signals</span>
                         </div>
-
-                        {myFocusTasks.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {myFocusTasks.map((t, i) => (
-                                    <Card key={t._id} variant="glass" padding="p-4" compact hideBorder className="group cursor-pointer bg-surface/5 hover:bg-surface/10 hover:shadow-panel transition-all duration-500 rounded-2xl"
-                                        onClick={() => setSelectedTask(t)}>
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="flex items-center gap-4 min-w-0">
-                                                <div className={cn("w-2 h-2 rounded-full shrink-0 shadow-sm", t.priority === 'Urgent' ? 'bg-danger animate-pulse' : 'bg-theme/40')} />
-                                                <div className="truncate">
-                                                    <p className="text-[14px] font-black text-primary truncate tracking-tight group-hover:text-theme transition-colors">{t.title}</p>
-                                                    <p className="text-[9px] font-bold text-tertiary uppercase tracking-widest mt-1 opacity-40">{t.project?.name}</p>
-                                                </div>
-                                            </div>
-                                            <div className="w-9 h-9 rounded-xl bg-sunken/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                                                <ArrowUpRight size={14} className="text-theme" />
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="py-10 flex items-center justify-center gap-6 bg-surface/5 backdrop-blur-md rounded-[2.5rem] shadow-panel relative overflow-hidden group border-none">
-                                <div className="absolute inset-0 bg-gradient-to-r from-theme/5 via-transparent to-transparent opacity-30 pointer-events-none" />
-                                <div className="w-12 h-12 rounded-full bg-theme/5 flex items-center justify-center">
-                                    <CheckCircle2 className="w-6 h-6 text-theme/40 group-hover:text-theme transition-colors" />
-                                </div>
-                                <span className="text-[11px] font-black text-theme uppercase tracking-[0.6em] opacity-30 group-hover:opacity-60 transition-opacity">Signals Clear // Stable Runway</span>
-                            </div>
-                        )}
+                        <IntelligenceWidget fixed />
                     </div>
+                )}
 
-                    {/* INTELLIGENCE FEED */}
-                    <Card variant="glass" padding="p-0" hideBorder className="rounded-[2.5rem] overflow-hidden bg-surface/5 backdrop-blur-3xl shadow-panel">
-                        <div className="px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface/5">
-                            <div className="flex items-center gap-6">
-                                <div>
-                                    <h3 className="text-lg font-black text-primary tracking-tight uppercase">Intelligence Center</h3>
-                                    <p className="text-[9px] font-black text-tertiary uppercase tracking-widest mt-1 opacity-30">Live Workspace Audit</p>
-                                </div>
-                                <div className="flex items-center gap-1 bg-sunken/30 p-1 rounded-xl shadow-inner">
-                                    {['WORKSPACE', 'PERSONAL'].map(m => (
-                                        <button key={m} onClick={() => setIntelMode(m.toLowerCase())}
-                                            className={cn("px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                                intelMode === m.toLowerCase() ? "bg-theme text-primary shadow-glow-sm shadow-theme/20" : "text-tertiary hover:text-primary")}>
-                                            {m}
-                                        </button>
-                                    ))}
-                                </div>
+                {/* COLUMN 2: ACTIVE TASKS (CENTER / CONCENTRATED) */}
+                <div className={cn(
+                    "col-span-12 space-y-6 lg:border-glass/10",
+                    (user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false) 
+                        ? "lg:col-span-5 lg:border-x px-6" 
+                        : "lg:col-span-8"
+                )}>
+                    <div className="flex items-center justify-between px-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-theme shadow-glow-sm" />
+                            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Active Tasks</h2>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1 h-1 rounded-full bg-theme" />
+                                <span className="text-[8px] font-black text-primary uppercase">{taskStats.active} In Play</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                {['All', 'Tasks', 'Security'].map(f => (
-                                    <button key={f} onClick={() => setFeedFilter(f)}
-                                        className={cn("px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                            feedFilter === f ? "bg-theme/10 text-theme" : "text-tertiary hover:text-primary")}>
-                                        {f}
-                                    </button>
-                                ))}
+                                <span className="w-1 h-1 rounded-full bg-danger animate-pulse" />
+                                <span className="text-[8px] font-black text-danger uppercase">{taskStats.urgent} Critical</span>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="h-[420px] overflow-y-auto custom-scrollbar p-5 space-y-2.5">
-                            {actLoading ? (
-                                <div className="space-y-2">{[...Array(6)].map((_, i) => <ActivitySkeleton key={i} delay={i * 0.1} />)}</div>
-                            ) : activity.length > 0 ? (
-                                <div className="space-y-3">
-                                    {activity.map((a, i) => (
-                                        <motion.div key={a._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }}
-                                            className="group flex items-center justify-between p-3.5 rounded-2xl bg-surface/5 hover:bg-surface/10 hover:shadow-sm transition-all duration-500 cursor-default">
-                                            <div className="flex items-center gap-4 min-w-0">
-                                                <div className="w-9 h-9 rounded-xl bg-sunken border border-glass/10 flex items-center justify-center font-black text-[10px] text-theme group-hover:bg-theme/5 transition-all shrink-0 shadow-sm">
-                                                    {a.user?.name?.charAt(0) || 'S'}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[13px] text-secondary font-medium group-hover:text-primary transition-colors truncate">
-                                                        {renderActivityNarrative(a)}
-                                                    </p>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <Clock size={10} className="text-tertiary opacity-40" />
-                                                        <p className="text-[9px] font-bold text-tertiary uppercase tracking-widest opacity-20">
-                                                            {new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
-                                                </div>
+                    <Card variant="glass" padding="p-0" hideBorder className="rounded-[2.5rem] overflow-hidden bg-surface/5 backdrop-blur-3xl shadow-panel border border-glass/5">
+                        <div className="px-6 py-4 grid grid-cols-[1.5fr_2fr_1.2fr] gap-4 bg-sunken/40 border-b border-glass/5 text-[8px] font-black text-tertiary uppercase tracking-widest opacity-40">
+                            <span>Task Identifier</span>
+                            <span>Current Status</span>
+                            <span className="text-right">Priority Level</span>
+                        </div>
+
+                        <div className="max-h-[580px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+                            {myFocusTasks.length > 0 ? (
+                                myFocusTasks.map((t, i) => (
+                                    <motion.div key={t._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                                        className="grid grid-cols-[1.5fr_2fr_1.2fr] gap-4 items-center p-3 rounded-2xl hover:bg-theme/5 transition-all group cursor-pointer border border-transparent hover:border-theme/10"
+                                        onClick={() => setSelectedTask(t)}>
+                                        <div className="min-w-0">
+                                            <span className="inline-block px-1.5 py-0.5 rounded text-[7px] font-black bg-theme/10 border border-theme/20 text-theme uppercase mb-1">
+                                                {t.project?.name?.slice(0, 10) || 'GENERAL'}
+                                            </span>
+                                            <p className="text-[12px] font-black text-primary truncate tracking-tight group-hover:text-theme transition-colors">{t.title}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex flex-col gap-1">
+                                                <span className={cn(
+                                                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest w-fit",
+                                                    t.status === 'In Progress' ? "bg-theme/10 text-theme border border-theme/20" : "bg-sunken text-tertiary/60 border border-glass/10"
+                                                )}>{t.status}</span>
                                             </div>
-                                            <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 ml-4">
-                                                <div className="px-2 py-0.5 rounded-md bg-theme/5 border border-theme/10 text-[7px] font-black text-theme uppercase tracking-widest">
-                                                    {a.action?.split('_')[0]}
-                                                </div>
+                                        </div>
+                                        <div className="flex items-center justify-end gap-3 min-w-0">
+                                            <div className={cn(
+                                                "px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest",
+                                                t.priority === 'Urgent' ? "text-danger bg-danger/10 border border-danger/20 shadow-glow-sm shadow-danger/10" : 
+                                                t.priority === 'High' ? "text-theme bg-theme/10 border border-theme/20" : "text-tertiary bg-sunken/40"
+                                            )}>
+                                                {t.priority}
                                             </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
+                                            <ArrowUpRight size={12} className="text-theme opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 shrink-0" />
+                                        </div>
+                                    </motion.div>
+                                ))
                             ) : (
-                                <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
-                                    <Activity size={40} className="mb-4" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">Zero Signals Detected</p>
+                                <div className="py-20 flex flex-col items-center justify-center gap-4 opacity-20">
+                                    <CheckCircle2 className="w-10 h-10 text-theme" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">No Active Tasks</p>
                                 </div>
                             )}
                         </div>
                     </Card>
-                </div>
 
-                {/* SIDEBAR UTILITY BENTO GRID */}
-                <aside className="col-span-12 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 lg:sticky lg:top-8">
-                    {/* FRONT VISIBLE INSPIRATION */}
-                    {user?.interfacePrefs?.showQuote !== false && <QuoteWidget />}
-
-                    {/* Team Locator */}
-                    {user?.interfacePrefs?.showTeamClock !== false && (
-                        <div className="space-y-1">
-                            <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.4em] px-2 opacity-30">Timeline</h3>
-                            <GlobalClockWidget />
+                    {/* NASA APOD (Relocated below Matrix) */}
+                    {user?.interfacePrefs?.showApod !== false && (
+                        <div className="mt-8">
+                            <ApodWidget />
                         </div>
                     )}
 
-                    <Card variant="glass" padding="p-5" className="rounded-2xl border-danger/10 bg-danger/5">
-                        <div className="flex items-center gap-2.5 mb-5">
-                            <ShieldAlert className="w-4 h-4 text-danger" />
-                            <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Strategic Threats</h4>
-                        </div>
-                        <div className="space-y-2.5">
-                            {ws.bottlenecks?.slice(0, 3).map((task) => (
-                                <div key={task._id} onClick={() => setSelectedTask(task)}
-                                    className="p-2.5 rounded-xl bg-sunken border border-glass hover:border-danger/40 transition-all cursor-pointer group">
-                                    <p className="text-[11px] font-bold text-primary truncate group-hover:text-danger">{task.title}</p>
-                                    <div className="flex items-center justify-between mt-1.5">
-                                        <span className="text-[7px] font-black text-danger uppercase tracking-widest bg-danger/10 px-1.5 py-0.5 rounded">Critical Risk</span>
-                                        <span className="text-[7px] font-black text-tertiary uppercase tracking-widest opacity-30">{task.project?.name}</span>
-                                    </div>
+                    {/* Performance Stats (Relocated below APOD) */}
+                    <div className="mt-8">
+                        <Card variant="glass" padding="p-6" hideBorder className="rounded-[2.5rem] bg-surface/5 backdrop-blur-3xl shadow-panel border border-glass/5">
+                            <div className="flex items-center justify-between gap-3 mb-6">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="w-3.5 h-3.5 text-theme" />
+                                    <h4 className="text-[10px] font-black text-primary uppercase tracking-widest opacity-60">Completion Rate</h4>
                                 </div>
-                            ))}
-                            {ws.bottlenecks?.length === 0 && <p className="text-[8px] font-black text-tertiary opacity-30 text-center py-2 uppercase tracking-widest">No threats detected</p>}
-                        </div>
-                    </Card>
-
-                    <Card variant="glass" padding="p-3" hideBorder className="rounded-[2rem] bg-surface/5 backdrop-blur-3xl shadow-panel">
-                        <div className="flex items-center justify-between gap-3 mb-3 px-1">
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="w-3 h-3 text-theme" />
-                                <h4 className="text-[9px] font-black text-primary uppercase tracking-widest opacity-60">Performance</h4>
+                                <div className="text-2xl font-black text-primary tracking-tighter tabular-nums flex items-baseline gap-0.5">
+                                    <Counter value={ws.completionPct} />
+                                    <span className="text-[10px] text-theme">%</span>
+                                </div>
                             </div>
-                            <div className="text-lg font-black text-primary tracking-tighter tabular-nums flex items-baseline gap-0.5">
-                                <Counter value={ws.completionPct} />
-                                <span className="text-[8px] text-theme">%</span>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-2xl bg-surface/5 border border-glass/5 flex flex-col gap-1">
+                                    <span className="text-[8px] font-black text-tertiary uppercase tracking-widest opacity-40">Resolved</span>
+                                    <span className="text-lg font-black text-primary leading-none">{ws.completedTasks || 0}</span>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-surface/5 border border-glass/5 flex flex-col gap-1">
+                                    <span className="text-[8px] font-black text-tertiary uppercase tracking-widest opacity-40">In Play</span>
+                                    <span className="text-lg font-black text-primary leading-none">{(ws.totalTasks || 0) - (ws.completedTasks || 0)}</span>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="p-2 rounded-xl bg-surface/5 flex items-center justify-between px-3">
-                                <span className="text-[7px] font-black text-tertiary uppercase tracking-widest opacity-40">Done</span>
-                                <span className="text-xs font-black text-primary leading-none">{ws.completedTasks || 0}</span>
-                            </div>
-                            <div className="p-2 rounded-xl bg-surface/5 flex items-center justify-between px-3">
-                                <span className="text-[7px] font-black text-tertiary uppercase tracking-widest opacity-40">Wait</span>
-                                <span className="text-xs font-black text-primary leading-none">{(ws.totalTasks || 0) - (ws.completedTasks || 0)}</span>
-                            </div>
-                        </div>
-                    </Card>
-
-                    <div className="grid grid-cols-1 gap-5">
-                        {user?.interfacePrefs?.showWeather !== false && <WeatherWidget />}
-                        {user?.interfacePrefs?.showApod !== false && <ApodWidget />}
+                        </Card>
                     </div>
-                </aside>
+                </div>
+
+                {/* COLUMN 3: DASHBOARD UTILITIES (SIDEBAR) */}
+                <div className="col-span-12 lg:col-span-4 space-y-8">
+                    <div className="flex items-center justify-between px-2">
+                        <div className="flex items-center gap-3">
+                            <Activity size={14} className="text-theme opacity-50" />
+                            <h2 className="text-[9px] font-black text-primary uppercase tracking-[0.4em] opacity-40">Dashboard Utilities</h2>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        {/* Daily Inspiration (Top of Sidebar) */}
+                        {user?.interfacePrefs?.showQuote !== false && <QuoteWidget />}
+
+                        {/* Global Sync (Minimalist) */}
+                        {user?.role !== 'Admin' && user?.interfacePrefs?.showTeamClock !== false && (
+                            <div className="px-2">
+                                <GlobalClockWidget />
+                            </div>
+                        )}
+
+                        {/* Real-time Activity (Minimalist) */}
+                        {user?.role !== 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
+                            <div className="px-2">
+                                <IntelligenceWidget />
+                            </div>
+                        )}
+
+                        {/* Urgent Tasks (Simplified Sidebar View) */}
+                        <div className="px-2">
+                            <div className="space-y-2.5">
+                                {ws.bottlenecks?.slice(0, 3).map((task) => {
+                                    const isUrgent = task.priority?.toLowerCase() === 'urgent';
+                                    const isOverdue = task.endDate && new Date(task.endDate) < new Date();
+                                    const isCritical = isUrgent || isOverdue;
+
+                                    return (
+                                        <div key={task._id} onClick={() => setSelectedTask(task)}
+                                            className="group cursor-pointer flex items-center justify-between gap-3">
+                                            <p className="text-[10px] font-bold text-secondary group-hover:text-danger transition-colors truncate flex-1">{task.title}</p>
+                                            <span className={cn(
+                                                "text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0",
+                                                isCritical ? "text-danger bg-danger/10" : "text-tertiary bg-glass/10"
+                                            )}>
+                                                {isUrgent ? 'URG' : isOverdue ? 'DUE' : 'RISK'}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                                {ws.bottlenecks?.length === 0 && <p className="text-[7px] font-black text-tertiary opacity-30 uppercase tracking-widest px-1">Clearance Confirmed</p>}
+                            </div>
+                        </div>
+
+                        {/* Weather */}
+                        {user?.interfacePrefs?.showWeather !== false && (
+                            <div className="px-2 border-t border-glass/5 pt-6">
+                                <WeatherWidget />
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <AnimatePresence>

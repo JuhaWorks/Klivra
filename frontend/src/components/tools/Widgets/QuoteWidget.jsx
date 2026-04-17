@@ -44,7 +44,7 @@ const QuoteWidget = () => {
     }, []);
 
     return (
-        <div className="relative group overflow-hidden rounded-[2rem] bg-surface/5 backdrop-blur-3xl p-5 shadow-panel">
+        <div className="relative group overflow-hidden rounded-[2rem] bg-transparent p-5">
             {/* Background Accent */}
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-theme/10 rounded-full blur-[40px] pointer-events-none" />
             

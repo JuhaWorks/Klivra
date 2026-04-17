@@ -437,48 +437,50 @@ const SidebarComponent = () => {
                         ))}
 
                         {/* Special Action: Messages */}
-                        <button
-                            onClick={() => {
-                                useChatStore.getState().openChatList();
-                                if (isMobile) setSidebarExpanded(false);
-                            }}
-                            className={cn(
-                                "sidebar-nav-item group relative flex items-center transition-all duration-200 select-none",
-                                effectiveCollapsed 
-                                    ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
-                                    : "gap-3 px-3 py-2.5 rounded-xl w-full",
-                                isDrawerOpen ? "text-theme" : "text-tertiary hover:text-primary"
-                            )}
-                        >
-                             <span className={cn(
-                                "absolute inset-0 rounded-xl transition-opacity duration-200",
-                                effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
-                                isDrawerOpen ? "opacity-100" : "opacity-0"
-                            )} />
-                            <span className={cn(
-                                "absolute inset-0 transition-opacity duration-150",
-                                effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                "bg-sunken",
-                                isDrawerOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100"
-                            )} />
-                            <div className="relative z-10 w-5 h-5 flex items-center justify-center">
-                                <MessageSquare strokeWidth={isDrawerOpen ? 2 : 1.75} className="w-full h-full" />
-                                {unreadTotal > 0 && (
-                                    <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] p-0.5 bg-danger rounded-full border border-base text-[8px] font-black text-white flex items-center justify-center shadow-lg">
-                                        {unreadTotal > 9 ? '9+' : unreadTotal}
-                                    </div>
+                        {user?.role !== 'Admin' && (
+                            <button
+                                onClick={() => {
+                                    useChatStore.getState().openChatList();
+                                    if (isMobile) setSidebarExpanded(false);
+                                }}
+                                className={cn(
+                                    "sidebar-nav-item group relative flex items-center transition-all duration-200 select-none",
+                                    effectiveCollapsed 
+                                        ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
+                                        : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                                    isDrawerOpen ? "text-theme" : "text-tertiary hover:text-primary"
                                 )}
-                            </div>
-                            {!effectiveCollapsed && (
+                            >
                                 <span className={cn(
-                                    "relative z-10 text-sm truncate leading-tight transition-colors duration-150 flex-1 text-left",
-                                    isDrawerOpen ? "font-semibold text-theme" : "font-medium"
-                                )}>
-                                    Messages
-                                </span>
-                            )}
-                        </button>
+                                    "absolute inset-0 rounded-xl transition-opacity duration-200",
+                                    effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
+                                    "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
+                                    isDrawerOpen ? "opacity-100" : "opacity-0"
+                                )} />
+                                <span className={cn(
+                                    "absolute inset-0 transition-opacity duration-150",
+                                    effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
+                                    "bg-sunken",
+                                    isDrawerOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+                                )} />
+                                <div className="relative z-10 w-5 h-5 flex items-center justify-center">
+                                    <MessageSquare strokeWidth={isDrawerOpen ? 2 : 1.75} className="w-full h-full" />
+                                    {unreadTotal > 0 && (
+                                        <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] p-0.5 bg-danger rounded-full border border-base text-[8px] font-black text-white flex items-center justify-center shadow-lg">
+                                            {unreadTotal > 9 ? '9+' : unreadTotal}
+                                        </div>
+                                    )}
+                                </div>
+                                {!effectiveCollapsed && (
+                                    <span className={cn(
+                                        "relative z-10 text-sm truncate leading-tight transition-colors duration-150 flex-1 text-left",
+                                        isDrawerOpen ? "font-semibold text-theme" : "font-medium"
+                                    )}>
+                                        Messages
+                                    </span>
+                                )}
+                            </button>
+                        )}
                     </div>
                 </nav>
 

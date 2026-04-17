@@ -21,7 +21,8 @@ const generalSchema = z.object({
         showTeamClock: z.boolean().default(true),
         showWeather: z.boolean().default(true),
         showQuote: z.boolean().default(true),
-        showChatBubbles: z.boolean().default(true)
+        showChatBubbles: z.boolean().default(true),
+        showIntelligence: z.boolean().default(true)
     }).optional()
 });
 
@@ -42,7 +43,8 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                 showWeather: user?.interfacePrefs?.showWeather ?? true,
                 showApod: user?.interfacePrefs?.showApod ?? true,
                 showQuote: user?.interfacePrefs?.showQuote ?? true,
-                showChatBubbles: user?.interfacePrefs?.showChatBubbles ?? true
+                showChatBubbles: user?.interfacePrefs?.showChatBubbles ?? true,
+                showIntelligence: user?.interfacePrefs?.showIntelligence ?? true
             }
         },
     });
@@ -80,37 +82,39 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Dashboard Display</span>
                         </div>
                         
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Team Clock Toggle */}
-                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
-                                <div className="space-y-1">
-                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show Team Clocks</p>
-                                    <p className="text-[9px] text-tertiary font-medium">Display teammate locations on home dashboard</p>
+                            {user?.role !== 'Admin' && (
+                                <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                    <div className="space-y-1">
+                                        <p className="text-[11px] font-black text-primary uppercase tracking-widest">Team Clocks</p>
+                                        <p className="text-[9px] text-tertiary font-medium">Display teammate locations</p>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            const newVal = !watch('interfacePrefs.showTeamClock');
+                                            setValue('interfacePrefs.showTeamClock', newVal, { shouldDirty: true });
+                                            onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showTeamClock: newVal } });
+                                        }}
+                                        className={cn(
+                                            "w-10 h-5 rounded-full relative transition-all duration-300",
+                                            watch('interfacePrefs.showTeamClock') ? "bg-theme" : "bg-sunken border border-glass"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                            watch('interfacePrefs.showTeamClock') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                        )} />
+                                    </button>
                                 </div>
-                                <button 
-                                    type="button"
-                                    onClick={() => {
-                                        const newVal = !watch('interfacePrefs.showTeamClock');
-                                        setValue('interfacePrefs.showTeamClock', newVal, { shouldDirty: true });
-                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showTeamClock: newVal } });
-                                    }}
-                                    className={cn(
-                                        "w-10 h-5 rounded-full relative transition-all duration-300",
-                                        watch('interfacePrefs.showTeamClock') ? "bg-theme" : "bg-sunken border border-glass"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
-                                        watch('interfacePrefs.showTeamClock') ? "right-1 bg-primary" : "left-1 bg-tertiary"
-                                    )} />
-                                </button>
-                            </div>
+                            )}
 
                             {/* Weather Toggle */}
                             <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
                                 <div className="space-y-1">
-                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show Weather</p>
-                                    <p className="text-[9px] text-tertiary font-medium">Display current weather insights at home</p>
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Weather</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Current weather insights</p>
                                 </div>
                                 <button 
                                     type="button"
@@ -134,8 +138,8 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                             {/* NASA APOD Toggle */}
                             <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
                                 <div className="space-y-1">
-                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show NASA APOD</p>
-                                    <p className="text-[9px] text-tertiary font-medium">Display Astronomy Picture of the Day widget</p>
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">NASA APOD</p>
+                                    <p className="text-[9px] text-tertiary font-medium">NASA Astronomy Picture Feed</p>
                                 </div>
                                 <button 
                                     type="button"
@@ -159,8 +163,8 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                             {/* Daily Quote Toggle */}
                             <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
                                 <div className="space-y-1">
-                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show Daily Inspiration</p>
-                                    <p className="text-[9px] text-tertiary font-medium">Display Quote of the Day on your home dashboard</p>
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Inspiration</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Daily quote of the day</p>
                                 </div>
                                 <button 
                                     type="button"
@@ -184,8 +188,8 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                             {/* Global Chat Bubbles Toggle */}
                             <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
                                 <div className="space-y-1">
-                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Enable Messaging Bubbles</p>
-                                    <p className="text-[9px] text-tertiary font-medium">Allow specific chats to float at the bottom right</p>
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Chat Bubbles</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Enables floating chat circles</p>
                                 </div>
                                 <button 
                                     type="button"
@@ -196,7 +200,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                     }}
                                     className={cn(
                                         "w-10 h-5 rounded-full relative transition-all duration-300",
-                                        watch('interfacePrefs.showChatBubbles') ? "bg-theme" : "bg-sunken border border-glass"
+                                        watch('interfacePrefs.showChatBubbles') ? "right-1 bg-primary" : "left-1 bg-tertiary"
                                     )}
                                 >
                                     <div className={cn(
@@ -206,17 +210,39 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                 </button>
                             </div>
 
-                            {/* Individual Bubble Management */}
+                            {/* Intelligence Monitor Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Signals Feed</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Real-time intelligence feed</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !watch('interfacePrefs.showIntelligence');
+                                        setValue('interfacePrefs.showIntelligence', newVal, { shouldDirty: true });
+                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showIntelligence: newVal } });
+                                    }}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full relative transition-all duration-300",
+                                        watch('interfacePrefs.showIntelligence') ? "bg-theme" : "bg-sunken border border-glass"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                        watch('interfacePrefs.showIntelligence') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                    )} />
+                                </button>
+                            </div>
+
+                            {/* Individual Bubble Management - Moved inside form or separate container */}
                             {watch('interfacePrefs.showChatBubbles') && user?.interfacePrefs?.bubbledChats?.length > 0 && (
-                                <div className="mt-8 pt-8 border-t border-glass space-y-4">
+                                <div className="col-span-1 md:col-span-2 mt-4 pt-8 border-t border-glass space-y-4">
                                     <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.2em]">Currently Bubbled Conversations</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {user.interfacePrefs.bubbledChats.map((chatId) => {
-                                            // Find chat details if available in useChatStore
-                                            // For now, we'll just show the ID or a placeholder if store isn't imported here
-                                            // Re-fetching logic might be better in useChatStore
-                                            return <BubbledChatCard key={chatId} chatId={chatId} />;
-                                        })}
+                                        {user.interfacePrefs.bubbledChats.map((chatId) => (
+                                            <BubbledChatCard key={chatId} chatId={chatId} />
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -240,7 +266,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                         <div className="absolute inset-0 z-0">
                             <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                         </div>
-                        
+
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 px-8 py-5">
                                 <div className="w-7 h-7 rounded-md flex items-center justify-center bg-surface border border-default">
@@ -292,7 +318,7 @@ const BubbledChatCard = ({ chatId }) => {
     const { chats, toggleBubble } = useChatStore();
     const chat = chats.find(c => c._id === chatId);
     const { user } = useAuthStore();
-    
+
     if (!chat) return null;
 
     const other = chat.type === 'private' ? chat.participants.find(p => p._id !== user?._id) : null;
@@ -302,15 +328,15 @@ const BubbledChatCard = ({ chatId }) => {
         <div className="flex items-center justify-between p-3 rounded-xl bg-base border border-glass">
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg overflow-hidden border border-glass">
-                    <img 
-                        src={chat.type === 'group' ? (chat.avatar || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=100') : other?.avatar} 
+                    <img
+                        src={chat.type === 'group' ? (chat.avatar || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=100') : other?.avatar}
                         className="w-full h-full object-cover"
                         alt=""
                     />
                 </div>
                 <span className="text-[11px] font-bold text-primary truncate max-w-[120px]">{name}</span>
             </div>
-            <button 
+            <button
                 onClick={() => toggleBubble(chatId)}
                 className="p-1.5 hover:bg-glass rounded-lg text-tertiary hover:text-danger transition-all"
             >

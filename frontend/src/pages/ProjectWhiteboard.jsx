@@ -303,16 +303,16 @@ const ProjectWhiteboard = () => {
     const activeProjectMembers = activeViewers.filter(v => v.projectId === projectId);
 
     return (
-        <article className="h-screen flex flex-col overflow-hidden bg-[#09090b] selection:bg-theme/30">
+        <article className="h-screen flex flex-col overflow-hidden bg-base selection:bg-theme/30 transition-colors duration-500">
             {/* Header: Project Context & Global Actions */}
-            <header className="shrink-0 z-[100] px-8 py-6 flex items-center justify-between border-b border-white/[0.05] bg-black/40 backdrop-blur-3xl">
+            <header className="shrink-0 z-[100] px-8 py-6 flex items-center justify-between border-b border-default bg-surface/40 backdrop-blur-3xl">
                 <div className="flex items-center gap-6">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 text-theme font-black text-[9px] uppercase tracking-[0.3em]">
                             <Sparkles className="w-3 h-3" />
                             <span>Brainstorm Hub</span>
                         </div>
-                        <h1 className="text-2xl font-black text-white tracking-tighter">Whiteboard.</h1>
+                        <h1 className="text-2xl font-black text-primary tracking-tighter">Whiteboard.</h1>
                     </div>
 
                     <div className="h-10 w-px bg-white/10 mx-2" />
@@ -321,7 +321,7 @@ const ProjectWhiteboard = () => {
                     <div className="relative">
                         <button
                             onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            className="h-12 flex items-center gap-3 px-5 bg-white/5 rounded-2xl border border-white/10 hover:border-theme/40 transition-all group active:scale-95 shadow-2xl"
+                            className="h-12 flex items-center gap-3 px-5 bg-sunken rounded-2xl border border-default hover:border-theme/40 transition-all group active:scale-95 shadow-lg shadow-black/5"
                         >
                             <Filter className="w-4 h-4 text-gray-500 group-hover:text-theme transition-colors" />
                             <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">
@@ -338,7 +338,7 @@ const ProjectWhiteboard = () => {
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className="absolute top-full left-0 mt-3 p-2 bg-[#0c0c0e]/95 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl z-40 min-w-[240px]"
+                                        className="absolute top-full left-0 mt-3 p-2 bg-elevated/95 backdrop-blur-3xl border border-strong rounded-3xl shadow-modal z-40 min-w-[240px]"
                                     >
                                         <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1">
                                             {loadingProjects ? (
@@ -409,7 +409,7 @@ const ProjectWhiteboard = () => {
                 className="flex-1 relative overflow-hidden cursor-crosshair group"
             >
                 {/* Blueprint Grid Background */}
-                <div className="absolute inset-0 bg-[#09090b] opacity-100" />
+                <div className="absolute inset-0 bg-base opacity-100" />
                 <AnimatePresence>
                     {isGridActive && (
                         <>
@@ -417,13 +417,13 @@ const ProjectWhiteboard = () => {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:32px_32px]"
+                                className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--grid-line)_1px,transparent_1px)] bg-[length:32px_32px]"
                             />
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[length:128px_128px]"
+                                className="absolute inset-0 bg-[linear-gradient(to_right,oklch(from_var(--grid-line)_l_c_h_/_0.4)_1px,transparent_1px),linear-gradient(to_bottom,oklch(from_var(--grid-line)_l_c_h_/_0.4)_1px,transparent_1px)] bg-[length:128px_128px]"
                             />
                         </>
                     )}
@@ -437,7 +437,7 @@ const ProjectWhiteboard = () => {
                                 <Target className="w-10 h-10 text-white/20" />
                             </div>
                             <div className="space-y-2">
-                                <h2 className="text-xl font-black text-white tracking-tight uppercase">Ready for Brainstorming</h2>
+                                <h2 className="text-xl font-black text-primary tracking-tight uppercase">Ready for Brainstorming</h2>
                                 <p className="text-gray-500 text-sm font-medium">Please select a project from the top menu to access its persistent sticky notes whiteboard.</p>
                             </div>
                         </div>
@@ -473,7 +473,7 @@ const ProjectWhiteboard = () => {
                 <motion.nav
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-4 p-2.5 bg-[#121214]/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)]"
+                    className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-4 p-2.5 bg-elevated/90 backdrop-blur-2xl border border-default rounded-3xl shadow-lift"
                 >
                     <Tooltip content="Add Spark">
                         <button

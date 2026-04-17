@@ -1,0 +1,38 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+
+# Build/Dist
+dist/
+build/
+.next/
+out/
+.vercel
+.turbo
+
+# IDE/Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Misc
+.DS_Store
+Thumbs.db

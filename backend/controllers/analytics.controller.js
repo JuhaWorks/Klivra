@@ -166,29 +166,37 @@ const getProjectAnalytics = catchAsync(async (req, res) => {
 const getWorkspaceAnalytics = catchAsync(async (req, res) => {
     const Project = require('../models/project.model');
     const userId = req.user._id;
+    const userRole = req.user.role;
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // 1. Fetch all projects the user is a member of
-    const projects = await Project.find({
-        'members.userId': userId,
-        'members.status': 'active',
-        deletedAt: null
-    }).select('_id name').lean();
-
-    if (projects.length === 0) {
-        return res.status(200).json({
-            status: 'success',
-            data: { phi: 100, chaosIndex: 0, totalTasks: 0, completedTasks: 0, bottlenecks: [] }
-        });
+    // 1. Fetch relevant projects
+    let projectQuery = { deletedAt: null };
+    
+    // Non-admins only see projects they are members of
+    if (userRole !== 'Admin') {
+        projectQuery['members.userId'] = userId;
+        projectQuery['members.status'] = 'active';
     }
 
+    const projects = await Project.find(projectQuery).select('_id name').lean();
     const projectIds = projects.map(p => p._id);
 
     // 2. Fetch Aggregated Metrics
+    // Logic: Tasks in the user's projects OR tasks directly assigned to the user
     const [tasks, snapshots] = await Promise.all([
-        Task.find({ project: { $in: projectIds }, isArchived: false }).populate('project', 'name').lean(),
-        ProjectSnapshot.find({ project: { $in: projectIds }, date: { $gte: thirtyDaysAgo } }).lean()
+        Task.find({ 
+            $or: [
+                { project: { $in: projectIds } },
+                { assignee: userId },
+                { assignees: userId }
+            ],
+            isArchived: false 
+        }).populate('project', 'name').lean(),
+        ProjectSnapshot.find({ 
+            project: { $in: projectIds }, 
+            date: { $gte: thirtyDaysAgo } 
+        }).lean()
     ]);
 
     // 3. Calculate Global KPIs
@@ -205,8 +213,7 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
         ? Math.max(...snapshots.map(s => s.chaosIndex || 0)) 
         : 0;
 
-    // 4. Identity Strategic Threats (Cross-Project Bottlenecks)
-    // Formula: Urgency (Overdue/Due Soon) + Priority Weight + Dependency Blocking density
+    // 4. Identify Strategic Threats (Cross-Project Bottlenecks)
     const bottlenecks = activeTasks
         .map(t => {
             const priorityWeight = (t.priority === 'Urgent' ? 50 : (t.priority === 'High' ? 30 : 10));
@@ -229,7 +236,7 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
             activeProjects: projects.length,
             bottlenecks,
             forecast: {
-                predictedFinishDate: null // Complex cross-project forecasting pending
+                predictedFinishDate: null
             }
         }
     });

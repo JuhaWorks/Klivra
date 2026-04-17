@@ -204,12 +204,12 @@ const GlobalClockWidget = () => {
                         : "text-tertiary hover:text-primary"
                 )}
             >
-                <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-all">
-                        <Globe className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center transition-all bg-theme/5">
+                        <Globe className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
                     </div>
                     <div className="text-left">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] leading-none mb-1">World</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] leading-none">World</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

@@ -233,11 +233,11 @@ const ChatMessageComponent = ({
             );
         }
     }, [isMe, isFirstInGroup, isLastInGroup]);
-    
+
     // Swipe to Reply Logic
     const x = useMotionValue(0);
     const snapX = useSpring(x, { stiffness: 600, damping: 40 });
-    
+
     // Icon animation values
     const threshold = 60;
     const iconScale = useTransform(x, [0, threshold], [0.5, 1.2]);
@@ -347,26 +347,26 @@ const ChatMessageComponent = ({
 
                         {/* Main Bubble Content Container with Drag */}
                         <div className="relative group/bubble-container">
-                             {/* Under-layer Reply Icon */}
-                             {!isMe && !isDeleted && onReply && (
-                                <motion.div 
+                            {/* Under-layer Reply Icon */}
+                            {!isMe && !isDeleted && onReply && (
+                                <motion.div
                                     style={{ x: snapX, opacity: iconOpacity, scale: iconScale, rotate: iconRotate }}
                                     className="absolute -left-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-theme"
                                 >
                                     <CornerUpLeft className="w-5 h-5 shadow-glow-sm" />
                                 </motion.div>
-                             )}
-                             
-                             {/* Similar icon for Me messages (if we want swipe right-to-left) */}
-                             {/* But usually swipe-to-reply is always swipe-right regardless of side */}
-                             {isMe && !isDeleted && onReply && (
-                                <motion.div 
+                            )}
+
+                            {/* Similar icon for Me messages (if we want swipe right-to-left) */}
+                            {/* But usually swipe-to-reply is always swipe-right regardless of side */}
+                            {isMe && !isDeleted && onReply && (
+                                <motion.div
                                     style={{ x: snapX, opacity: iconOpacity, scale: iconScale, rotate: iconRotate }}
                                     className="absolute -left-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-theme"
                                 >
                                     <CornerUpLeft className="w-5 h-5 shadow-glow-sm" />
                                 </motion.div>
-                             )}
+                            )}
 
                             <motion.div
                                 drag="x"

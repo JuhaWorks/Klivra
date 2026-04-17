@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    User, Shield, Bell, Palette, AlertCircle, 
-    Settings as SettingsIcon, ChevronRight, Globe, 
+import {
+    User, Shield, Bell, Palette, AlertCircle,
+    Settings as SettingsIcon, ChevronRight, Globe,
     Smartphone, History, Activity, CreditCard
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
@@ -30,37 +30,36 @@ const TabButton = ({ tab, active, onClick }) => {
     return (
         <button
             onClick={() => onClick(tab.id)}
-            className={`w-full relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden ${
-                active 
-                ? 'shadow-sm border border-strong' 
-                : 'hover:border-default border border-transparent'
-            }`}
+            className={`w-full relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden ${active
+                    ? 'shadow-sm border border-strong'
+                    : 'hover:border-default border border-transparent'
+                }`}
         >
             <div className={`absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${active ? 'opacity-100' : ''}`}>
                 <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-40} backgroundOpacity={active ? 0.12 : 0.04} opacity={0.9} />
             </div>
 
             <div className="relative z-10 flex items-center gap-3 w-full">
-            <div className={twMerge(clsx(
-                "p-2 rounded-lg transition-all duration-300",
-                active 
-                    ? "bg-theme text-primary shadow-lg shadow-theme/20" 
-                    : "bg-surface group-hover:bg-sunken text-tertiary group-hover:text-primary"
-            ))}>
-                <Icon className="w-3.5 h-3.5" />
-            </div>
-            <span className={twMerge(clsx(
-                "text-[10px] font-black uppercase tracking-[0.2em] transition-all",
-                active ? "text-primary" : "text-tertiary group-hover:text-primary"
-            ))}>
-                {tab.label}
-            </span>
-            {active && (
-                <motion.div 
-                    layoutId="active-pill"
-                    className="ml-auto w-1 h-1 rounded-full bg-primary"
-                />
-            )}
+                <div className={twMerge(clsx(
+                    "p-2 rounded-lg transition-all duration-300",
+                    active
+                        ? "bg-theme text-primary shadow-lg shadow-theme/20"
+                        : "bg-surface group-hover:bg-sunken text-tertiary group-hover:text-primary"
+                ))}>
+                    <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span className={twMerge(clsx(
+                    "text-[10px] font-black uppercase tracking-[0.2em] transition-all",
+                    active ? "text-primary" : "text-tertiary group-hover:text-primary"
+                ))}>
+                    {tab.label}
+                </span>
+                {active && (
+                    <motion.div
+                        layoutId="active-pill"
+                        className="ml-auto w-1 h-1 rounded-full bg-primary"
+                    />
+                )}
             </div>
         </button>
     );
@@ -77,7 +76,7 @@ export default function Settings() {
                 <div className="absolute inset-0 z-0">
                     <GlassSurface width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
                 </div>
-                
+
                 <div className="max-w-screen-2xl mx-auto py-8 flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-2xl bg-theme flex items-center justify-center shadow-lg shadow-theme/10">
@@ -99,11 +98,11 @@ export default function Settings() {
                         <div className="space-y-1.5">
                             <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] px-4 mb-4">Configuration</p>
                             {TABS.map(tab => (
-                                <TabButton 
-                                    key={tab.id} 
-                                    tab={tab} 
-                                    active={activeTab === tab.id} 
-                                    onClick={setActiveTab} 
+                                <TabButton
+                                    key={tab.id}
+                                    tab={tab}
+                                    active={activeTab === tab.id}
+                                    onClick={setActiveTab}
                                 />
                             ))}
                         </div>
@@ -113,7 +112,7 @@ export default function Settings() {
                             <div className="absolute inset-0 z-0">
                                 <GlassSurface width="100%" height="100%" borderRadius={24} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
                             </div>
-                            
+
                             <div className="flex items-center gap-2 mb-3 relative z-10">
                                 <Globe className="w-3.5 h-3.5 text-tertiary" />
                                 <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest">Platform Status</span>

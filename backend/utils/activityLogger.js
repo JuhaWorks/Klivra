@@ -12,6 +12,17 @@ const logActivity = async (projectId, actorId, action, metadata = {}, entityType
         let rawEntityId = entityId || projectId || actorId;
         const finalEntityId = (rawEntityId && typeof rawEntityId === 'object' && rawEntityId._id) ? rawEntityId._id : rawEntityId;
 
+        // Auto-inject project name for better context if available
+        if (projectId && !metadata.projectName) {
+            try {
+                const Project = require('../models/project.model');
+                const p = await Project.findById(projectId).select('name').lean();
+                if (p) metadata.projectName = p.name;
+            } catch (err) {
+                // Non-fatal naming error
+            }
+        }
+
         const auditEntry = await Audit.create({
             user: actorId,
             action,
