@@ -20,23 +20,28 @@ export default defineConfig({
   ],
 
   build: {
-    minify: 'esbuild',
+    minify: 'oxc', // Vite 8 preference
+    minifyOptions: {
+      drop: ['console', 'debugger'],
+    },
     sourcemap: false,
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          core: ['react', 'react-dom', 'react-router-dom', 'framer-motion', 'zustand', 'axios'],
-          charts: ['recharts'],
-          three: ['three'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('three')) return 'three';
+            if (id.includes('recharts')) return 'charts';
+            if (id.includes('react') || id.includes('framer-motion') || id.includes('zustand') || id.includes('axios')) {
+              return 'core';
+            }
+            return 'vendor';
+          }
         }
       }
     }
   },
 
-  esbuild: {
-    drop: ['console', 'debugger'], // Zero-leak production logs
-  },
 
   // Speed up local dev by pre-bundling heavy deps
   optimizeDeps: {

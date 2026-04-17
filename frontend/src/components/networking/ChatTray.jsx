@@ -296,8 +296,11 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
         const timer = setTimeout(async () => {
             setMembersLoading(true);
             try {
-                const res = await api.get(`/users/workspace?q=${encodeURIComponent(memberSearch)}`);
-                setMembers(res.data.data);
+                // Switching from general user search to connection-only search
+                const res = await api.get(`/connections?q=${encodeURIComponent(memberSearch)}`);
+                // Connection objects contain nested user objects
+                const connections = res.data.data || [];
+                setMembers(connections.map(conn => conn.user));
             } catch (e) {
                 console.error(e);
             } finally {

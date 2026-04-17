@@ -95,7 +95,36 @@ const Avatar = ({ user, size = 'md' }) => {
     );
 };
 
-// ── Role Badge ───────────────────────────────────────────────────────────────
+// ── Shared UI Patterns (matching Home Dashboard) ─────────────────────────
+const HeaderMetric = ({ label, value, unit, color1, color2 }) => (
+    <div className="ent-h-metric">
+        <span className="ent-label" style={{ marginBottom: 6, fontSize: 11, opacity: 0.8 }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span style={{ 
+                fontFamily: 'var(--ent-mono)', 
+                fontSize: 32, 
+                fontWeight: 600, 
+                lineHeight: 1,
+                background: `linear-gradient(to bottom right, ${color1}, ${color2})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                letterSpacing: '-0.02em'
+            }}>
+                <Counter value={value} />
+            </span>
+            {unit && <span style={{ fontFamily: 'var(--ent-mono)', fontSize: 12, color: 'var(--ent-text-3)', marginLeft: 1 }}>{unit}</span>}
+        </div>
+    </div>
+);
+
+const BackgroundGlow = () => (
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+        <div className="glow-blob" style={{ background: 'var(--v-blue)', top: '-15%', left: '-5%', width: '40vw', height: '40vw', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.05 }} />
+        <div className="glow-blob" style={{ background: 'var(--v-cyan)', top: '10%', right: '10%', width: '35vw', height: '35vw', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.03 }} />
+        <div className="glow-blob" style={{ background: 'var(--v-rose)', top: '40%', right: '-5%', width: '30vw', height: '30vw', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.04 }} />
+    </div>
+);
+
 const RoleBadge = ({ role }) => {
     const styles = {
         Admin: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
@@ -127,8 +156,8 @@ const ConnectionCard = ({ connection, onRemove, onViewProfile }) => {
     const user = connection.user;
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
-            <Card variant="glass" padding="p-0" className="group hover:border-theme/20 transition-all duration-300">
-                <div className="p-3.5 flex items-start gap-3">
+            <Card variant="glass" padding="p-0" className="group hover:border-theme/20 transition-all duration-300 rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
+                <div className="p-2.5 flex items-start gap-3">
                     <div className="relative cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
                         <Avatar user={user} size="sm" />
                         <div className="absolute -bottom-0.5 -right-0.5">
@@ -184,8 +213,8 @@ const IncomingRequestCard = ({ request, onRespond }) => {
 
     return (
         <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={EASE}>
-            <Card variant="glass" padding="p-0" className="border-l-2 border-l-theme/40">
-                <div className="p-4">
+            <Card variant="glass" padding="p-0" className="border-l-4 border-l-theme/40 rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
+                <div className="p-3">
                     <div className="flex items-start gap-3">
                         <Avatar user={user} size="sm" />
                         <div className="flex-1 min-w-0">
@@ -238,8 +267,8 @@ const SentRequestCard = ({ request, onWithdraw }) => {
     const user = request.recipient;
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
-            <Card variant="glass" padding="p-0">
-                <div className="p-3.5 flex items-center gap-3">
+            <Card variant="glass" padding="p-0" className="rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
+                <div className="p-2.5 flex items-center gap-3">
                     <Avatar user={user} size="sm" />
                     <div className="flex-1 min-w-0">
                         <h4 className="text-[13px] font-bold text-primary truncate leading-tight">{user?.name}</h4>
@@ -310,8 +339,8 @@ const DiscoverCard = ({ user, onConnect, onViewProfile }) => {
 
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
-            <Card variant="glass" padding="p-0" className="hover:border-theme/15 transition-all duration-300">
-                <div className="p-3.5">
+            <Card variant="glass" padding="p-0" className="hover:border-theme/15 transition-all duration-300 rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
+                <div className="p-2.5">
                     <div className="flex items-start gap-3">
                         <div className="relative cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
                             <Avatar user={user} size="sm" />
@@ -683,12 +712,6 @@ const Networking = () => {
         await respondMutation.mutateAsync({ connectionId, action });
     }, [respondMutation]);
 
-    // ── Stats Cards ──────────────────────────────────────────────────────────
-    const STATS = [
-        { label: 'Connections', value: Math.max(0, stats.connectionCount), icon: Users2, accent: 'var(--accent-500)', glow: 'var(--accent-bg)' },
-        { label: 'Received', value: stats.pendingCount, icon: UserPlus, accent: 'oklch(0.70 0.15 240)', glow: 'oklch(0.70 0.15 240 / 0.10)' },
-        { label: 'Sent', value: stats.sentCount, icon: Send, accent: 'oklch(0.72 0.15 60)', glow: 'oklch(0.72 0.15 60 / 0.10)' },
-    ];
 
     const discoverData = isSearching ? searchResults : suggestions;
 
@@ -705,74 +728,88 @@ const Networking = () => {
         <>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+                
+                :root {
+                  --ent-text-1: oklch(0.98 0 0);
+                  --ent-text-2: oklch(0.85 0 0);
+                  --ent-text-3: oklch(0.6 0 0);
+                  --ent-border: oklch(0.25 0 0);
+                  --ent-mono: 'JetBrains Mono', monospace;
+                  --v-emerald: oklch(0.7 0.25 150);
+                  --v-rose: oklch(0.7 0.25 10);
+                  --v-cyan: oklch(0.7 0.2 210);
+                  --v-amber: oklch(0.7 0.2 70);
+                  --v-blue: oklch(0.7 0.2 250);
+                }
+
                 .net-root { font-family: 'Sora', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace; }
+                .ent-label {
+                  font-family: var(--ent-mono);
+                  font-size: 9px;
+                  font-weight: 800;
+                  text-transform: uppercase;
+                  letter-spacing: 0.2em;
+                  color: var(--ent-text-3);
+                }
+                .ent-h-metric {
+                  padding-right: 64px;
+                  border-right: 1px solid var(--ent-border);
+                  margin-right: -1px; /* overlap border edges */
+                }
+                .ent-h-metric:last-child {
+                  border-right: none;
+                }
                 .net-scroll::-webkit-scrollbar { width: 3px; }
                 .net-scroll::-webkit-scrollbar-track { background: transparent; }
                 .net-scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+
+                @media (max-width: 1024px) {
+                  .ent-header-hud { display: none !important; }
+                  .ent-h-metric { border: none !important; padding: 0 !important; }
+                  .ent-greeting-area { flex-direction: column !important; align-items: flex-start !important; }
+                }
             `}</style>
 
-            <article className="net-root min-h-[calc(100vh-120px)] flex flex-col pb-10 relative max-w-[2000px] mx-auto w-full">
-                {/* Ambient glow */}
-                <div className="fixed top-0 left-0 right-0 h-[220px] pointer-events-none z-0 overflow-hidden">
-                    <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-theme/10 rounded-full blur-[120px] opacity-40" />
-                    <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-theme/5 rounded-full blur-[120px] opacity-30" />
-                </div>
+            <article className="net-root min-h-[calc(100vh-120px)] flex flex-col pb-10 relative max-w-[2000px] mx-auto w-full px-10 ent-animate">
+                <BackgroundGlow />
 
-                <div className="px-1 relative z-10">
-                    {/* Header */}
-                    <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={EASE} className="mb-10 sm:mb-12">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-theme/10 flex items-center justify-center">
-                                        <Users2 className="w-4 h-4 text-theme" />
+                <div className="relative z-10 w-full">
+                    {/* Header with Integrated HUD */}
+                    <header style={{
+                        padding: '48px 0 32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: '1px solid var(--ent-border)',
+                        marginBottom: 48,
+                        gap: 40,
+                    }}>
+                        <div className="ent-greeting-area" style={{ display: 'flex', alignItems: 'baseline', gap: 48, flexWrap: 'wrap' }}>
+                            <div style={{ paddingRight: 48, borderRight: '1px solid var(--ent-border)' }}>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-6 h-6 rounded-lg bg-theme/10 flex items-center justify-center">
+                                        <Users2 className="w-3.5 h-3.5 text-theme" />
                                     </div>
-                                    <span className="text-[10px] sm:text-[11px] text-tertiary uppercase tracking-[0.3em] font-mono">
-                                        Professional Network
-                                    </span>
+                                    <span className="ent-label" style={{ fontSize: 9 }}>Professional Network</span>
                                 </div>
-                                <h1 className="text-5xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">
-                                    Networking
+                                <h1 style={{ fontSize: 48, fontWeight: 600, color: 'var(--ent-text-1)', margin: 0, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
+                                    <span style={{ color: 'var(--ent-text-1)' }}>Networking</span>
                                 </h1>
-                                <p className="text-sm sm:text-lg text-secondary max-w-xl leading-relaxed opacity-80 font-medium">
-                                    Connect with professionals, join project teams, and collaborate on global initiatives.
-                                </p>
+                            </div>
+
+                            {/* HUD / Metrics */}
+                            <div className="ent-header-hud" style={{ display: 'flex', alignItems: 'baseline', gap: 0 }}>
+                                <HeaderMetric label="Connections" value={stats.connectionCount} color1="var(--v-emerald)" color2="var(--v-cyan)" />
+                                <HeaderMetric label="Received" value={stats.pendingCount} color1="var(--v-amber)" color2="var(--v-rose)" />
+                                <HeaderMetric label="Sent Requests" value={stats.sentCount} color1="var(--v-blue)" color2="var(--v-rose)" />
                             </div>
                         </div>
-                    </motion.header>
-
-                    {/* Stats Grid - Moved below header */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                        {STATS.map((s, i) => (
-                            <motion.div
-                                key={s.label}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ ...EASE, delay: i * 0.04 }}
-                            >
-                                <Card
-                                    variant="glass"
-                                    performance="premium"
-                                    padding="p-6 sm:p-8"
-                                    hideBorder={true}
-                                    className="rounded-[2.5rem] sm:rounded-[3.15rem] cursor-default"
-                                >
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-8"
-                                        style={{ background: s.glow, border: `1px solid ${s.accent}20` }}>
-                                        <s.icon className="w-5 h-5" style={{ color: s.accent }} />
-                                    </div>
-                                    <div className="text-3xl sm:text-4xl font-bold tracking-tighter text-primary leading-none mb-2 tabular-nums">
-                                        <Counter value={s.value} delay={i * 60} />
-                                    </div>
-                                    <div className="text-[10px] sm:text-[11px] font-bold tracking-widest text-tertiary uppercase font-mono">{s.label}</div>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
+                    </header>
 
 
-                    {/* Tabs */}
-                    <div className="flex flex-wrap items-center gap-1.5 mb-10 p-1.5 rounded-[1.75rem] bg-sunken/50 border border-subtle w-fit backdrop-blur-xl">
+
+                    {/* Minimalist Tabs */}
+                    <div className="flex flex-wrap items-center gap-8 mb-12 px-2 border-b border-default w-full">
                         {TABS.map((tab) => {
                             const isActive = activeTab === tab.key;
                             const count = tab.key === 'pending' ? pending.length : tab.key === 'sent' ? sent.length : tab.key === 'network' ? connections.length : 0;
@@ -780,28 +817,28 @@ const Networking = () => {
                                 <button
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`relative flex items-center gap-3 px-5 sm:px-8 py-3 rounded-2xl text-[10px] sm:text-xs font-black transition-all duration-300 uppercase tracking-widest ${
+                                    className={`relative flex items-center gap-3 pb-4 text-[10px] sm:text-xs font-black transition-all duration-300 uppercase tracking-[0.2em] ${
                                         isActive ? 'text-primary' : 'text-tertiary hover:text-secondary'
                                     }`}
                                 >
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="activeTab"
-                                            className="absolute inset-0 bg-surface shadow-xl border border-subtle rounded-2xl z-0"
-                                            transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                                        />
-                                    )}
-                                    <div className="relative z-10 flex items-center gap-2.5">
-                                        <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    <div className="flex items-center gap-2.5">
+                                        <tab.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${isActive ? 'text-theme' : 'text-tertiary'}`} />
                                         <span className="hidden xs:inline">{tab.label}</span>
                                         {count > 0 && tab.key !== 'discover' && (
-                                            <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-mono ${
+                                            <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-black ${
                                                 isActive ? 'bg-theme/10 text-theme' : 'bg-sunken text-tertiary'
                                             }`}>
                                                 {count}
                                             </span>
                                         )}
                                     </div>
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="activeTabUnderline"
+                                            className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-theme shadow-[0_0_12px_var(--v-emerald)] rounded-full z-10"
+                                            transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                                        />
+                                    )}
                                 </button>
                             );
                         })}

@@ -1,20 +1,17 @@
 import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    FolderKanban, CheckSquare, Users, Plus, ChevronRight,
-    Activity, Lock, RefreshCw, ArrowUpRight, TrendingUp,
-    Target, Clock, AlertCircle, LayoutDashboard, Search,
-    ChevronDown, CheckCircle2, MoreVertical, ShieldAlert,
-    Zap, Globe, Briefcase
+    Plus, Activity, ArrowUpRight, TrendingUp,
+    Target, Clock, AlertCircle, CheckCircle2,
+    Zap, Briefcase, ChevronRight, MoreHorizontal,
+    Circle, Minus
 } from 'lucide-react';
 import ApodWidget from '../components/tools/Widgets/ApodWidget';
 import WeatherWidget from '../components/tools/Widgets/WeatherWidget';
 import GlobalClockWidget from '../components/tools/Widgets/GlobalClockWidget';
-import NotificationHistoryWidget from '../components/notifications/NotificationHistoryWidget';
 import QuoteWidget from '../components/tools/Widgets/QuoteWidget';
 import IntelligenceWidget from '../components/tools/Widgets/IntelligenceWidget';
 import { useSocketStore } from '../store/useSocketStore';
@@ -23,42 +20,261 @@ import { DeadlinePopup } from '../components/projects/ProjectShared';
 import Card from '../components/ui/Card';
 import Counter from '../components/ui/Counter';
 import { cn } from '../utils/cn';
-import { renderActivityNarrative } from '../utils/activityNarrative';
 import TaskDetailModal from '../components/Kanban/TaskDetailModal';
-import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 
-const EASE = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
+/* --- DESIGN TOKENS (Theme Aware & Vibrant) ------------------------------ */
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
-const ActivitySkeleton = ({ delay = 0 }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay }} className="flex items-center gap-4 p-3 rounded-2xl">
-        <div className="w-10 h-10 rounded-xl bg-shimmer animate-pulse" />
-        <div className="flex-1 space-y-2">
-            <div className="h-3 bg-shimmer rounded-full animate-pulse w-3/4" />
-            <div className="h-2 bg-shimmer rounded-full animate-pulse w-1/2" />
-        </div>
-    </motion.div>
+  .ent-root {
+    --ent-font:       'DM Sans', sans-serif;
+    --ent-mono:       'DM Mono', monospace;
+
+    /* Theme-Aware Mapping */
+    --ent-bg:         var(--bg-base);
+    --ent-surface:    var(--bg-surface);
+    --ent-surface-2:  var(--bg-sunken);
+    --ent-border:     var(--border-default);
+    --ent-border-2:   var(--border-strong);
+
+    --ent-text-1:     var(--text-primary);
+    --ent-text-2:     var(--text-secondary);
+    --ent-text-3:     var(--text-tertiary);
+
+    --ent-accent:     var(--accent-500);
+    --ent-accent-dim: var(--accent-bg);
+
+    /* Vibrant Brand Palette */
+    --v-emerald:      oklch(0.72 0.18 162);
+    --v-cyan:         oklch(0.70 0.15 200);
+    --v-amber:        oklch(0.82 0.18 75);
+    --v-orange:       oklch(0.65 0.20 45);
+    --v-blue:         oklch(0.60 0.18 240);
+    --v-indigo:       oklch(0.55 0.20 270);
+    --v-rose:         oklch(0.65 0.22 15);
+    
+    font-family: var(--ent-font);
+    font-feature-settings: 'ss01', 'ss02', 'cv01';
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* Shifting Text Hue Utility */
+  .text-hue-vibrant {
+    background: linear-gradient(135deg, var(--v-emerald), var(--v-blue), var(--v-rose));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: ent-hue-shift 8s ease infinite alternate;
+  }
+
+  @keyframes ent-hue-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+
+  /* Background Glow Components */
+  .glow-blob {
+    position: absolute;
+    width: 40vw;
+    height: 40vw;
+    border-radius: 50%;
+    filter: blur(140px);
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* scrollbar */
+  .ent-scroll::-webkit-scrollbar { width: 3px; }
+  .ent-scroll::-webkit-scrollbar-track { background: transparent; }
+  .ent-scroll::-webkit-scrollbar-thumb { background: var(--ent-border-2); border-radius: 10px; }
+
+  /* table row */
+  .ent-task-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(200px, 1.5fr) 140px 120px 1.2fr;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 1px solid var(--ent-border);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  .ent-task-row:last-child { border-bottom: none; }
+  .ent-task-row:hover { background: var(--ent-surface-2); transform: translateX(4px); }
+
+  .ent-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--ent-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px -2px rgba(0,0,0,0.1);
+  }
+
+  .ent-label {
+    font-family: var(--ent-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ent-text-3);
+  }
+
+  /* Header Metric Item */
+  .ent-h-metric {
+    display: flex;
+    flex-direction: column;
+    padding: 0 32px;
+    border-right: 1px solid var(--ent-border);
+  }
+  .ent-h-metric:last-child { border-right: none; }
+
+  .ent-divider {
+    height: 1px;
+    background: var(--ent-border);
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 1200px) {
+    .ent-dashboard-grid {
+      grid-template-columns: 1fr !important;
+      gap: 32px !important;
+    }
+    .ent-task-row {
+      grid-template-columns: 1.5fr minmax(80px, 0.8fr) 0.8fr 1fr;
+      padding: 16px !important;
+    }
+    .ent-task-row span:nth-child(2),
+    .ent-task-row span:nth-child(3) {
+        display: none;
+    }
+    .ent-root {
+      padding: 0 16px 40px !important;
+    }
+    .ent-header-hud {
+      display: none !important;
+    }
+    .ent-greeting-area {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+    }
+    .ent-greeting-area h1 {
+      font-size: 28px !important;
+    }
+    .ent-sidebar-col {
+        gap: 32px !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .ent-task-row {
+      grid-template-columns: 1fr 100px;
+    }
+    .ent-task-row span:nth-child(2),
+    .ent-task-row span:nth-child(3) {
+      display: none;
+    }
+    .ent-label:not(:first-child):not(:last-child) {
+      display: none;
+    }
+  }
+
+  @keyframes ent-fadein {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .ent-animate { animation: ent-fadein 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+`;
+
+/* --- HELPERS ------------------------------------------------------------- */
+const priorityConfig = {
+    Urgent: { color: 'var(--v-rose)', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', glow: 'rgba(239,68,68,0.2)' },
+    High: { color: 'var(--v-amber)', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)', glow: 'rgba(245,158,11,0.2)' },
+    Medium: { color: 'var(--v-blue)', bg: 'rgba(59,130,246,0.05)', border: 'var(--ent-border)', glow: 'transparent' },
+    Low: { color: 'var(--ent-text-3)', bg: 'transparent', border: 'var(--ent-border)', glow: 'transparent' },
+};
+
+const statusConfig = {
+    'In Progress': { color: 'var(--v-blue)', dot: true, bg: 'rgba(59,130,246,0.1)' },
+    'Pending': { color: 'var(--ent-text-3)', dot: false, bg: 'transparent' },
+    'Completed': { color: 'var(--v-emerald)', dot: false, bg: 'rgba(34,197,94,0.1)' },
+};
+
+const Tag = ({ label, config }) => (
+    <span className="ent-tag" style={{ 
+        color: config.color, 
+        background: config.bg, 
+        borderColor: config.border,
+        boxShadow: config.glow ? `0 0 12px ${config.glow}` : 'none'
+    }}>
+        {config.dot && <span style={{ width: 5, height: 5, borderRadius: '50%', background: config.color, display: 'inline-block', flexShrink: 0 }} />}
+        {label}
+    </span>
 );
 
+const HeaderMetric = ({ label, value, unit, color1, color2 }) => (
+    <div className="ent-h-metric">
+        <span className="ent-label" style={{ marginBottom: 4 }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+            <span style={{ 
+                fontFamily: 'var(--ent-mono)', 
+                fontSize: 18, 
+                fontWeight: 600, 
+                lineHeight: 1,
+                background: `linear-gradient(to bottom right, ${color1}, ${color2})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+            }}>
+                <Counter value={value} />
+            </span>
+            {unit && <span style={{ fontFamily: 'var(--ent-mono)', fontSize: 10, color: 'var(--ent-text-3)', marginLeft: 1 }}>{unit}</span>}
+        </div>
+    </div>
+);
+
+const BackgroundGlow = () => (
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+        <div className="glow-blob" style={{ background: 'var(--v-emerald)', top: '-10%', left: '-10%' }} />
+        <div className="glow-blob" style={{ background: 'var(--v-rose)', top: '40%', right: '-5%', width: '30vw', height: '30vw', opacity: 0.05 }} />
+    </div>
+);
+
+const SectionHeader = ({ label, right }) => (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0 16px' }}>
+        <span className="ent-label" style={{ fontSize: 10, letterSpacing: '0.15em' }}>{label}</span>
+        {right}
+    </div>
+);
+
+/* ─── MAIN COMPONENT ──────────────────────────────────────────────────────── */
 const Home = () => {
     const { user } = useAuthStore();
-    const { socket } = useSocketStore();
     const queryClient = useQueryClient();
-    const canViewActivity = !!user;
 
     const [selectedTask, setSelectedTask] = useState(null);
-    const [expandedTaskId, setExpandedTaskId] = useState(null);
-
     const [greeting, setGreeting] = useState('');
+
     useEffect(() => {
         const h = new Date().getHours();
-        if (h < 12) setGreeting('Daily Briefing');
-        else if (h < 17) setGreeting('Workspace Overview');
-        else setGreeting('Executive Summary');
+        if (h < 12) setGreeting('Good morning');
+        else if (h < 17) setGreeting('Good afternoon');
+        else setGreeting('Good evening');
     }, []);
 
     const dateString = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+    /* queries */
     const { data: projRes } = useQuery({
         queryKey: ['projects'],
         queryFn: async ({ signal }) => (await api.get('/projects', { signal })).data,
@@ -76,10 +292,9 @@ const Home = () => {
     const { data: wsAnalytics } = useQuery({
         queryKey: ['workspaceAnalytics'],
         queryFn: async () => (await api.get('/analytics/workspace')).data,
-        staleTime: 1000 * 60 * 10
+        staleTime: 1000 * 60 * 10,
     });
 
-    // Fallback logic for NaN safety
     const ws = useMemo(() => {
         const d = wsAnalytics?.data || {};
         return {
@@ -89,296 +304,368 @@ const Home = () => {
             activeProjects: d.activeProjects ?? 0,
             completedTasks: d.completedTasks ?? 0,
             totalTasks: d.totalTasks ?? 0,
-            bottlenecks: d.bottlenecks || []
+            bottlenecks: d.bottlenecks || [],
         };
     }, [wsAnalytics]);
 
-
     const taskStats = useMemo(() => {
-        const userId = user?._id;
-        const myTasks = allTasks.filter(t => t.assignee?._id === userId || t.assignees?.some(a => a._id === userId));
         return {
-            total: myTasks.length,
-            pending: myTasks.filter(t => t.status === 'Pending').length,
-            active: myTasks.filter(t => t.status === 'In Progress').length,
-            urgent: myTasks.filter(t => (t.priority === 'Urgent' || (t.endDate && new Date(t.endDate) < new Date())) && t.status !== 'Completed').length
+            total: allTasks.length,
+            pending: allTasks.filter(t => t.status === 'Pending').length,
+            active: allTasks.filter(t => t.status === 'In Progress').length,
+            urgent: allTasks.filter(t => (t.priority === 'Urgent' || (t.endDate && new Date(t.endDate) < new Date())) && t.status !== 'Completed').length,
         };
-    }, [allTasks, user]);
+    }, [allTasks]);
 
     const myFocusTasks = useMemo(() => {
-        const userId = user?._id;
         return allTasks
-            .filter(t => t.status !== 'Completed' && t.status !== 'Canceled' &&
-                (t.assignee?._id === userId || t.assignees?.some(a => a._id === userId)))
+            .filter(t => t.status !== 'Completed' && t.status !== 'Canceled')
             .sort((a, b) => {
-                const pMap = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
-                if (pMap[b.priority] !== pMap[a.priority]) return pMap[b.priority] - pMap[a.priority];
+                const p = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+                if (p[b.priority] !== p[a.priority]) return p[b.priority] - p[a.priority];
                 return (a.dueDate && b.dueDate) ? new Date(a.dueDate) - new Date(b.dueDate) : 0;
             })
-            .slice(0, 10);
-    }, [allTasks, user]);
+            .slice(0, 12);
+    }, [allTasks]);
 
     const updateTaskMutation = useMutation({
         mutationFn: async ({ id, updates }) => (await api.put(`/tasks/${id}`, updates)).data,
-        onSuccess: () => queryClient.invalidateQueries(['myTasks'])
+        onSuccess: () => queryClient.invalidateQueries(['myTasks']),
     });
 
-    const STATS = [
-        { label: 'Health', value: ws.phi, icon: Target, accent: 'var(--accent-500)', sub: 'Workspace Maturity' },
-        { label: 'Stability', value: 100 - ws.chaosIndex, icon: Activity, accent: '#60a5fa', sub: 'Project Cohesion' },
-        { label: 'Units', value: ws.completedTasks, icon: Zap, accent: '#10b981', sub: 'Completed Work' },
-        { label: 'Projects', value: ws.activeProjects, icon: Briefcase, accent: '#f59e0b', sub: 'Active Tracks' },
-    ];
+    /* completion bar */
+    const pct = Math.min(100, Math.max(0, ws.completionPct));
 
     return (
-        <div className="min-h-screen flex flex-col pb-12 px-6 lg:px-12 max-w-[1800px] mx-auto w-full animate-in fade-in duration-1000">
-            <DeadlinePopup projects={projects} user={user} />
+        <div
+            className="ent-root"
+            style={{
+                minHeight: '100vh',
+                background: 'transparent',
+                color: 'var(--ent-text-1)',
+                padding: '0 40px 64px',
+                width: '100%',
+                boxSizing: 'border-box',
+                position: 'relative',
+            }}
+>
+    <style>{styles}</style>
+    <BackgroundGlow />
+    <DeadlinePopup projects={projects} user={user} />
 
-            <style>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
-            `}</style>
+    {/* ── HEADER ─────────────────────────────────────────────────── */}
+    <header style={{
+        padding: '48px 0 32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid var(--ent-border)',
+        marginBottom: 40,
+        gap: 40,
+    }}>
+        <div className="ent-greeting-area" style={{ display: 'flex', alignItems: 'baseline', gap: 48, flexWrap: 'wrap' }}>
+            <div style={{ paddingRight: 48, borderRight: '1px solid var(--ent-border)' }}>
+                <p style={{ fontFamily: 'var(--ent-mono)', fontSize: 10, color: 'var(--ent-text-3)', letterSpacing: '0.15em', marginBottom: 4 }}>
+                    {dateString}
+                </p>
+                <h1 style={{ fontSize: 34, fontWeight: 600, color: 'var(--ent-text-1)', margin: 0, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
+                    <span className="text-hue-vibrant">{greeting}</span>, <span style={{ color: 'var(--ent-text-2)' }}>{user?.name?.split(' ')[0] || 'Member'}</span>
+                </h1>
+            </div>
 
-            {/* HEADER & EXECUTIVE BAR */}
-            <header className="py-8 flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-4">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                        <span className="px-2.5 py-0.5 rounded-full bg-theme/10 border border-theme/20 text-[9px] font-black text-theme uppercase tracking-widest">{greeting}</span>
-                        <span className="text-[9px] font-bold text-tertiary uppercase tracking-widest opacity-40">{dateString}</span>
-                    </div>
-                    <h1 className="text-2xl sm:text-4xl font-black text-primary tracking-tighter">
-                        Welcome, <span className="text-theme">{user?.name?.split(' ')[0] || 'Member'}.</span>
-                    </h1>
+            {/* HUD / Metrics Integrated into Header */}
+            <div className="ent-header-hud" style={{ 
+                display: 'flex', 
+                alignItems: 'baseline', 
+                gap: 0
+            }}>
+                <HeaderMetric label="Health" value={ws.phi} unit="%" color1="var(--v-emerald)" color2="var(--v-cyan)" />
+                <HeaderMetric label="Stability" value={100 - ws.chaosIndex} unit="%" color1="var(--v-amber)" color2="var(--v-orange)" />
+                <HeaderMetric label="Resolved" value={ws.completedTasks} color1="var(--v-blue)" color2="var(--v-indigo)" />
+                <HeaderMetric label="Active" value={ws.activeProjects} color1="var(--v-rose)" color2="var(--v-orange)" />
+            </div>
+        </div>
+
+        <div className="ent-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 380px', gap: 48, alignItems: 'start' }}>
+            {user?.role !== 'Admin' && (
+                <Button
+                    variant="primary"
+                    leftIcon={Plus}
+                    as={Link}
+                    to="/projects"
+                    style={{
+                        fontFamily: 'var(--ent-mono)',
+                        fontSize: 10,
+                        letterSpacing: '0.08em',
+                        fontWeight: 500,
+                        background: 'var(--ent-text-1)',
+                        color: 'var(--bg-base)',
+                        border: 'none',
+                        borderRadius: 24, // Rounded corners
+                        padding: '10px 20px',
+                        cursor: 'pointer',
+                        boxShadow: 'var(--shadow-elevation)'
+                    }}
+                >
+                    New Project
+                </Button>
+            )}
+        </div>
+    </header>
+
+    {/* ── BODY GRID ────────────────────────────────────────────────── */}
+    <div style={{
+        display: 'grid',
+        gridTemplateColumns: user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false
+            ? '300px 1fr 300px'
+            : '1fr 340px',
+        gap: 48,
+        alignItems: 'start',
+    }}>
+
+        {/* ACTIVITY FEED — Admin only ─────────────────────────────── */}
+        {user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
+            <div>
+                <SectionHeader label="System Pulse" />
+                <div style={{ background: 'transparent' }}>
+                    <IntelligenceWidget fixed />
+                </div>
+            </div>
+        )}
+
+        {/* TASKS ───────────────────────────────────────────────────── */}
+        <div style={{ minWidth: 0 }}>
+            {/* task count line */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12 }}>
+                <span className="ent-label">Active Tracks</span>
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <span style={{ fontFamily: 'var(--ent-mono)', fontSize: 9, color: 'var(--ent-blue)' }}>
+                        {taskStats.active} in progress
+                    </span>
+                    {taskStats.urgent > 0 && (
+                        <span style={{ fontFamily: 'var(--ent-mono)', fontSize: 9, color: 'var(--ent-red)' }}>
+                            {taskStats.urgent} critical
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            {/* table */}
+            <div style={{
+                background: 'var(--ent-surface)',
+                border: '1px solid var(--ent-border)',
+                borderRadius: 24, // Softer rounding
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-elevation)'
+            }}>
+                {/* thead */}
+                <div className="ent-task-row" style={{
+                    background: 'var(--ent-surface-2)',
+                    cursor: 'default',
+                    padding: '14px 24px',
+                }}>
+                    <span className="ent-label" style={{ paddingLeft: 0 }}>Title</span>
+                    <span className="ent-label">Status</span>
+                    <span className="ent-label">Priority</span>
+                    <span className="ent-label" style={{ textAlign: 'right' }}>Project</span>
                 </div>
 
-                {/* Compact Stats Grid */}
-                {/* Seamless Executive Status Bar */}
-                <div className="flex flex-wrap items-center gap-6 bg-surface/5 backdrop-blur-2xl rounded-[2.5rem] px-8 py-3.5 shadow-panel overflow-x-auto no-scrollbar">
-                    {STATS.map((s, i) => (
-                        <div key={s.label} className="flex items-center gap-4 min-w-fit">
-                            <div className="flex items-center gap-3.5">
-                                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: `${s.accent}08` }}>
-                                    <s.icon className="w-4 h-4" style={{ color: s.accent }} />
-                                </div>
-                                <div className="min-w-0 pr-4">
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-xl font-black text-primary tracking-tighter truncate">
-                                            <Counter value={s.value} delay={i * 50} />
-                                        </span>
-                                        {s.label !== 'Projects' && s.label !== 'Units' && <span className="text-[9px] font-black text-tertiary opacity-40">%</span>}
-                                    </div>
-                                    <p className="text-[8px] font-black text-tertiary uppercase tracking-[0.22em] truncate opacity-40">{s.label}</p>
-                                </div>
+                {/* tbody */}
+                <div className="ent-scroll" style={{ maxHeight: 520, overflowY: 'auto' }}>
+                    {myFocusTasks.length > 0 ? myFocusTasks.map((t, i) => {
+                        const pConf = priorityConfig[t.priority] || priorityConfig.Medium;
+                        const sConf = statusConfig[t.status] || statusConfig['Pending'];
+                        return (
+                            <div
+                                key={t._id}
+                                className="ent-task-row ent-animate"
+                                style={{ animationDelay: `${i * 30}ms`, padding: '20px 24px', background: 'transparent' }}
+                                onClick={() => setSelectedTask(t)}
+                            >
+                                <span style={{
+                                    fontSize: 14,
+                                    fontWeight: 500,
+                                    color: 'var(--ent-text-1)',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    paddingRight: 20
+                                }}>
+                                    {t.title}
+                                </span>
+
+                                <Tag label={t.status} config={sConf} />
+
+                                <Tag label={t.priority} config={pConf} />
+
+                                <span style={{
+                                    fontFamily: 'var(--ent-mono)',
+                                    fontSize: 10,
+                                    color: 'var(--ent-text-3)',
+                                    textAlign: 'right',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}>
+                                    {t.project?.name || '—'}
+                                </span>
                             </div>
-                            {i < STATS.length - 1 && <div className="hidden md:block w-px h-6 bg-glass/5" />}
-                        </div>
-                    ))}
-                    {user?.role !== 'Admin' && (
-                        <div className="ml-auto flex items-center pl-6 border-l border-glass/10 h-10">
-                            <Button variant="primary" leftIcon={Plus} as={Link} to="/projects" className="rounded-2xl h-11 px-8 shadow-glow-sm shadow-theme/10 font-black uppercase text-[10px] tracking-[0.2em] transition-all hover:scale-105 active:scale-95">
-                                New Project
-                            </Button>
+                        );
+                    }) : (
+                        <div style={{
+                            padding: '64px 24px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 12,
+                            color: 'var(--ent-text-3)',
+                        }}>
+                            <CheckCircle2 size={24} strokeWidth={1.5} />
+                            <span className="ent-label">All systems clear</span>
                         </div>
                     )}
                 </div>
-            </header>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                
-                {/* COLUMN 1: ACTIVITY FEED (ADMIN FIXED VIEW) */}
-                {user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
-                    <div className="col-span-12 lg:col-span-3 space-y-6">
-                        <div className="flex items-center justify-between px-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-1 h-1 rounded-full bg-theme" />
-                                <h2 className="text-[9px] font-black text-primary uppercase tracking-[0.4em]">Activity Feed</h2>
-                            </div>
-                        </div>
-                        <IntelligenceWidget fixed />
-                    </div>
-                )}
-
-                {/* COLUMN 2: ACTIVE TASKS (CENTER / CONCENTRATED) */}
-                <div className={cn(
-                    "col-span-12 space-y-6 lg:border-glass/10",
-                    (user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false) 
-                        ? "lg:col-span-5 lg:border-x px-6" 
-                        : "lg:col-span-8"
-                )}>
-                    <div className="flex items-center justify-between px-2">
-                        <div className="flex items-center gap-3">
-                            <div className="w-1.5 h-1.5 rounded-full bg-theme shadow-glow-sm" />
-                            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Active Tasks</h2>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1 h-1 rounded-full bg-theme" />
-                                <span className="text-[8px] font-black text-primary uppercase">{taskStats.active} In Play</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1 h-1 rounded-full bg-danger animate-pulse" />
-                                <span className="text-[8px] font-black text-danger uppercase">{taskStats.urgent} Critical</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Card variant="glass" padding="p-0" hideBorder className="rounded-[2.5rem] overflow-hidden bg-surface/5 backdrop-blur-3xl shadow-panel border border-glass/5">
-                        <div className="px-6 py-4 grid grid-cols-[1.5fr_2fr_1.2fr] gap-4 bg-sunken/40 border-b border-glass/5 text-[8px] font-black text-tertiary uppercase tracking-widest opacity-40">
-                            <span>Task Identifier</span>
-                            <span>Current Status</span>
-                            <span className="text-right">Priority Level</span>
-                        </div>
-
-                        <div className="max-h-[580px] overflow-y-auto custom-scrollbar p-2 space-y-1">
-                            {myFocusTasks.length > 0 ? (
-                                myFocusTasks.map((t, i) => (
-                                    <motion.div key={t._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                                        className="grid grid-cols-[1.5fr_2fr_1.2fr] gap-4 items-center p-3 rounded-2xl hover:bg-theme/5 transition-all group cursor-pointer border border-transparent hover:border-theme/10"
-                                        onClick={() => setSelectedTask(t)}>
-                                        <div className="min-w-0">
-                                            <span className="inline-block px-1.5 py-0.5 rounded text-[7px] font-black bg-theme/10 border border-theme/20 text-theme uppercase mb-1">
-                                                {t.project?.name?.slice(0, 10) || 'GENERAL'}
-                                            </span>
-                                            <p className="text-[12px] font-black text-primary truncate tracking-tight group-hover:text-theme transition-colors">{t.title}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex flex-col gap-1">
-                                                <span className={cn(
-                                                    "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest w-fit",
-                                                    t.status === 'In Progress' ? "bg-theme/10 text-theme border border-theme/20" : "bg-sunken text-tertiary/60 border border-glass/10"
-                                                )}>{t.status}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-end gap-3 min-w-0">
-                                            <div className={cn(
-                                                "px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest",
-                                                t.priority === 'Urgent' ? "text-danger bg-danger/10 border border-danger/20 shadow-glow-sm shadow-danger/10" : 
-                                                t.priority === 'High' ? "text-theme bg-theme/10 border border-theme/20" : "text-tertiary bg-sunken/40"
-                                            )}>
-                                                {t.priority}
-                                            </div>
-                                            <ArrowUpRight size={12} className="text-theme opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 shrink-0" />
-                                        </div>
-                                    </motion.div>
-                                ))
-                            ) : (
-                                <div className="py-20 flex flex-col items-center justify-center gap-4 opacity-20">
-                                    <CheckCircle2 className="w-10 h-10 text-theme" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">No Active Tasks</p>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
-
-                    {/* NASA APOD (Relocated below Matrix) */}
-                    {user?.interfacePrefs?.showApod !== false && (
-                        <div className="mt-8">
-                            <ApodWidget />
-                        </div>
-                    )}
-
-                    {/* Performance Stats (Relocated below APOD) */}
-                    <div className="mt-8">
-                        <Card variant="glass" padding="p-6" hideBorder className="rounded-[2.5rem] bg-surface/5 backdrop-blur-3xl shadow-panel border border-glass/5">
-                            <div className="flex items-center justify-between gap-3 mb-6">
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp className="w-3.5 h-3.5 text-theme" />
-                                    <h4 className="text-[10px] font-black text-primary uppercase tracking-widest opacity-60">Completion Rate</h4>
-                                </div>
-                                <div className="text-2xl font-black text-primary tracking-tighter tabular-nums flex items-baseline gap-0.5">
-                                    <Counter value={ws.completionPct} />
-                                    <span className="text-[10px] text-theme">%</span>
-                                </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="p-3 rounded-2xl bg-surface/5 border border-glass/5 flex flex-col gap-1">
-                                    <span className="text-[8px] font-black text-tertiary uppercase tracking-widest opacity-40">Resolved</span>
-                                    <span className="text-lg font-black text-primary leading-none">{ws.completedTasks || 0}</span>
-                                </div>
-                                <div className="p-3 rounded-2xl bg-surface/5 border border-glass/5 flex flex-col gap-1">
-                                    <span className="text-[8px] font-black text-tertiary uppercase tracking-widest opacity-40">In Play</span>
-                                    <span className="text-lg font-black text-primary leading-none">{(ws.totalTasks || 0) - (ws.completedTasks || 0)}</span>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
+            {/* completion bar */}
+            <div style={{
+                marginTop: 32,
+                background: 'var(--ent-surface)',
+                border: '1px solid var(--ent-border)',
+                borderRadius: 24, // Softer rounding
+                padding: '24px 32px',
+                boxShadow: 'var(--shadow-elevation)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <span className="ent-label">Workload Completion</span>
+                    <span style={{ fontFamily: 'var(--ent-mono)', fontSize: 13, color: 'var(--ent-text-1)' }}>
+                        <Counter value={pct} />%
+                    </span>
                 </div>
-
-                {/* COLUMN 3: DASHBOARD UTILITIES (SIDEBAR) */}
-                <div className="col-span-12 lg:col-span-4 space-y-8">
-                    <div className="flex items-center justify-between px-2">
-                        <div className="flex items-center gap-3">
-                            <Activity size={14} className="text-theme opacity-50" />
-                            <h2 className="text-[9px] font-black text-primary uppercase tracking-[0.4em] opacity-40">Dashboard Utilities</h2>
-                        </div>
+                <div style={{ height: 1, background: 'var(--ent-border)', borderRadius: 1 }}>
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ 
+                                    height: '100%', 
+                                    background: 'linear-gradient(to right, var(--v-blue), var(--v-emerald))',
+                                    borderRadius: 2 
+                                }}
+                    />
+                </div>
+                <div style={{ display: 'flex', gap: 40, marginTop: 16 }}>
+                    <div>
+                        <span className="ent-label">Resolved</span>
+                        <p style={{ fontFamily: 'var(--ent-mono)', fontSize: 18, color: 'var(--ent-text-1)', margin: '4px 0 0' }}>{ws.completedTasks}</p>
                     </div>
-
-                    <div className="space-y-8">
-                        {/* Daily Inspiration (Top of Sidebar) */}
-                        {user?.interfacePrefs?.showQuote !== false && <QuoteWidget />}
-
-                        {/* Global Sync (Minimalist) */}
-                        {user?.role !== 'Admin' && user?.interfacePrefs?.showTeamClock !== false && (
-                            <div className="px-2">
-                                <GlobalClockWidget />
-                            </div>
-                        )}
-
-                        {/* Real-time Activity (Minimalist) */}
-                        {user?.role !== 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
-                            <div className="px-2">
-                                <IntelligenceWidget />
-                            </div>
-                        )}
-
-                        {/* Urgent Tasks (Simplified Sidebar View) */}
-                        <div className="px-2">
-                            <div className="space-y-2.5">
-                                {ws.bottlenecks?.slice(0, 3).map((task) => {
-                                    const isUrgent = task.priority?.toLowerCase() === 'urgent';
-                                    const isOverdue = task.endDate && new Date(task.endDate) < new Date();
-                                    const isCritical = isUrgent || isOverdue;
-
-                                    return (
-                                        <div key={task._id} onClick={() => setSelectedTask(task)}
-                                            className="group cursor-pointer flex items-center justify-between gap-3">
-                                            <p className="text-[10px] font-bold text-secondary group-hover:text-danger transition-colors truncate flex-1">{task.title}</p>
-                                            <span className={cn(
-                                                "text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0",
-                                                isCritical ? "text-danger bg-danger/10" : "text-tertiary bg-glass/10"
-                                            )}>
-                                                {isUrgent ? 'URG' : isOverdue ? 'DUE' : 'RISK'}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                                {ws.bottlenecks?.length === 0 && <p className="text-[7px] font-black text-tertiary opacity-30 uppercase tracking-widest px-1">Clearance Confirmed</p>}
-                            </div>
-                        </div>
-
-                        {/* Weather */}
-                        {user?.interfacePrefs?.showWeather !== false && (
-                            <div className="px-2 border-t border-glass/5 pt-6">
-                                <WeatherWidget />
-                            </div>
-                        )}
+                    <div>
+                        <span className="ent-label">Remaining</span>
+                        <p style={{ fontFamily: 'var(--ent-mono)', fontSize: 18, color: 'var(--ent-red)', margin: '4px 0 0' }}>{(ws.totalTasks || 0) - (ws.completedTasks || 0)}</p>
                     </div>
                 </div>
             </div>
 
-            <AnimatePresence>
-                {selectedTask && (
-                    <TaskDetailModal
-                        task={selectedTask}
-                        projectId={selectedTask.project?._id || selectedTask.project}
-                        onClose={() => setSelectedTask(null)}
-                        onUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
-                    />
-                )}
-            </AnimatePresence>
+            {/* APOD */}
+            {user?.interfacePrefs?.showApod !== false && (
+                <div style={{ marginTop: 32 }}>
+                    <SectionHeader label="Visual Intelligence" />
+                    <div style={{ background: 'transparent' }}>
+                        <ApodWidget />
+                    </div>
+                </div>
+            )}
         </div>
+
+        {/* RIGHT SIDEBAR ───────────────────────────────────────────── */}
+        <div className="ent-sidebar-col" style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 48 }}>
+
+            {/* Bottlenecks */}
+            {ws.bottlenecks?.length > 0 && (
+                <div>
+                    <SectionHeader label="Strategic Risks" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {ws.bottlenecks.slice(0, 4).map((task, i) => {
+                            const isOverdue = task.endDate && new Date(task.endDate) < new Date();
+                            const isUrgent = task.priority?.toLowerCase() === 'urgent';
+                            const badge = isUrgent ? 'CRITICAL' : isOverdue ? 'OVERDUE' : 'AT RISK';
+                            const bColor = (isUrgent || isOverdue) ? 'var(--ent-red)' : 'var(--ent-amber)';
+                            return (
+                                <div
+                                    key={task._id}
+                                    onClick={() => setSelectedTask(task)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 12,
+                                        padding: '12px 0',
+                                        borderBottom: '1px solid var(--ent-border)',
+                                        cursor: 'pointer',
+                                        transition: 'opacity 0.2s',
+                                    }}
+                                    className="hover:opacity-70"
+                                >
+                                    <span style={{ fontSize: 13, color: 'var(--ent-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {task.title}
+                                    </span>
+                                    <span className="ent-tag" style={{ color: bColor, borderColor: 'transparent', background: 'transparent', padding: '0', fontSize: 8 }}>
+                                        {badge}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Quote */}
+            {user?.interfacePrefs?.showQuote !== false && (
+                <div>
+                    <SectionHeader label="Daily Narrative" />
+                    <QuoteWidget />
+                </div>
+            )}
+
+            {/* Activity (non-admin) */}
+            {user?.role !== 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
+                <div>
+                    <SectionHeader label="Workspace Activity" />
+                    <IntelligenceWidget />
+                </div>
+            )}
+
+            {/* Clock */}
+            {user?.role !== 'Admin' && user?.interfacePrefs?.showTeamClock !== false && (
+                <div>
+                    <SectionHeader label="Operational Sync" />
+                    <GlobalClockWidget />
+                </div>
+            )}
+
+            {/* Weather */}
+            {user?.interfacePrefs?.showWeather !== false && (
+                <div>
+                    <SectionHeader label="Regional Context" />
+                    <WeatherWidget />
+                </div>
+            )}
+        </div>
+    </div>
+
+    {/* ── TASK MODAL ───────────────────────────────────────────────── */}
+    <AnimatePresence>
+        {selectedTask && (
+            <TaskDetailModal
+                task={selectedTask}
+                projectId={selectedTask.project?._id || selectedTask.project}
+                onClose={() => setSelectedTask(null)}
+                onUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
+            />
+        )}
+    </AnimatePresence>
+</div>
     );
 };
 
-export default memo(Home);
+export default memo(Home);

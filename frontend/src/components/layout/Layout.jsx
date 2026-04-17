@@ -143,7 +143,7 @@ const Layout = ({ checkingAuth }) => {
                         transition={LIQUID_SPRING}
                         style={{ willChange: 'transform, opacity' }}
                         className={twMerge(clsx(
-                            "px-3 sm:px-6 lg:px-10 h-full transition-opacity duration-300",
+                            "px-4 sm:px-6 lg:px-10 h-full transition-opacity duration-300",
                             (isPending || isActuallyCheckingAuth) && "opacity-50 blur-sm pointer-events-none"
                         ))}
                     >

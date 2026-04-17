@@ -373,12 +373,34 @@ const getMyConnections = async (req, res, next) => {
     try {
         const userId = req.user._id;
         const limit = parseInt(req.query.limit) || 20;
-        const cursor = req.query.cursor; // This would be the 'respondedAt' of the last item
+        const cursor = req.query.cursor; 
+        const q = req.query.q;
 
-        const query = {
+        let query = {
             $or: [{ requester: userId }, { recipient: userId }],
             status: 'accepted',
         };
+
+        // If a search query is provided, we need to filter by the OTHER person's details.
+        // Step 1: Find users matching the query
+        if (q && q.trim().length >= 1) {
+            const matchingUsers = await User.find({
+                $or: [
+                    { name: { $regex: q, $options: 'i' } },
+                    { email: { $regex: q, $options: 'i' } }
+                ]
+            }).select('_id');
+            const matchingUserIds = matchingUsers.map(u => u._id);
+
+            // Step 2: Ensure the connection involves one of these matching users
+            query = {
+                $and: [
+                    { status: 'accepted' },
+                    { $or: [{ requester: userId }, { recipient: userId }] },
+                    { $or: [{ requester: { $in: matchingUserIds } }, { recipient: { $in: matchingUserIds } }] }
+                ]
+            };
+        }
 
         if (cursor) {
             query.respondedAt = { $lt: new Date(cursor) };

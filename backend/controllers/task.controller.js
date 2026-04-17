@@ -56,18 +56,25 @@ const getTasks = async (req, res, next) => {
             query.project = projectId;
         } else {
             // "All Projects" logic: Find projects user is a member of
-            const userProjects = await Project.find({
-                members: { 
-                    $elemMatch: { 
-                        userId: req.user._id, 
-                        status: { $nin: ['pending', 'rejected'] } 
-                    } 
-                },
-                isArchived: false
-            }).select('_id').lean();
-            
+            let projectQuery = { isArchived: false };
+            if (req.user.role !== 'Admin') {
+                projectQuery['members.userId'] = req.user._id;
+                projectQuery['members.status'] = 'active';
+            }
+
+            const userProjects = await Project.find(projectQuery).select('_id').lean();
             const projectIds = userProjects.map(p => p._id);
-            query.project = { $in: projectIds };
+            
+            // Allow fetching tasks if in projects OR specifically assigned to user
+            if (req.user.role === 'Admin') {
+                query.project = { $in: projectIds };
+            } else {
+                query.$or = [
+                    { project: { $in: projectIds } },
+                    { assignee: req.user._id },
+                    { assignees: req.user._id }
+                ];
+            }
         }
 
         // Pagination setup

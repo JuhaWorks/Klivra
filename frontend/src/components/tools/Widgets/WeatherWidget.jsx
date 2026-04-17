@@ -113,9 +113,9 @@ const WeatherWidget = () => {
     }
 
     return (
-        <Card variant="glass" compact padding="p-0" className="overflow-hidden bg-theme/[0.02]">
+        <div className="flex flex-col w-full h-full">
             {/* Ultra-Compact Header */}
-            <div className="px-5 py-4 flex items-center justify-between border-b border-glass bg-surface/20">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-glass">
                 <div className="flex items-center gap-3">
                     <div className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60"></span>
@@ -158,7 +158,7 @@ const WeatherWidget = () => {
             </div>
 
             {/* Micro Metrics - Single Row */}
-            <div className="px-5 py-4 bg-sunken/40 border-t border-glass flex items-center justify-between gap-4">
+            <div className="px-5 py-4 border-t border-glass flex items-center justify-between gap-4">
                 <MiniMetric icon={Wind} label="Wind" value={weather.windSpeed.toFixed(1)} unit="m/s" />
                 <div className="w-px h-6 bg-glass" />
                 <MiniMetric icon={Droplets} label="Humidity" value={weather.humidity} unit="%" />
@@ -182,7 +182,7 @@ const WeatherWidget = () => {
                 </div>
                 <span>Forensic Pulse Sync</span>
             </div>
-        </Card>
+        </div>
     );
 };
 

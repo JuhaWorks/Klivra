@@ -12,25 +12,32 @@ const OAuthCallback = () => {
     useEffect(() => {
         const handleOAuthCallback = async () => {
             try {
-                // The backend has securely set the HttpOnly refreshToken cookie before redirecting here.
-                // We call checkAuth() which will attempt to hit /api/auth/me.
-                // This triggers the Axios interceptor to securely fetch the short-lived accessToken via the refresh endpoint.
+                // Safari Fix: Wait briefly for the browser to register the HttpOnly cookie 
+                // injected by the backend redirect before triggering the auth check.
+                await new Promise(resolve => setTimeout(resolve, 500));
 
-
+                console.log("[AUTH] Starting OAuth session verification...");
+                
                 // 2. Fetch the user profile from the backend to populate the UI
-                await checkAuth(true);
+                await checkAuth();
 
+                console.log("[AUTH] OAuth session verified. Redirecting to dashboard...");
+                
                 // 3. Navigate instantly to the dashboard
                 navigate('/');
             } catch (err) {
-                console.error("OAuth Callback Error:", err);
-                setError(err.message || "An unexpected error occurred during authentication.");
-                setTimeout(() => navigate('/login'), 4000);
+                console.error("❌ OAuth Callback Error:", err);
+                const msg = err.response?.data?.message || err.message || "An unexpected error occurred during authentication.";
+                setError(msg);
+                
+                // Auto-redirect back to login on failure so the user isn't stuck
+                setTimeout(() => navigate('/login'), 5000);
             }
         };
 
         handleOAuthCallback();
-    }, [location, navigate, setAccessToken, checkAuth]);
+    }, [location, navigate, checkAuth]);
+
 
     // Error State
     if (error) {

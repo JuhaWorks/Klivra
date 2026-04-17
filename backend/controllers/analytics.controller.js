@@ -200,8 +200,9 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
     ]);
 
     // 3. Calculate Global KPIs
-    const activeTasks = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled');
+    const activeTasksCount = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled').length;
     const completedTasksCount = tasks.filter(t => t.status === 'Completed').length;
+    const validTasksCount = activeTasksCount + completedTasksCount;
     
     // Average PHI from snapshots
     const avgPhi = snapshots.length > 0 
@@ -214,6 +215,7 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
         : 0;
 
     // 4. Identify Strategic Threats (Cross-Project Bottlenecks)
+    const activeTasks = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled');
     const bottlenecks = activeTasks
         .map(t => {
             const priorityWeight = (t.priority === 'Urgent' ? 50 : (t.priority === 'High' ? 30 : 10));
@@ -230,9 +232,9 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
         data: {
             phi: Math.round(avgPhi),
             chaosIndex: Math.round(maxChaos),
-            totalTasks: tasks.length,
+            totalTasks: validTasksCount,
             completedTasks: completedTasksCount,
-            completionPct: tasks.length > 0 ? Math.round((completedTasksCount / tasks.length) * 100) : 0,
+            completionPct: validTasksCount > 0 ? Math.round((completedTasksCount / validTasksCount) * 100) : 0,
             activeProjects: projects.length,
             bottlenecks,
             forecast: {

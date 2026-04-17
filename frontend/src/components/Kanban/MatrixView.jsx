@@ -336,7 +336,7 @@ const AnalyticsSidebar = React.memo(({ metrics, onOpenTask, project, tasks, memb
         <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-[360px] shrink-0 border-l border-glass bg-glass-heavy backdrop-blur-3xl p-8 flex flex-col gap-8 overflow-hidden"
+            className="w-full lg:w-[360px] shrink-0 border-l lg:border-l border-glass bg-glass-heavy backdrop-blur-3xl p-4 lg:p-8 flex flex-col gap-8 overflow-hidden"
         >
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -878,7 +878,7 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
     }, [filteredTasks]);
 
     return (
-        <div className="flex-1 flex min-h-0 bg-base relative overflow-hidden font-sans">
+        <div className="flex flex-col lg:flex-row h-full w-full overflow-y-auto lg:overflow-hidden bg-base relative z-10 transition-all duration-300">
             <AnimatePresence>
                 {isBatchMode && selectedIds.length > 0 && (
                     <motion.div initial={{ y: 100, x: '-50%', opacity: 0 }} animate={{ y: -40, x: '-50%', opacity: 1 }} exit={{ y: 100, x: '-50%', opacity: 0 }}
@@ -896,28 +896,28 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex flex-col min-h-0 relative p-10">
+            <div className="flex-1 flex flex-col min-w-0 h-full lg:overflow-hidden p-4 lg:p-8">
                 <header className="flex flex-col gap-6 mb-10 shrink-0">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
                             <div className="w-12 h-12 rounded-[1.25rem] bg-theme/10 border border-theme/20 flex items-center justify-center shadow-theme-slight">
                                 <Target className="w-6 h-6 text-theme" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-black text-primary tracking-tighter uppercase leading-none">Priority Alignment Matrix</h1>
+                                <h1 className="text-2xl lg:text-3xl font-black text-primary tracking-tighter uppercase leading-none">Priority Alignment Matrix</h1>
                                 <p className="text-[10px] font-black text-tertiary/40 tracking-[0.6em] uppercase mt-2">Strategic Oversight Interface</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                             <div className="flex items-center gap-8 px-8 py-3 bg-sunken border border-glass rounded-[1.5rem]">
+                        <div className="flex items-center justify-between lg:justify-end gap-4">
+                             <div className="flex items-center gap-4 lg:gap-8 px-4 lg:px-8 py-3 bg-sunken border border-glass rounded-[1.5rem] overflow-x-auto">
                                 {[
                                     { label: 'Total Tasks', value: filteredTasks.length, unit: 'Units' },
                                     { label: 'Capacity', value: project?.members?.length || 0, unit: 'Members' },
                                     { label: 'Risk Drift', value: metrics.memberMetrics?.reduce((s, m) => s + (m.overdue || 0), 0) || 0, unit: 'Overdue', color: 'text-danger' }
                                 ].map((item, i) => (
-                                    <div key={i} className="flex flex-col">
+                                    <div key={i} className="flex flex-col shrink-0">
                                         <span className="text-[8px] font-black text-tertiary/40 uppercase tracking-widest mb-1">{item.label}</span>
-                                        <span className={twMerge(clsx("text-lg font-black font-mono", item.color || "text-primary"))}>
+                                        <span className={twMerge(clsx("text-base lg:text-lg font-black font-mono", item.color || "text-primary"))}>
                                             {item.value} <span className="text-[9px] text-tertiary/40">{item.unit}</span>
                                         </span>
                                     </div>
@@ -948,7 +948,7 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                     </div>
                 </header>
 
-                <div className="flex-1 grid grid-cols-2 gap-8 min-h-0 overflow-hidden relative">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-0 lg:overflow-hidden relative">
                     {MATRIX_CONFIG.quadrants.map(q => (
                         <MatrixQuadrant key={q.id} quadrant={q} tasks={categorized[q.id]} onOpen={onOpenTask} onDrop={handleDrop} isBatchMode={isBatchMode} selectedIds={selectedIds} onSelect={(id) => setSelectedIds(pv => pv.includes(id) ? pv.filter(x => x !== id) : [...pv, id])} page={quadrantPages[q.id]} onPageChange={(p) => setQuadrantPages(pv => ({ ...pv, [q.id]: p }))} />
                     ))}

@@ -341,10 +341,18 @@ const oauthCallback = async (req, res) => {
     });
 
     const options = getCookieOptions(true);
-    options.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // Explicitly set 7-day expiry for OAuth sessions to match generateRefreshToken
+    options.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    
     res.cookie('refreshToken', refreshToken, options);
 
+    // Safari Fix: Prevent the browser from caching the "logged out" state or the redirect itself.
+    res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.header('Pragma', 'no-cache');
+    res.header('Expires', '0');
+
     res.redirect(`${getFrontendUrl()}/oauth/callback`);
+
 };
 
 // @desc    Verify email address

@@ -201,16 +201,27 @@ const sendStandardEmail = async ({ to, subject, title, body, ctaText, ctaUrl, fo
  */
 const getCookieOptions = (rememberMe = false) => {
     const isProd = process.env.NODE_ENV === 'production';
+    
+    // Safari Fix: SameSite=None MUST have Secure=true.
+    // Detection: Enable Secure/None if NOT localhost.
+    const frontendUrl = getFrontendUrl();
+    const isLocal = frontendUrl.includes('localhost') || frontendUrl.includes('127.0.0.1');
+
     const options = {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? 'none' : 'lax',
+        // In Safari/Chrome, SameSite=None requires Secure=true.
+        // We force Secure=true unless we are explicitly on a local HTTP environment.
+        secure: !isLocal,
+        sameSite: isLocal ? 'lax' : 'none',
     };
+
     if (rememberMe) {
-        options.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        options.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
     }
+    
     return options;
 };
+
 
 /**
  * Robustly checks if maintenance mode is effectively active.
