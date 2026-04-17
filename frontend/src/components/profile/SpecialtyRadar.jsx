@@ -30,7 +30,8 @@ const SpecialtyRadar = memo(({
     const data = useMemo(() => 
         RADAR_SUBJECTS.map((sub) => ({
             subject: sub,
-            A: specialties[sub] ?? 0,
+            // Clamping 0-100 ensures geometric stability against outlier data
+            A: Math.min(100, Math.max(0, specialties[sub] ?? 0)),
             fullMark: fullMark,
         })),
         [specialties, fullMark]

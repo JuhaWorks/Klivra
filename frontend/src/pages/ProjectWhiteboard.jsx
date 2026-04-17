@@ -305,8 +305,8 @@ const ProjectWhiteboard = () => {
     return (
         <article className="h-screen flex flex-col overflow-hidden bg-base selection:bg-theme/30 transition-colors duration-500">
             {/* Header: Project Context & Global Actions */}
-            <header className="shrink-0 z-[100] px-8 py-6 flex items-center justify-between border-b border-default bg-surface/40 backdrop-blur-3xl">
-                <div className="flex items-center gap-6">
+            <header className="shrink-0 z-[100] px-4 sm:px-8 py-3 sm:py-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-default bg-surface/40 backdrop-blur-3xl">
+                <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-6">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 text-theme font-black text-[9px] uppercase tracking-[0.3em]">
                             <Sparkles className="w-3 h-3" />
@@ -321,13 +321,13 @@ const ProjectWhiteboard = () => {
                     <div className="relative">
                         <button
                             onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            className="h-12 flex items-center gap-3 px-5 bg-sunken rounded-2xl border border-default hover:border-theme/40 transition-all group active:scale-95 shadow-lg shadow-black/5"
+                            className="h-10 sm:h-12 flex items-center gap-2 sm:gap-3 px-3 sm:px-5 bg-sunken rounded-xl sm:rounded-2xl border border-default hover:border-theme/40 transition-all group active:scale-95 shadow-lg shadow-black/5"
                         >
-                            <Filter className="w-4 h-4 text-gray-500 group-hover:text-theme transition-colors" />
-                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                            <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 group-hover:text-theme transition-colors" />
+                            <span className="text-[9px] sm:text-[11px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap max-w-[80px] sm:max-w-none truncate">
                                 {activeProject ? activeProject.name : 'Select Project'}
                             </span>
-                            <ChevronDown className={cn("w-3.5 h-3.5 text-gray-600 transition-transform", isFilterOpen && "rotate-180")} />
+                            <ChevronDown className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-600 transition-transform", isFilterOpen && "rotate-180")} />
                         </button>
 
                         <AnimatePresence>
@@ -376,29 +376,32 @@ const ProjectWhiteboard = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6">
+                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6">
                     {/* Synchronized Collaborative Presence */}
-                    <div className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.08] px-4 py-2 rounded-2xl">
-                        <div className="flex -space-x-2">
-                            {activeProjectMembers.length > 0 ? activeProjectMembers.map((v, i) => (
-                                <div key={v.userId} className="w-8 h-8 rounded-full border-2 border-[#09090b] overflow-hidden bg-gray-800 ring-2 ring-emerald-500/20" title={`${v.name} (Active)`}>
+                    <div className="flex items-center gap-2 sm:gap-3 bg-white/[0.03] border border-white/[0.08] px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl overflow-hidden">
+                        <div className="flex -space-x-2 shrink-0">
+                            {activeProjectMembers.length > 0 ? activeProjectMembers.slice(0, 3).map((v, i) => (
+                                <div key={v.userId} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-[#09090b] overflow-hidden bg-gray-800 ring-2 ring-emerald-500/20 shadow-lg" title={`${v.name} (Active)`}>
                                     <img src={v.avatar || '/default-avatar.png'} alt={v.name} className="w-full h-full object-cover" />
                                 </div>
                             )) : (
-                                <div className="w-8 h-8 rounded-full border-2 border-[#09090b] bg-white/5 flex items-center justify-center">
-                                    <Sparkles className="w-3.5 h-3.5 text-white/20" />
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-[#09090b] bg-white/5 flex items-center justify-center">
+                                    <Sparkles className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-white/20" />
                                 </div>
                             )}
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Team Live</span>
-                            <span className="text-[10px] font-black text-theme">{activeProjectMembers.length || 1} Syncing</span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[7px] sm:text-[9px] font-bold text-gray-500 uppercase tracking-widest truncate">Live</span>
+                            <span className="text-[8px] sm:text-[10px] font-black text-theme whitespace-nowrap">{activeProjectMembers.length || 1} Sync</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <Button variant="outline" size="sm" onClick={handleExport} leftIcon={Download} className="border-white/10 text-gray-400">Export</Button>
-                        <Button variant="outline" size="sm" onClick={handleShare} leftIcon={Share2} className="border-white/10 text-gray-400">Share</Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="xs" onClick={handleExport} className="border-white/10 text-gray-400 flex sm:hidden p-2"><Download className="w-4 h-4" /></Button>
+                        <Button variant="outline" size="sm" onClick={handleExport} leftIcon={Download} className="border-white/10 text-gray-400 hidden sm:flex">Export</Button>
+                        
+                        <Button variant="outline" size="xs" onClick={handleShare} className="border-white/10 text-gray-400 flex sm:hidden p-2"><Share2 className="w-4 h-4" /></Button>
+                        <Button variant="outline" size="sm" onClick={handleShare} leftIcon={Share2} className="border-white/10 text-gray-400 hidden sm:flex">Share</Button>
                     </div>
                 </div>
             </header>
@@ -473,14 +476,14 @@ const ProjectWhiteboard = () => {
                 <motion.nav
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-4 p-2.5 bg-elevated/90 backdrop-blur-2xl border border-default rounded-3xl shadow-lift"
+                    className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-2 sm:gap-4 p-2 bg-elevated/90 backdrop-blur-2xl border border-default rounded-2xl sm:rounded-3xl shadow-lift w-auto max-w-[calc(100%-2rem)]"
                 >
                     <Tooltip content="Add Spark">
                         <button
                             onClick={handleAddNote}
-                            className="w-14 h-14 rounded-2xl bg-theme text-black flex items-center justify-center shadow-lg shadow-theme/30 active:scale-90 transition-all group"
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-theme text-black flex items-center justify-center shadow-lg shadow-theme/30 active:scale-90 transition-all group shrink-0"
                         >
-                            <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                            <Plus className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-300" />
                         </button>
                     </Tooltip>
 

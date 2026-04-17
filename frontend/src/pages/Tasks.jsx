@@ -212,24 +212,24 @@ export default function Tasks() {
                         </div>
                         <span>Task Management Dashboard</span>
                     </div>
-                    <div className="space-y-2">
-                        <h1 className="text-3xl sm:text-6xl font-black text-primary tracking-tighter leading-[0.85]">
+                    <div className="space-y-4">
+                        <h1 className="text-4xl sm:text-6xl font-black text-primary tracking-tighter leading-[0.85]">
                             Task <span className="text-theme">Management.</span>
                         </h1>
-                        <p className="text-secondary font-medium text-xs sm:text-xl max-w-xl leading-relaxed opacity-80">
+                        <p className="text-secondary font-medium text-sm sm:text-xl max-w-xl leading-relaxed opacity-80">
                             Manage and track project tasks with real-time status updates and team synchronization.
                         </p>
                     </div>
                 </div>
 
-                <nav className="flex flex-wrap items-center gap-4 sm:gap-6" aria-label="Task management controls">
+                <nav className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6" aria-label="Task management controls">
                     {/* View Switcher Morphing */}
-                    <div className="flex p-1.5 bg-sunken/50 backdrop-blur-xl rounded-[1.75rem] border border-subtle relative shadow-2xl">
+                    <div className="flex p-1.5 bg-sunken/50 backdrop-blur-xl rounded-[1.75rem] border border-subtle relative shadow-2xl overflow-x-auto">
                         {['kanban', 'list'].map((mode) => (
                             <button
                                 key={mode}
                                 onClick={() => handleViewChange(mode)}
-                                className={`relative z-10 px-5 py-3 rounded-2xl transition-all duration-500 uppercase text-[10px] font-black tracking-widest ${optimisticView === mode ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}
+                                className={`relative z-10 flex-1 sm:flex-none px-5 py-3 rounded-2xl transition-all duration-500 uppercase text-[10px] font-black tracking-widest ${optimisticView === mode ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}
                                 aria-label={`${mode} view`}
                             >
                                 {optimisticView === mode && (
@@ -239,9 +239,9 @@ export default function Tasks() {
                                         transition={LIQUID_SPRING}
                                     />
                                 )}
-                                <div className="flex items-center gap-2 relative z-10">
+                                <div className="flex items-center justify-center gap-2 relative z-10">
                                     {mode === 'kanban' ? <LayoutGrid className="w-4 h-4" /> : <List className="w-4 h-4" />}
-                                    <span className="hidden sm:inline">{mode}</span>
+                                    <span className="">{mode}</span>
                                 </div>
                             </button>
                         ))}
@@ -252,7 +252,7 @@ export default function Tasks() {
                         leftIcon={Plus}
                         size="lg"
                         onClick={() => setTriggerQuickAdd(Date.now())}
-                        className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-xl shadow-theme/30 w-full sm:w-auto"
+                        className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-xl shadow-theme/30"
                     >
                         New Task
                     </Button>

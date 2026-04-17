@@ -882,7 +882,7 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
             <AnimatePresence>
                 {isBatchMode && selectedIds.length > 0 && (
                     <motion.div initial={{ y: 100, x: '-50%', opacity: 0 }} animate={{ y: -40, x: '-50%', opacity: 1 }} exit={{ y: 100, x: '-50%', opacity: 0 }}
-                        className="fixed bottom-0 left-1/2 z-[100] w-[600px] h-20 bg-glass-heavy backdrop-blur-3xl border border-glass rounded-[2rem] shadow-evolution flex items-center justify-between px-8"
+                        className="fixed bottom-0 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-[600px] h-auto min-h-20 bg-glass-heavy backdrop-blur-3xl border border-glass rounded-[2rem] shadow-evolution flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4"
                     >
                         <div className="flex items-center gap-4">
                             <Zap className="w-5 h-5 text-theme" />
@@ -903,9 +903,9 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                             <div className="w-12 h-12 rounded-[1.25rem] bg-theme/10 border border-theme/20 flex items-center justify-center shadow-theme-slight">
                                 <Target className="w-6 h-6 text-theme" />
                             </div>
-                            <div>
-                                <h1 className="text-2xl lg:text-3xl font-black text-primary tracking-tighter uppercase leading-none">Priority Alignment Matrix</h1>
-                                <p className="text-[10px] font-black text-tertiary/40 tracking-[0.6em] uppercase mt-2">Strategic Oversight Interface</p>
+                            <div className="flex flex-col">
+                                <h1 className="text-xl lg:text-3xl font-black text-primary tracking-tighter uppercase leading-none">Priority Alignment Matrix</h1>
+                                <p className="text-[8px] lg:text-[10px] font-black text-tertiary/40 tracking-[0.2em] lg:tracking-[0.6em] uppercase mt-2">Strategic Oversight Interface</p>
                             </div>
                         </div>
                         <div className="flex items-center justify-between lg:justify-end gap-4">
@@ -929,20 +929,20 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-6 p-2 bg-sunken border border-glass rounded-[2rem]">
-                        <div className="flex items-center gap-4 flex-1 px-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-2 bg-sunken border border-glass rounded-[1.5rem] sm:rounded-[2rem]">
+                        <div className="flex items-center gap-4 flex-1 px-4 lg:px-6 w-full">
                             <MousePointer2 className="w-4 h-4 text-tertiary/30" />
                             <input type="text" placeholder="FILTER STRATEGIC SCOPE..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                                className="bg-transparent border-none text-[11px] font-black text-primary placeholder:text-tertiary/30 w-full focus:ring-0 uppercase tracking-widest shadow-none" />
+                                className="bg-transparent border-none text-[10px] lg:text-[11px] font-black text-primary placeholder:text-tertiary/30 w-full focus:ring-0 uppercase tracking-widest shadow-none" />
                         </div>
-                        <div className="flex items-center gap-3 pr-2">
-                             <select value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="bg-transparent border-none text-[10px] font-black text-tertiary uppercase tracking-widest focus:ring-0 cursor-pointer">
+                        <div className="flex items-center justify-between md:justify-end gap-3 pr-2 w-full md:w-auto">
+                             <select value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="bg-transparent border-none text-[9px] lg:text-[10px] font-black text-tertiary uppercase tracking-widest focus:ring-0 cursor-pointer min-w-[120px]">
                                 <option value="ALL">ALL MEMBERS</option>
                                 {project?.members?.map(m => <option key={m.userId?._id} value={m.userId._id}>{m.userId.name}</option>)}
                             </select>
-                            <div className="h-6 w-px bg-glass mx-2" />
-                            <button onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds([]); }} className={`px-6 py-2.5 rounded-[1.25rem] border text-[10px] font-black uppercase tracking-widest transition-all ${isBatchMode ? 'bg-theme border-theme text-white shadow-theme-slight' : 'bg-sunken border-glass text-tertiary hover:text-primary'}`}>
-                                {isBatchMode ? 'Cancel' : 'Bulk Action'}
+                            <div className="h-6 w-px bg-glass md:mx-2" />
+                            <button onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds([]); }} className={`px-4 lg:px-6 py-2.5 rounded-[1rem] lg:rounded-[1.25rem] border text-[9px] lg:text-[10px] font-black uppercase tracking-widest transition-all ${isBatchMode ? 'bg-theme border-theme text-white shadow-theme-slight' : 'bg-sunken border-glass text-tertiary hover:text-primary'}`}>
+                                {isBatchMode ? 'Cancel' : 'Bulk'}
                             </button>
                         </div>
                     </div>

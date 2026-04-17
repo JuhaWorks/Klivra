@@ -35,9 +35,9 @@ const AnimatedNumber = ({ value, duration = 1.2 }) => {
 
 /* ─────────────────────── status / role badges ─── */
 const STATUS_MAP = {
-    restricted: { label: 'Restricted', color: '#ff4d6d', bg: 'rgba(255,77,109,0.08)', border: 'rgba(255,77,109,0.2)' },
-    inactive: { label: 'Inactive', color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.2)' },
-    active: { label: 'Active', color: '#00e5a0', bg: 'rgba(0,229,160,0.08)', border: 'rgba(0,229,160,0.2)' },
+    restricted: { label: 'Restricted', color: 'var(--red)', bg: 'rgba(255,77,109,0.08)', border: 'rgba(255,77,109,0.2)' },
+    inactive: { label: 'Inactive', color: 'var(--text-tertiary)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)' },
+    active: { label: 'Active', color: 'var(--green)', bg: 'rgba(0,229,160,0.08)', border: 'rgba(0,229,160,0.2)' },
 };
 
 const StatusBadge = ({ user: u }) => {
@@ -59,8 +59,8 @@ const StatusBadge = ({ user: u }) => {
 
 const ROLE_MAP = {
     Admin: { color: 'var(--accent-500)', bg: 'var(--accent-bg)', border: 'var(--accent-border)' },
-    Manager: { color: '#38bdf8', bg: 'rgba(56,189,248,0.07)', border: 'rgba(56,189,248,0.18)' },
-    Developer: { color: '#a78bfa', bg: 'rgba(167,139,250,0.07)', border: 'rgba(167,139,250,0.18)' },
+    Manager: { color: 'var(--blue)', bg: 'rgba(56,189,248,0.07)', border: 'rgba(56,189,248,0.18)' },
+    Developer: { color: 'var(--purple)', bg: 'rgba(167,139,250,0.07)', border: 'rgba(167,139,250,0.18)' },
 };
 
 const RoleBadge = ({ role }) => {
@@ -141,20 +141,20 @@ const CommandPalette = ({ open, onClose, users = [], onBan, onRole }) => (
                         <kbd style={{ fontSize: 9, fontFamily: 'var(--mono)', color: '#4a5568', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '2px 6px' }}>ESC</kbd>
                     </div>
                     <div style={{ padding: '6px 6px 10px' }}>
-                        <div style={{ padding: '6px 12px 4px', fontSize: 9, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: '#334155', fontFamily: 'var(--mono)' }}>Quick Actions</div>
+                        <div style={{ padding: '6px 12px 4px', fontSize: 9, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--text-disabled)', fontFamily: 'var(--mono)' }}>Quick Actions</div>
                         {[
-                            { icon: '⚡', label: 'Schedule Maintenance', hint: 'System' },
-                            { icon: '📋', label: 'Export User CSV', hint: 'Export' },
-                            { icon: '🔒', label: 'Lock All Sessions', hint: 'Security' },
-                            { icon: '📊', label: 'View Activity Log', hint: 'Audit' },
-                        ].map((a, i) => (
-                            <motion.button key={i} whileHover={{ background: 'rgba(0,229,160,0.05)' }}
-                                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', fontFamily: 'var(--sans)', fontSize: 13, textAlign: 'left' }}
+                            { id: 'maint', icon: '⚡', label: 'Schedule Maintenance', hint: 'System' },
+                            { id: 'export', icon: '📋', label: 'Export User CSV', hint: 'Export' },
+                            { id: 'lock', icon: '🔒', label: 'Lock All Sessions', hint: 'Security' },
+                            { id: 'audit', icon: '📊', label: 'View Activity Log', hint: 'Audit' },
+                        ].map((a) => (
+                            <motion.button key={a.id} whileHover={{ background: 'rgba(0,229,160,0.05)' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'var(--sans)', fontSize: 13, textAlign: 'left' }}
                                 onClick={onClose}
                             >
                                 <span style={{ fontSize: 15 }}>{a.icon}</span>
                                 <span style={{ flex: 1 }}>{a.label}</span>
-                                <span style={{ fontSize: 9, fontFamily: 'var(--mono)', color: '#334155', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', padding: '2px 7px', borderRadius: 4 }}>{a.hint}</span>
+                                <span style={{ fontSize: 9, fontFamily: 'var(--mono)', color: 'var(--text-disabled)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', padding: '2px 7px', borderRadius: 4 }}>{a.hint}</span>
                             </motion.button>
                         ))}
                     </div>
@@ -661,7 +661,7 @@ const AdminDashboard = () => {
                                         <tbody>
                                             {isLoading ? (
                                                 Array.from({ length: 8 }).map((_, i) => (
-                                                    <motion.tr key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * .05 }}>
+                                                    <motion.tr key={`skeleton-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * .05 }}>
                                                         <td style={{ padding: '14px 24px' }}><div style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(255,255,255,0.04)' }} /></td>
                                                         <td style={{ padding: '14px 24px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -673,7 +673,7 @@ const AdminDashboard = () => {
                                                             </div>
                                                         </td>
                                                         {[55, 65, 90, 32].map((w, j) => (
-                                                            <td key={j} style={{ padding: '14px 24px' }}>
+                                                            <td key={`skeleton-cell-${i}-${j}`} style={{ padding: '14px 24px' }}>
                                                                 <div style={{ width: w, height: 20, borderRadius: 5, background: 'rgba(255,255,255,0.03)', backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
                                                             </td>
                                                         ))}
@@ -684,7 +684,7 @@ const AdminDashboard = () => {
                                                     <td colSpan={6} style={{ padding: '70px 24px', textAlign: 'center' }}>
                                                         <motion.div initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }}>
                                                             <div style={{ fontSize: 32, marginBottom: 12 }}>⚠</div>
-                                                            <div style={{ fontSize: 13, color: '#2d3748', fontFamily: 'var(--mono)' }}>No users found for "{search}"</div>
+                                                            <div style={{ fontSize: 13, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>No users found for "{search}"</div>
                                                         </motion.div>
                                                     </td>
                                                 </tr>

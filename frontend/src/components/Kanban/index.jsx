@@ -704,7 +704,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                 'bg-[#0c0c0e] border border-white/[0.05]',
             )}>
                 {/* View switcher */}
-                <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.05] p-1 rounded-xl">
+                <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.05] p-1 rounded-xl overflow-x-auto max-w-full no-scrollbar">
                     {VIEW_MODES.map(({ id, label, Icon }) => {
                         const active = viewMode === id;
                         return (
@@ -712,14 +712,14 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                                 key={id}
                                 onClick={() => setViewMode(id)}
                                 className={twMerge(clsx(
-                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-widest transition-all duration-150',
+                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-widest transition-all duration-150 shrink-0',
                                     active
                                         ? 'bg-white/[0.08] text-white shadow-sm'
                                         : 'text-zinc-600 hover:text-zinc-300',
                                 ))}
                             >
                                 <Icon className="w-3 h-3" />
-                                {label}
+                                <span className="whitespace-nowrap">{label}</span>
                             </button>
                         );
                     })}
@@ -790,7 +790,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                     {/* Columns */}
                     <div className="flex-1 flex flex-col min-h-0" ref={boardRef}>
                         {filteredTasksByView.type === 'standard' ? (
-                            <div className="flex flex-1 gap-4 overflow-x-auto pb-4 items-stretch h-full">
+                            <div className="flex flex-1 gap-4 overflow-x-auto pb-4 items-stretch h-full px-1">
                                 {boardColumns.map(col => (
                                     <KanbanColumn
                                         key={col.id}

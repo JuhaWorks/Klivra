@@ -13,6 +13,7 @@ import { useSmartScroll } from '../../hooks/useSmartScroll';
 import { cn } from '../../utils/cn';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { isSameDay, format } from 'date-fns';
 import { getOptimizedAvatar } from '../../utils/avatar';
 import { toast } from 'react-hot-toast';
@@ -115,6 +116,7 @@ const ChatTray = () => {
         };
     }, [user, fetchChats, addIncomingMessage, setTyping, isDrawerOpen, setDrawerOpen, setActiveChat, handleMessageDeleted]);
 
+    const isMobile = useMediaQuery('(max-width: 768px)');
     const bubbledChats = chats.filter(c => bubbledChatIds.includes(c._id));
 
     return (
@@ -126,61 +128,78 @@ const ChatTray = () => {
                         <motion.div 
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setDrawerOpen(false)}
-                            className="absolute inset-0 bg-black/40 backdrop-blur-md pointer-events-auto"
+                            className="absolute inset-0 bg-black/60 backdrop-blur-xl pointer-events-auto"
                         />
                         <motion.div
-                            initial={{ x: -420, opacity: 0, scale: 0.95 }} 
+                            initial={{ x: isMobile ? 0 : -420, y: isMobile ? 100 : 0, opacity: 0, scale: 0.95 }} 
                             animate={{ 
-                                x: 0,
+                                x: isMobile ? 0 : 0,
+                                y: 0,
                                 opacity: 1,
                                 scale: 1,
-                                width: activeChat ? 740 : 320,
-                                height: 744
+                                width: isMobile ? '100%' : (activeChat ? 740 : 320),
+                                height: isMobile ? '100%' : 744,
+                                borderRadius: isMobile ? 0 : '2.5rem',
+                                left: isMobile ? 0 : 32,
+                                top: isMobile ? 0 : 32
                             }} 
-                            exit={{ x: -420, opacity: 0, scale: 0.95 }}
+                            exit={{ x: isMobile ? 0 : -420, y: isMobile ? 100 : 0, opacity: 0, scale: 0.95 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="absolute top-8 left-8 bg-surface border border-glass shadow-modal pointer-events-auto rounded-[2.5rem] flex flex-row overflow-hidden z-50"
+                            className="absolute bg-surface border border-glass shadow-modal pointer-events-auto flex flex-row overflow-hidden z-50"
                         >
-                            <div className="w-[320px] h-full shrink-0 flex flex-col relative z-20 shadow-[8px_0_24px_-12px_rgba(0,0,0,0.1)]">
-                                <ChatList 
-                                    chats={chats} 
-                                    activeChat={activeChat}
-                                    onSelectChat={(chat) => {
-                                        setActiveChat(chat);
-                                        setOpenBubbleId(null);
-                                    }} 
-                                    onClose={() => setDrawerOpen(false)} 
-                                />
-                            </div>
+                            {/* Panel 1: Chat List */}
+                            <AnimatePresence mode="wait">
+                                {(!isMobile || !activeChat) && (
+                                    <motion.div 
+                                        initial={isMobile ? { opacity: 0 } : false}
+                                        animate={{ opacity: 1 }}
+                                        exit={isMobile ? { opacity: 0 } : false}
+                                        className={cn(
+                                            "h-full shrink-0 flex flex-col relative z-20 shadow-[8px_0_24px_-12px_rgba(0,0,0,0.1)]",
+                                            isMobile ? "w-full" : "w-[320px]"
+                                        )}
+                                    >
+                                        <ChatList 
+                                            chats={chats} 
+                                            activeChat={activeChat}
+                                            onSelectChat={(chat) => {
+                                                setActiveChat(chat);
+                                                setOpenBubbleId(null);
+                                            }} 
+                                            onClose={() => setDrawerOpen(false)} 
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                             
-                            <div className={cn(
-                                "flex-1 h-full relative transition-opacity duration-300",
-                                activeChat ? "opacity-100" : "opacity-0 invisible"
-                            )}>
-                                <AnimatePresence mode="wait">
-                                    {activeChat ? (
-                                        <motion.div 
-                                            key={activeChat._id}
-                                            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="absolute inset-0 bg-surface flex flex-col"
-                                        >
-                                            <ChatBox chat={activeChat} onBack={() => setActiveChat(null)} />
-                                        </motion.div>
-                                    ) : (
-                                        <motion.div 
-                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                            className="h-full flex flex-col items-center justify-center p-12 text-center opacity-30 select-none"
-                                        >
-                                            <div className="w-20 h-20 bg-sunken rounded-[2.5rem] flex items-center justify-center mb-6">
-                                                <MessageSquare className="w-10 h-10 text-tertiary" />
-                                            </div>
-                                            <h3 className="text-lg font-black text-primary">Select a Conversation</h3>
-                                            <p className="text-[11px] text-tertiary mt-2 max-w-[200px]">Choose a chat from the sidebar to start collaborating.</p>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
+                            {/* Panel 2: Chat Box */}
+                            <AnimatePresence mode="wait">
+                                {(activeChat) && (
+                                    <motion.div 
+                                        initial={isMobile ? { x: '100%' } : { opacity: 0, x: 20 }} 
+                                        animate={{ opacity: 1, x: 0 }} 
+                                        exit={isMobile ? { x: '100%' } : { opacity: 0, x: -20 }}
+                                        transition={{ type: 'spring', damping: 25, stiffness: 300, duration: 0.2 }}
+                                        className={cn(
+                                            "h-full relative transition-opacity duration-300 bg-surface flex flex-col",
+                                            isMobile ? "absolute inset-0 z-30" : "flex-1"
+                                        )}
+                                    >
+                                        <ChatBox chat={activeChat} onBack={() => setActiveChat(null)} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Empty State placeholder for Desktop */}
+                            {!isMobile && !activeChat && (
+                                <div className="flex-1 h-full flex flex-col items-center justify-center p-12 text-center opacity-30 select-none">
+                                    <div className="w-20 h-20 bg-sunken rounded-[2.5rem] flex items-center justify-center mb-6">
+                                        <MessageSquare className="w-10 h-10 text-tertiary" />
+                                    </div>
+                                    <h3 className="text-lg font-black text-primary">Select a Conversation</h3>
+                                    <p className="text-[11px] text-tertiary mt-2 max-w-[200px]">Choose a chat from the sidebar to start collaborating.</p>
+                                </div>
+                            )}
                         </motion.div>
                     </div>
                 )}

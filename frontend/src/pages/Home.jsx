@@ -177,16 +177,59 @@ const styles = `
     }
   }
 
-  @media (max-width: 640px) {
+  @media (max-width: 1024px) {
+    .ent-main-grid {
+      grid-template-columns: 1fr !important;
+      gap: 32px !important;
+    }
+    .ent-admin-pulse {
+      order: 3;
+    }
+    .ent-sidebar-col {
+      order: 2;
+    }
+    .ent-task-col {
+      order: 1;
+    }
+    .ent-header-hud {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .ent-root {
+      padding: 0 20px 48px !important;
+    }
+    header {
+      padding: 32px 0 24px !important;
+      margin-bottom: 24px !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 24px !important;
+    }
+    .ent-greeting-area {
+      padding-right: 0 !important;
+      border-right: none !important;
+      width: 100%;
+    }
+    .ent-greeting-area h1 {
+      font-size: 26px !important;
+      white-space: normal !important;
+    }
+    .ent-dashboard-grid {
+      width: 100%;
+    }
     .ent-task-row {
-      grid-template-columns: 1fr 100px;
+      grid-template-columns: 1fr 80px !important;
+      padding: 16px 16px !important;
+      gap: 8px !important;
     }
     .ent-task-row span:nth-child(2),
     .ent-task-row span:nth-child(3) {
-      display: none;
+      display: none !important;
     }
     .ent-label:not(:first-child):not(:last-child) {
-      display: none;
+      display: none !important;
     }
   }
 
@@ -414,18 +457,24 @@ const Home = () => {
     </header>
 
     {/* ── BODY GRID ────────────────────────────────────────────────── */}
-    <div style={{
-        display: 'grid',
-        gridTemplateColumns: user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false
-            ? '300px 1fr 300px'
-            : '1fr 340px',
-        gap: 48,
-        alignItems: 'start',
-    }}>
+    <div 
+        className={cn(
+            "ent-main-grid",
+            user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false ? "ent-admin-layout" : "ent-standard-layout"
+        )}
+        style={{
+            display: 'grid',
+            gridTemplateColumns: user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false
+                ? '300px 1fr 300px'
+                : '1fr 340px',
+            gap: 48,
+            alignItems: 'start',
+        }}
+    >
 
         {/* ACTIVITY FEED — Admin only ─────────────────────────────── */}
         {user?.role === 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
-            <div>
+            <div className="ent-admin-pulse">
                 <SectionHeader label="System Pulse" />
                 <div style={{ background: 'transparent' }}>
                     <IntelligenceWidget fixed />
@@ -434,7 +483,7 @@ const Home = () => {
         )}
 
         {/* TASKS ───────────────────────────────────────────────────── */}
-        <div style={{ minWidth: 0 }}>
+        <div className="ent-task-col" style={{ minWidth: 0 }}>
             {/* task count line */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12 }}>
                 <span className="ent-label">Active Tracks</span>
