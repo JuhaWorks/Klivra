@@ -48,7 +48,7 @@ const IntelligenceWidget = ({ fixed = false }) => {
     // Data Fetching
     const { data: actRes, isLoading: actLoading } = useQuery({
         queryKey: ['activityFeed'],
-        queryFn: async ({ signal }) => (await api.get('/audit?limit=50', { signal })).data,
+        queryFn: async ({ signal }) => (await api.get('/admin/audit?limit=50', { signal })).data,
         staleTime: 1000 * 60 * 5,
         enabled: !!user,
     });

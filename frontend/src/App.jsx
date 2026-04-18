@@ -32,6 +32,7 @@ const Home = lazy(() => import('./pages/Home'));
 const Networking = lazy(() => import('./pages/Networking'));
 
 import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
+import { registerServiceWorker, subscribeToNotifications } from './utils/push';
 
 // Protected Route Wrapper Component
 const ProtectedRoute = ({ children }) => {
@@ -58,6 +59,19 @@ function App() {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Initialize background push notifications
+  useEffect(() => {
+    const initPush = async () => {
+      await registerServiceWorker();
+      // If user is already authenticated, ensure they are subscribed on this device
+      if (isAuthenticated) {
+        // Simple delay to ensure registration is ready
+        setTimeout(subscribeToNotifications, 3000);
+      }
+    };
+    initPush();
+  }, [isAuthenticated]);
 
   // Connect Socket to React Query for zero-reload synchronized updates
   useEffect(() => {

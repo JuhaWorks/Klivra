@@ -16,7 +16,18 @@ const getUserChats = async (req, res, next) => {
 
         // Identify which chats are currently bubbled for this user
         const bubbledChatIds = req.user.interfacePrefs?.bubbledChats?.map(id => id.toString()) || [];
-        const formattedChats = chats.map(chat => ({
+        
+        const formattedChats = chats.filter(chat => {
+            const userDeletedAt = chat.deletedAt instanceof Map && chat.deletedAt.has(req.user._id.toString()) 
+                ? chat.deletedAt.get(req.user._id.toString()) 
+                : null;
+            
+            if (!userDeletedAt) return true;
+            if (!chat.lastMessage) return false;
+            
+            // Re-appear if last message is newer than the deletion date
+            return new Date(chat.lastMessage.createdAt) > new Date(userDeletedAt);
+        }).map(chat => ({
             ...chat,
             isBubbled: bubbledChatIds.includes(chat._id.toString())
         }));
@@ -44,7 +55,12 @@ const getChatMessageHistory = async (req, res, next) => {
             return res.status(403).json({ status: 'error', message: 'Access denied. You are not a participant in this chat.' });
         }
 
-        const messages = await Message.find({ chat: chatId })
+        const clearedAt = chat.clearedAt?.get(req.user._id.toString()) || new Date(0);
+        
+        const messages = await Message.find({ 
+            chat: chatId,
+            createdAt: { $gt: clearedAt }
+        })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
@@ -119,9 +135,15 @@ const sendMessage = async (req, res, next) => {
         
         // Increment unread for all participants except sender
         chat.participants.forEach(pId => {
-            if (pId.toString() !== req.user._id.toString()) {
-                const current = chat.unreadCounts.get(pId.toString()) || 0;
-                chat.unreadCounts.set(pId.toString(), current + 1);
+            const sId = pId.toString();
+            // Clear deletedAt for everyone so it reappears in their inbox
+            if (chat.deletedAt instanceof Map && chat.deletedAt.has(sId)) {
+                chat.deletedAt.delete(sId);
+            }
+
+            if (sId !== req.user._id.toString()) {
+                const current = chat.unreadCounts.get(sId) || 0;
+                chat.unreadCounts.set(sId, current + 1);
             }
         });
 
@@ -309,14 +331,42 @@ const archiveChat = async (req, res, next) => {
 const deleteUserChat = async (req, res, next) => {
     try {
         const { chatId } = req.params;
-        const userId = req.user._id;
+        const userId = req.user._id.toString();
 
-        // Remove the user from the chat's participants (soft delete - only affects this user)
-        await Chat.findByIdAndUpdate(chatId, {
-            $pull: { participants: userId }
-        });
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ status: 'error', message: 'Chat not found' });
+        
+        if (!chat.deletedAt) chat.deletedAt = new Map();
+        if (!chat.clearedAt) chat.clearedAt = new Map();
+        
+        const now = new Date();
+        chat.deletedAt.set(userId, now);
+        chat.clearedAt.set(userId, now); // Also clear history for this user
+        
+        await chat.save();
+        res.status(200).json({ status: 'success', message: 'Chat removed for you' });
+    } catch (error) { next(error); }
+};
+// @desc    Clear chat history for current user
+// @route   POST /api/chats/:chatId/clear
+// @access  Private
+const clearChatHistory = async (req, res, next) => {
+    try {
+        const { chatId } = req.params;
+        const userId = req.user._id.toString();
 
-        res.status(200).json({ status: 'success', message: 'Chat removed' });
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ status: 'error', message: 'Chat not found' });
+        
+        if (!chat.participants.some(p => p.toString() === userId)) {
+            return res.status(403).json({ status: 'error', message: 'Not a participant' });
+        }
+
+        if (!chat.clearedAt) chat.clearedAt = new Map();
+        chat.clearedAt.set(userId, new Date());
+        await chat.save();
+
+        res.status(200).json({ status: 'success', message: 'History cleared for you' });
     } catch (error) { next(error); }
 };
 
@@ -328,5 +378,6 @@ module.exports = {
     ensureProjectChat,
     toggleBubble,
     archiveChat,
-    deleteUserChat
+    deleteUserChat,
+    clearChatHistory
 };

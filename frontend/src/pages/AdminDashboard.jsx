@@ -11,6 +11,7 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip as ReTooltip } from 'rech
 import toast from 'react-hot-toast';
 import GlassSurface from '../components/ui/GlassSurface';
 import NotificationHistoryWidget from '../components/notifications/NotificationHistoryWidget';
+import { usePlatform } from '../hooks/usePlatform';
 
 /* ─────────────────────────────── helpers ─── */
 const fmtDTLocal = (date) => {
@@ -305,15 +306,16 @@ const AdminDashboard = () => {
     const [cmdOpen, setCmdOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [roleFilter, setRoleFilter] = useState('All');
+    const { shortcutPrefix, shortcutKey } = usePlatform();
 
     if (user?.role !== 'Admin') return <Navigate to="/" replace />;
 
     /* keyboard shortcut for command palette */
     useEffect(() => {
-        const handler = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setCmdOpen(o => !o); } };
+        const handler = (e) => { if (e[shortcutKey] && e.key === 'k') { e.preventDefault(); setCmdOpen(o => !o); } };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, []);
+    }, [shortcutKey]);
 
     /* debounced search */
     useEffect(() => {
@@ -533,7 +535,7 @@ const AdminDashboard = () => {
                                         <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: .96 }} onClick={() => setCmdOpen(true)}
                                             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, background: 'rgba(255,255,255,0.03)', color: '#4a5568', cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11 }}>
                                             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                            <span>⌘K</span>
+                                            <span>{shortcutPrefix}K</span>
                                         </motion.button>
                                     </Tooltip.Trigger>
                                     <Tooltip.Content style={{ fontSize: 11, fontFamily: 'var(--mono)', background: '#1e2030', color: '#94a3b8', padding: '5px 10px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.07)' }} sideOffset={5}>

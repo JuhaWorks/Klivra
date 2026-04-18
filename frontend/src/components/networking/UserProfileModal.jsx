@@ -12,6 +12,7 @@ import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import { getOptimizedAvatar } from '../../utils/avatar';
 import { cn } from '../../utils/cn';
+import { toast } from 'react-hot-toast';
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 const getLevelProgress = (xp, level) => {
@@ -70,17 +71,17 @@ export default function UserProfileModal({ isOpen, onClose, userId }) {
         enabled: !!userId && isOpen,
     });
 
-    const { fetchChats, sendMessage, setActiveChat, setDrawerOpen } = useChatStore();
+    const { fetchChats, sendMessage, setActiveChat, setDrawerOpen, startPrivateChat } = useChatStore();
 
     const handleStartChat = async () => {
-        // 1. Send initial message
-        const msg = await sendMessage(null, "Hi! I'd like to reach out regarding our project collaboration.", userId);
-        if (msg) {
-            // 2. Set as active and open drawer
-            setActiveChat({ _id: msg.chat, participants: [user, reqUser], type: 'private' });
-            setDrawerOpen(true);
-            // 3. Close profile
+        const tid = toast.loading("Establishing secure channel...");
+        try {
+            await startPrivateChat(userId);
+            toast.success("Intelligence frequency synced", { id: tid });
             onClose();
+        } catch (err) {
+            toast.error("Signal lost: Could not initialize chat", { id: tid });
+            console.error(err);
         }
     };
 

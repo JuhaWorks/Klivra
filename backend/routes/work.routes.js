@@ -67,7 +67,10 @@ taskRouter.route('/:id')
     .delete(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), taskCtrl.deleteTask);
 
 taskRouter.patch('/:id/status', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.updateTaskStatus);
-taskRouter.post('/:id/comments', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.addTaskComment);
+taskRouter.get('/:id/activity', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.getTaskActivity);
+taskRouter.route('/:id/comments')
+    .get(isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.getTaskComments)
+    .post(isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.addTaskComment);
 taskRouter.delete('/:id/comments/:commentId', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.deleteTaskComment);
 
 // ─── 3. Whiteboard (Sticky Notes) ──────────────────────────────────────────

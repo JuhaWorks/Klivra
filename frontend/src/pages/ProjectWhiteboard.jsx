@@ -194,6 +194,12 @@ const ProjectWhiteboard = () => {
             old?.map(n => n._id === id ? { ...n, ...data } : n)
         );
 
+        // Emit for real-time sync
+        const { socket } = useSocketStore.getState();
+        if (socket && projectId && !String(id).startsWith('temp-')) {
+            socket.emit('whiteboard:noteUpdated', { projectId, noteId: id, data });
+        }
+
         // Only hit the server if it's a real ID
         if (!String(id).startsWith('temp-')) {
             updateMutation.mutate({ id, data });
@@ -234,17 +240,26 @@ const ProjectWhiteboard = () => {
     };
 
     const handleConvertToTask = async (note) => {
+        if (!note.content?.trim()) {
+            return toast.error("Sticky note is empty — add content first");
+        }
+
+        const tid = toast.loading("Converting to actionable task...");
         try {
             const taskData = {
-                title: note.content || "Brainstormed Task",
-                description: `Created from whiteboard sticky note.\n\nOriginal Content: ${note.content}`,
+                title: note.content.length > 50 ? note.content.substring(0, 47) + "..." : note.content,
+                description: `## Brainstorming Insight\nConverted from whiteboard sticky note.\n\n### Original Content\n${note.content}`,
                 status: 'Pending',
-                priority: 'Medium'
+                priority: 'Medium',
+                type: 'Task'
             };
             await api.post(`/projects/${projectId}/tasks`, taskData);
-            toast.success("Converted note to task!");
+            toast.success("Intelligence captured as Task", { id: tid });
+            
+            // Optional: delete note after conversion if requested, 
+            // but usually keeping it as reference is better for "whiteboard" feel.
         } catch (err) {
-            toast.error("Failed to convert note to task");
+            toast.error("Bridge failure: Intelligence could not be persisted", { id: tid });
         }
     };
 

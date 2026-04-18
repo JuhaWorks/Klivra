@@ -1,5 +1,6 @@
 const User = require('../models/user.model');
 const Notification = require('../models/notification.model');
+const Audit = require('../models/audit.model');
 const axios = require('axios');
 const { z } = require('zod');
 const crypto = require('crypto');
@@ -783,6 +784,65 @@ const sendTestNotification = catchAsync(async (req, res) => {
     res.status(200).json({ status: 'success', message: `Test ${type} dispatched` });
 });
 
+const getSecurityLogs = catchAsync(async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const logs = await Audit.find({ 
+        user: req.user._id,
+        // Only show security or account-level events for this specific HUD
+        action: { $in: ['LOGIN_SUCCESS', 'LOGIN_FAILURE', 'PASSWORD_CHANGE', 'EMAIL_CHANGE', '2FA_ENABLE', '2FA_DISABLE', 'SESSION_TERMINATED', 'PROFILE_UPDATE', 'SecurityAlert', 'EmailChangeSuccess'] }
+    })
+    .sort('-createdAt')
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+    const total = await Audit.countDocuments({ 
+        user: req.user._id, 
+        action: { $in: ['LOGIN_SUCCESS', 'LOGIN_FAILURE', 'PASSWORD_CHANGE', 'EMAIL_CHANGE', '2FA_ENABLE', '2FA_DISABLE', 'SESSION_TERMINATED', 'PROFILE_UPDATE', 'SecurityAlert', 'EmailChangeSuccess'] } 
+    });
+
+    res.status(200).json({
+        status: 'success',
+        pagination: { total, page, pages: Math.ceil(total / limit) },
+        data: logs
+    });
+});
+
+const subscribeToPush = catchAsync(async (req, res) => {
+    const { subscription, userAgent } = req.body;
+    
+    if (!subscription || !subscription.endpoint || !subscription.keys) {
+        res.status(400);
+        throw new Error('Invalid subscription object');
+    }
+
+    const user = await User.findById(req.user._id);
+
+    // Check if subscription already exists for this user
+    const exists = user.pushSubscriptions.find(s => s.endpoint === subscription.endpoint);
+    if (!exists) {
+        user.pushSubscriptions.push({
+            ...subscription,
+            userAgent: userAgent || 'Unknown'
+        });
+        await user.save();
+    }
+
+    res.status(200).json({ status: 'success', message: 'Successfully subscribed to push notifications' });
+});
+
+const unsubscribeFromPush = catchAsync(async (req, res) => {
+    const { endpoint } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    user.pushSubscriptions = user.pushSubscriptions.filter(s => s.endpoint !== endpoint);
+    await user.save();
+
+    res.status(200).json({ status: 'success', message: 'Successfully unsubscribed from push notifications' });
+});
+
 module.exports = {
     uploadAvatar,
     uploadCoverImage,
@@ -805,5 +865,8 @@ module.exports = {
     deleteNotification,
     updateNotificationPreferences,
     sendTestNotification,
-    updateSecurity
+    updateSecurity,
+    subscribeToPush,
+    unsubscribeFromPush,
+    getSecurityLogs
 };

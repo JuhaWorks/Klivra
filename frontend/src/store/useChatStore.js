@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api, useAuthStore } from './useAuthStore';
+import { useSocketStore } from './useSocketStore';
 
 export const useChatStore = create((set, get) => ({
     chats: [],
@@ -88,7 +89,7 @@ export const useChatStore = create((set, get) => ({
         try {
             let mediaData = null;
 
-            // 3. Handle File Uploads (Synchronous for now, simplest approach)
+            // 3. Handle File Uploads
             if (isMedia) {
                 const formData = new FormData();
                 formData.append('file', attachments[0].file);
@@ -101,7 +102,7 @@ export const useChatStore = create((set, get) => ({
             const res = await api.post('/chats/send', { 
                 chatId, 
                 recipientId, 
-                content: mediaData ? mediaData.url : content,
+                content: mediaData ? mediaData.url : (content || '👋'),
                 type: tempMessage.type,
                 replyTo,
                 metadata: mediaData ? { ...mediaData, status: 'complete' } : {}
@@ -112,10 +113,7 @@ export const useChatStore = create((set, get) => ({
 
             set((state) => {
                 const history = state.messages[actualChatId] || [];
-                // 1. Remove the temp message
                 const filteredHistory = history.filter(m => m._id !== tempId);
-                
-                // 2. Double check if the socket already added this message (received via server emit)
                 const alreadyExists = filteredHistory.some(m => m._id === newMessage._id);
                 if (alreadyExists) return { messages: { ...state.messages, [actualChatId]: filteredHistory } };
 
@@ -128,10 +126,10 @@ export const useChatStore = create((set, get) => ({
             });
 
             if (!chatId) {
-                // Join the newly created chat room
+                // Join room immediately
                 const socket = useSocketStore.getState().socket;
                 if (socket && socket.connected) socket.emit('join_chat', newMessage.chat);
-                get().fetchChats();
+                await get().fetchChats();
             }
             return newMessage;
         } catch (error) {
@@ -144,7 +142,42 @@ export const useChatStore = create((set, get) => ({
                     return { messages: { ...state.messages, [chatId]: newHistory } };
                 });
             }
-            console.error('Send message error:', error);
+            throw error;
+        }
+    },
+
+    startPrivateChat: async (recipientId) => {
+        set({ isLoading: true });
+        try {
+            // 1. Check local cache first
+            const existing = get().chats.find(c => 
+                c.type === 'private' && 
+                c.participants.some(p => (p._id || p) === recipientId)
+            );
+
+            if (existing) {
+                get().setActiveChat(existing);
+                set({ isDrawerOpen: true, isLoading: false });
+                return existing;
+            }
+
+            // 2. Send initial message to create chat
+            const msg = await get().sendMessage(null, "👋", recipientId);
+            
+            // 3. Fetch latest chat list to get the full chat object
+            await get().fetchChats();
+            const newChat = get().chats.find(c => c._id === msg.chat);
+            
+            if (newChat) {
+                get().setActiveChat(newChat);
+            }
+            
+            set({ isDrawerOpen: true, isLoading: false });
+            return newChat;
+        } catch (error) {
+            console.error('Start private chat error:', error);
+            set({ isLoading: false });
+            throw error;
         }
     },
 
@@ -334,6 +367,23 @@ export const useChatStore = create((set, get) => ({
             }));
         } catch (error) {
             console.error('Delete chat error:', error);
+        }
+    },
+    
+    clearChatHistory: async (chatId) => {
+        // Optimistic update: Clear local messages for this chat
+        set((state) => ({
+            messages: { ...state.messages, [chatId]: [] }
+        }));
+        
+        try {
+            await api.post(`/chats/${chatId}/clear`);
+            // Optionally refresh chats to update lastMessage preview if it's now cleared
+            get().fetchChats();
+        } catch (error) {
+            console.error('Clear chat history error:', error);
+            // On error we might want to refetch messages if they were deleted optimistically
+            get().fetchMessages(chatId);
         }
     }
 }));

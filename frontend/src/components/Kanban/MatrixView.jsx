@@ -137,10 +137,10 @@ const MatrixTaskCard = React.memo(({ task, onOpen, isSelected, onSelect, isBatch
                 e.dataTransfer.setData('taskIds', task._id);
             }}
             className={twMerge(clsx(
-                "group relative p-3 bg-surface border transition-all duration-300 rounded-2xl cursor-pointer",
-                isSelected ? "border-theme ring-1 ring-theme bg-theme/5" : 
-                (isUrgent ? "border-danger/40 shadow-[0_0_15px_rgba(239,68,68,0.15)] bg-danger/[0.02]" : "border-glass hover:border-strong hover:bg-sunken"),
-                task.status === 'Completed' && "opacity-60"
+                "group relative p-3 transition-all duration-400 rounded-2xl cursor-pointer border border-transparent",
+                isSelected ? "border-theme bg-theme/5" : 
+                (isUrgent ? "border-danger/30 bg-danger/[0.03] shadow-[0_0_20px_rgba(239,68,68,0.08)]" : "hover:bg-sunken hover:border-glass hover:translate-x-1"),
+                task.status === 'Completed' && "opacity-40 grayscale-[0.5]"
             ))}
         >
             <div className="flex items-center gap-4">

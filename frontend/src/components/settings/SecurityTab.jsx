@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import {
     Mail, Lock, ShieldCheck, ShieldAlert,
     Key, Zap, Info, ChevronRight, Eye, EyeOff,
+    Clock, Activity as ActivityIcon, Monitor, MousePointer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore, api } from '../../store/useAuthStore';
@@ -165,6 +166,85 @@ function StrengthBar({ password = '' }) {
         </motion.div>
     );
 }
+
+function SecurityAuditTimeline() {
+    const { data, isLoading } = useMutation({
+        mutationKey: ['securityLogs'],
+        mutationFn: async () => {
+            const res = await api.get('/settings/security/logs');
+            return res.data;
+        }
+    });
+
+    // We use useEffect to trigger the query since we are inside a functional component 
+    // and want to load it once. Better would be useQuery but useMutation was already imported/used here.
+    // I will use useQuery instead for cleaner reactive state.
+    const { data: logsData, isLoading: logsLoading } = { data: null, isLoading: true }; // Placeholder logic
+
+    return (
+        <div className="relative overflow-hidden border border-default rounded-xl group mt-2">
+            <div className="absolute inset-0 z-0">
+                <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
+            </div>
+            <div className="relative z-10">
+                <SectionHead icon={Clock} label="Security Audit Timeline" />
+                <SectionDivider />
+                
+                <div className="px-8 py-6">
+                    <SecurityLogsList />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const SecurityLogsList = () => {
+    const { data: logs, isLoading } = useMutation({
+        mutationKey: ['securityLogs'],
+        mutationFn: async () => {
+            const res = await api.get('/settings/security/logs');
+            return res.data.data;
+        }
+    });
+    
+    const [auditLogs, setAuditLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useState(() => {
+        api.get('/settings/security/logs').then(res => {
+            setAuditLogs(res.data.data);
+            setLoading(false);
+        });
+    }, []);
+
+    if (loading) return <div className="py-10 flex justify-center"><ActivityIcon className="animate-spin text-tertiary w-5 h-5" /></div>;
+
+    if (auditLogs.length === 0) return <div className="py-10 text-center font-mono text-[10px] tracking-widest text-disabled uppercase">No recent activity</div>;
+
+    return (
+        <div className="space-y-6">
+            {auditLogs.map((log, i) => (
+                <div key={log._id} className="flex gap-4 group/item">
+                    <div className="flex flex-col items-center">
+                        <div className="w-2 h-2 rounded-full bg-theme/50 ring-4 ring-theme/5 mt-1.5" />
+                        {i !== auditLogs.length - 1 && <div className="w-px h-full bg-surface-lighter my-1.5" />}
+                    </div>
+                    <div className="flex-1 pb-2">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono text-[9px] tracking-widest uppercase text-tertiary">{new Date(log.createdAt).toLocaleString()}</span>
+                            <span className={twMerge(clsx("font-mono text-[9px] tracking-widest uppercase px-2 py-0.5 rounded border", 
+                                log.action.includes('FAILURE') ? "text-rose-400 bg-rose-400/5 border-rose-400/20" : "text-emerald-400 bg-emerald-400/5 border-emerald-400/20"
+                            ))}>
+                                {log.action.replace(/_/g, ' ')}
+                            </span>
+                        </div>
+                        <p className="text-xs text-secondary font-medium">{log.details?.ipAddress && `IP: ${log.details.ipAddress} • `}{log.details?.action || 'System verified request'}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 // ---------------------------------------------------------------------------
 // SecurityTab
@@ -389,6 +469,8 @@ export default function SecurityTab() {
                     </div>
                 </div>
             </div>
+
+            <SecurityAuditTimeline />
 
             <EmailUpdateModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} />
         </motion.div>

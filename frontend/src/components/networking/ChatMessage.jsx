@@ -213,23 +213,24 @@ const ChatMessageComponent = ({
 
     // Messenger-Perfect Bubble Radii Logic
     // Groups calculate corners based on message position to create seamless "stacks"
+    // Minimalist Bubble Geometry
     const bubbleRadius = useMemo(() => {
-        const baseRadius = 'rounded-[1.25rem]'; // 20px baseline
-        const tightRadius = '0.25rem'; // 4px tight corner for stacked messages
+        const baseRadius = 'rounded-[1.5rem]'; 
+        const tightRadius = '0.5rem';
 
         if (isMe) {
             return cn(
                 baseRadius,
-                !isFirstInGroup && !isLastInGroup && `rounded-tr-[${tightRadius}] rounded-br-[${tightRadius}]`, // Middle
-                isFirstInGroup && !isLastInGroup && `rounded-br-[${tightRadius}]`, // Top of stack
-                !isFirstInGroup && isLastInGroup && `rounded-tr-[${tightRadius}]`  // Bottom of stack
+                !isFirstInGroup && !isLastInGroup && `rounded-tr-[${tightRadius}] rounded-br-[${tightRadius}]`,
+                isFirstInGroup && !isLastInGroup && `rounded-br-[${tightRadius}]`,
+                !isFirstInGroup && isLastInGroup && `rounded-tr-[${tightRadius}]`
             );
         } else {
             return cn(
                 baseRadius,
-                !isFirstInGroup && !isLastInGroup && `rounded-tl-[${tightRadius}] rounded-bl-[${tightRadius}]`, // Middle
-                isFirstInGroup && !isLastInGroup && `rounded-bl-[${tightRadius}]`, // Top of stack
-                !isFirstInGroup && isLastInGroup && `rounded-tl-[${tightRadius}]`  // Bottom of stack
+                !isFirstInGroup && !isLastInGroup && `rounded-tl-[${tightRadius}] rounded-bl-[${tightRadius}]`,
+                isFirstInGroup && !isLastInGroup && `rounded-bl-[${tightRadius}]`,
+                !isFirstInGroup && isLastInGroup && `rounded-tl-[${tightRadius}]`
             );
         }
     }, [isMe, isFirstInGroup, isLastInGroup]);
@@ -296,31 +297,34 @@ const ChatMessageComponent = ({
 
                 <div className={cn('flex items-end gap-1.5 w-full', isMe ? 'flex-row-reverse' : 'flex-row')}>
                     {/* Action Buttons (Hover State) - Shifted up to align with bubble center better */}
+                    {/* Action Toolbar - Minimalistic Integrated Overlay */}
                     <AnimatePresence>
                         {hovering && !isDeleted && (
                             <motion.div
-                                initial={{ opacity: 0, x: isMe ? 10 : -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: isMe ? 5 : -5 }}
-                                transition={{ duration: 0.15 }}
-                                className="flex items-center gap-1 shrink-0 px-1 mb-2"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className={cn(
+                                    "absolute top-0 flex items-center gap-0.5 bg-elevated/80 backdrop-blur-md border border-glass rounded-full p-0.5 shadow-lift z-20",
+                                    isMe ? "right-full mr-2" : "left-full ml-2"
+                                )}
                             >
                                 {onReply && (
                                     <button
-                                        onClick={onReply}
-                                        className="p-1.5 rounded-full text-tertiary hover:text-theme hover:bg-theme/10 transition-colors"
-                                        aria-label="Reply to message"
+                                        onClick={() => onReply(message)}
+                                        className="p-1.5 rounded-full text-tertiary hover:text-theme hover:bg-theme/10 transition-all active:scale-90"
+                                        title="Reply"
                                     >
-                                        <CornerUpLeft className="w-4 h-4" />
+                                        <CornerUpLeft className="w-3.5 h-3.5" />
                                     </button>
                                 )}
                                 {isMe && onUnsend && (
                                     <button
                                         onClick={onUnsend}
-                                        className="p-1.5 rounded-full text-tertiary hover:text-danger hover:bg-danger/10 transition-colors"
-                                        aria-label="Unsend message"
+                                        className="p-1.5 rounded-full text-tertiary hover:text-danger hover:bg-danger/10 transition-all active:scale-90"
+                                        title="Delete"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                 )}
                             </motion.div>
@@ -368,40 +372,40 @@ const ChatMessageComponent = ({
                                 </motion.div>
                             )}
 
-                            <motion.div
-                                drag="x"
-                                dragConstraints={{ left: 0, right: threshold + 20 }}
-                                dragElastic={0.15}
-                                style={{ x }}
-                                onDragEnd={handleDragEnd}
-                                className="cursor-grab active:cursor-grabbing touch-none"
-                            >
-                                {isDeleted ? (
-                                    <div className="px-4 py-2 rounded-[1.25rem] border border-glass/50 bg-sunken/50">
-                                        <p className="text-[13px] italic text-tertiary">🚫 Message removed</p>
-                                    </div>
-                                ) : isMedia ? (
-                                    <div className={cn(
-                                        'overflow-hidden shadow-sm transition-all',
-                                        bubbleRadius,
-                                        isMe
-                                            ? cn('bg-theme text-white', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                            : cn('bg-surface border border-glass text-primary', isError && 'ring-2 ring-danger')
-                                    )}>
-                                        <MediaContent message={message} isMe={isMe} />
-                                    </div>
-                                ) : (
-                                    <div className={cn(
-                                        'px-3.5 py-1.5 sm:px-4 sm:py-2.5 text-[13.5px] sm:text-[15px] leading-[1.4] transition-all',
-                                        bubbleRadius,
-                                        isMe
-                                            ? cn('bg-blue-600 text-white shadow-sm font-medium', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                            : cn('bg-gray-100 dark:bg-[#2A2B32] text-gray-900 dark:text-gray-100 shadow-sm font-medium', isError && 'ring-2 ring-danger')
-                                    )}>
-                                        <p className="whitespace-pre-wrap break-words tracking-tight">{message.content}</p>
-                                    </div>
-                                )}
-                            </motion.div>
+                                <motion.div
+                                    drag="x"
+                                    dragConstraints={{ left: 0, right: threshold + 20 }}
+                                    dragElastic={0.15}
+                                    style={{ x }}
+                                    onDragEnd={handleDragEnd}
+                                    className="cursor-grab active:cursor-grabbing touch-none"
+                                >
+                                    {isDeleted ? (
+                                        <div className="px-5 py-2.5 rounded-[1.5rem] border border-glass/30 bg-sunken/40 backdrop-blur-sm">
+                                            <p className="text-[12px] italic text-tertiary opacity-40">Message removed</p>
+                                        </div>
+                                    ) : isMedia ? (
+                                        <div className={cn(
+                                            'overflow-hidden shadow-modal transition-all border border-glass',
+                                            bubbleRadius,
+                                            isMe
+                                                ? cn('bg-theme text-white', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
+                                                : cn('bg-surface text-primary', isError && 'ring-2 ring-danger')
+                                        )}>
+                                            <MediaContent message={message} isMe={isMe} />
+                                        </div>
+                                    ) : (
+                                        <div className={cn(
+                                            'px-4.5 py-2.5 text-[14px] sm:text-[15px] leading-relaxed transition-all shadow-sm border border-glass/10',
+                                            bubbleRadius,
+                                            isMe
+                                                ? cn('bg-theme text-white font-bold', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
+                                                : cn('bg-surface text-primary font-bold', isError && 'ring-2 ring-danger')
+                                        )}>
+                                            <p className="whitespace-pre-wrap break-words tracking-tight drop-shadow-sm">{message.content}</p>
+                                        </div>
+                                    )}
+                                </motion.div>
                         </div>
                     </div>
                 </div>

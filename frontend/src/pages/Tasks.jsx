@@ -342,7 +342,7 @@ export default function Tasks() {
                         title="Filter Active Tasks"
                     >
                         <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-1 transition-colors", quickFilter === 'Active' ? "text-theme" : "text-tertiary opacity-60 group-hover:opacity-100")}>Active</span>
-                        <span className={cn("text-sm font-black font-mono tracking-tighter px-4 py-1.5 rounded-xl border transition-all", quickFilter === 'Active' ? "text-theme bg-theme/10 border-theme/20 shadow-sm" : "text-theme/70 bg-theme/5 border-theme/5")}>
+                        <span className={cn("text-sm font-black font-mono tracking-tighter px-4 py-1.5 rounded-xl border transition-all", quickFilter === 'Active' ? "text-theme bg-theme/10 border-theme/20 shadow-sm" : "text-accent/70 bg-theme/5 border-theme/5")}>
                             <Counter value={activeTasksCount} />
                         </span>
                     </button>

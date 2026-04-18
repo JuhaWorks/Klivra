@@ -13,6 +13,7 @@ import { useSmartScroll } from '../../hooks/useSmartScroll';
 import { cn } from '../../utils/cn';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
+import ConfirmModal from '../common/ConfirmModal';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { isSameDay, format } from 'date-fns';
 import { getOptimizedAvatar } from '../../utils/avatar';
@@ -79,6 +80,7 @@ const ChatTray = () => {
     } = useChatStore();
     const { user } = useAuthStore();
     const [openBubbleId, setOpenBubbleId] = useState(null);
+    const [confirmConfig, setConfirmConfig] = useState(null);
 
     useEffect(() => {
         if (user) {
@@ -103,6 +105,14 @@ const ChatTray = () => {
                 });
                 socket.on('messageDeleted', ({ chat, messageId }) => {
                     handleMessageDeleted(chat, messageId);
+                });
+                socket.on('chatCleared', ({ chat, userId }) => {
+                    if (userId === user?._id) {
+                        fetchChats(); // Refresh to update previews
+                        if (useChatStore.getState().activeChat?._id === chat) {
+                            useChatStore.getState().fetchMessages(chat);
+                        }
+                    }
                 });
             }
         }
@@ -162,6 +172,7 @@ const ChatTray = () => {
                                         <ChatList 
                                             chats={chats} 
                                             activeChat={activeChat}
+                                            setConfirmConfig={setConfirmConfig}
                                             onSelectChat={(chat) => {
                                                 setActiveChat(chat);
                                                 setOpenBubbleId(null);
@@ -185,7 +196,11 @@ const ChatTray = () => {
                                             isMobile ? "absolute inset-0 z-30" : "flex-1"
                                         )}
                                     >
-                                        <ChatBox chat={activeChat} onBack={() => setActiveChat(null)} />
+                                        <ChatBox 
+                                            chat={activeChat} 
+                                            setConfirmConfig={setConfirmConfig}
+                                            onBack={() => setActiveChat(null)} 
+                                        />
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -204,6 +219,16 @@ const ChatTray = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            <ConfirmModal 
+                {...confirmConfig}
+                isOpen={!!confirmConfig}
+                onClose={() => setConfirmConfig(null)}
+                onConfirm={() => {
+                    confirmConfig?.onConfirm?.();
+                    setConfirmConfig(null);
+                }}
+            />
 
             {/* Floating Bubbles */}
             {user?.interfacePrefs?.showChatBubbles !== false && (
@@ -235,6 +260,7 @@ const ChatTray = () => {
                         <ChatBox 
                             chat={chats.find(c => c._id === openBubbleId)} 
                             onBack={() => setOpenBubbleId(null)} 
+                            setConfirmConfig={setConfirmConfig}
                             isBubbleMode
                         />
                     </motion.div>
@@ -289,7 +315,7 @@ const BubbleItem = ({ chat, isOpened, onToggle }) => {
 
 
 // ─── Chat List ────────────────────────────────────────────────────────────────
-const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
+const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }) => {
     const [search, setSearch] = useState('');
     const [memberSearch, setMemberSearch] = useState('');
     const [members, setMembers] = useState([]);
@@ -297,9 +323,11 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
     const [showArchived, setShowArchived] = useState(false);
     const [view, setView] = useState('list'); // 'list' | 'new'
     const [contextMenu, setContextMenu] = useState(null);
+    const [isSelectMode, setIsSelectMode] = useState(false);
+    const [selectedChatIds, setSelectedChatIds] = useState([]);
     const { user } = useAuthStore();
     const { onlineUsers } = useSocketStore();
-    const { archiveChat, deleteChat, sendMessage } = useChatStore();
+    const { archiveChat, deleteChat, clearChatHistory, sendMessage, startPrivateChat, toggleBubble, bubbledChatIds } = useChatStore();
     const menuRef = useRef(null);
     const memberInputRef = useRef(null);
 
@@ -310,17 +338,17 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
         }
     }, [view]);
 
-    // Debounced member search
+    // Debounced member search — connections only
     useEffect(() => {
         if (view !== 'new') return;
         const timer = setTimeout(async () => {
             setMembersLoading(true);
             try {
-                // Switching from general user search to connection-only search
-                const res = await api.get(`/connections?q=${encodeURIComponent(memberSearch)}`);
-                // Connection objects contain nested user objects
+                const res = await api.get(`/connections?q=${encodeURIComponent(memberSearch)}&limit=30`);
+                // /connections returns { data: [{ _id, user, connectedAt }] }
+                // Normalise to the shape the list expects
                 const connections = res.data.data || [];
-                setMembers(connections.map(conn => conn.user));
+                setMembers(connections.map(c => c.user));
             } catch (e) {
                 console.error(e);
             } finally {
@@ -340,26 +368,10 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
     }, []);
 
     const handleStartNewConversation = async (member) => {
-        setView('list');
-        setMemberSearch('');
         try {
-            await useChatStore.getState().fetchChats();
-            const freshChats = useChatStore.getState().chats;
-            // Check if chat with this member already exists
-            const existing = freshChats.find(c =>
-                c.type === 'private' &&
-                c.participants.some(p => (p._id || p) === member._id)
-            );
-            if (existing) { onSelectChat(existing); return; }
-            // Create new chat via send
-            await sendMessage(null, { content: '👋' }, member._id);
-            await useChatStore.getState().fetchChats();
-            const updated = useChatStore.getState().chats;
-            const newChat = updated.find(c =>
-                c.type === 'private' &&
-                c.participants.some(p => (p._id || p) === member._id)
-            );
-            if (newChat) onSelectChat(newChat);
+            await startPrivateChat(member._id);
+            setView('list');
+            setMemberSearch('');
         } catch (e) {
             console.error(e);
             toast.error('Could not start conversation');
@@ -380,10 +392,65 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
     }, [chats, search, user]);
 
     const handleContextMenu = (e, chatId) => { e.preventDefault(); setContextMenu({ chatId, x: e.clientX, y: e.clientY }); };
-    const handleArchive = async (chatId) => { setContextMenu(null); await archiveChat(chatId); toast.success('Chat archived'); };
-    const handleDelete = async (chatId) => {
+    const handleArchive = async (chatId) => { 
+        setContextMenu(null); 
+        await archiveChat(chatId); 
+        const chat = chats.find(c => c._id === chatId);
+        toast.success(chat?.isArchived ? 'Chat unarchived' : 'Chat archived'); 
+    };
+    const handleClear = (chatId) => {
         setContextMenu(null);
-        if (confirm('Remove this conversation?')) { await deleteChat(chatId); toast.success('Conversation removed'); }
+        setConfirmConfig({
+            title: 'Clear My History?',
+            message: 'Are you sure? Messages will be removed from your view only. The other participant will still see the full conversation.',
+            confirmText: 'Clear for Me',
+            onConfirm: () => {
+                clearChatHistory(chatId);
+                toast.success('History cleared locally');
+            }
+        });
+    };
+    const handleDelete = (chatId) => {
+        setContextMenu(null);
+        setConfirmConfig({
+            title: 'Delete Conversation?',
+            message: 'This will permenantly remove this conversation from your inbox. You can start a new one anytime.',
+            confirmText: 'Delete Forever',
+            type: 'danger',
+            onConfirm: () => {
+                deleteChat(chatId);
+                toast.success('Conversation removed');
+            }
+        });
+    };
+
+    const handleToggleSelect = (chatId) => {
+        setSelectedChatIds(prev => 
+            prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]
+        );
+    };
+
+    const handleSelectAll = () => {
+        const allIds = visibleChats.map(c => c._id);
+        setSelectedChatIds(selectedChatIds.length === allIds.length ? [] : allIds);
+    };
+
+    const handleBatchBubble = async () => {
+        const toBubble = selectedChatIds.filter(id => !bubbledChatIds.includes(id));
+        const toUnbubble = selectedChatIds.filter(id => bubbledChatIds.includes(id));
+        
+        // Simple sequential processing for now
+        toast.promise(
+            Promise.all(selectedChatIds.map(id => toggleBubble(id))),
+            {
+                loading: `Updating ${selectedChatIds.length} chats...`,
+                success: 'Bubble status updated',
+                error: 'Failed to update some chats'
+            }
+        );
+        
+        setIsSelectMode(false);
+        setSelectedChatIds([]);
     };
 
     return (
@@ -406,6 +473,32 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
                             <p className="text-[10px] font-black text-tertiary mt-0.5 opacity-20 uppercase tracking-[0.2em]">Connected Workspace</p>
                         </div>
                         <div className="flex items-center gap-1.5">
+                            {isSelectMode ? (
+                                <div className="flex items-center gap-1 bg-sunken rounded-xl p-1 animate-in fade-in zoom-in duration-300">
+                                    <button
+                                        onClick={handleSelectAll}
+                                        className="px-2.5 py-1.5 hover:bg-glass rounded-lg text-theme text-[9px] font-black uppercase tracking-widest transition-all"
+                                    >
+                                        {selectedChatIds.length === visibleChats.length ? 'None' : 'All'}
+                                    </button>
+                                    <button
+                                        onClick={() => { setIsSelectMode(false); setSelectedChatIds([]); }}
+                                        className="px-2.5 py-1.5 hover:bg-glass rounded-lg text-tertiary text-[9px] font-black uppercase tracking-widest transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => setIsSelectMode(true)}
+                                    className="p-2 hover:bg-theme/10 hover:text-theme rounded-xl text-tertiary transition-all"
+                                    title="Select Messages"
+                                >
+                                    <div className="w-4 h-4 border-2 border-current rounded-[4px] relative">
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-current rounded-[1px] opacity-20" />
+                                    </div>
+                                </button>
+                            )}
                             <button
                                 onClick={() => setView('new')}
                                 className="p-2 hover:bg-theme/10 hover:text-theme rounded-xl text-tertiary transition-all"
@@ -488,7 +581,16 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
                             {visibleChats.length > 0 ? (
                                 <div className="space-y-0.5">
                                     {visibleChats.map(chat => (
-                                        <ChatListItem key={chat._id} chat={chat} activeChat={activeChat} user={user} onSelect={onSelectChat} onContextMenu={handleContextMenu} />
+                                        <ChatListItem 
+                                            key={chat._id} 
+                                            chat={chat} 
+                                            activeChat={activeChat} 
+                                            user={user} 
+                                            onSelect={isSelectMode ? () => handleToggleSelect(chat._id) : onSelectChat} 
+                                            onContextMenu={handleContextMenu} 
+                                            isSelected={selectedChatIds.includes(chat._id)}
+                                            isSelectMode={isSelectMode}
+                                        />
                                     ))}
                                 </div>
                             ) : (
@@ -514,7 +616,17 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
                                         {showArchived && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden space-y-0.5 mt-1">
                                                 {archivedChats.map(chat => (
-                                                    <ChatListItem key={chat._id} chat={chat} activeChat={activeChat} user={user} onSelect={onSelectChat} onContextMenu={handleContextMenu} dimmed />
+                                                    <ChatListItem 
+                                                        key={chat._id} 
+                                                        chat={chat} 
+                                                        activeChat={activeChat} 
+                                                        user={user} 
+                                                        onSelect={isSelectMode ? () => handleToggleSelect(chat._id) : onSelectChat} 
+                                                        onContextMenu={handleContextMenu} 
+                                                        dimmed 
+                                                        isSelected={selectedChatIds.includes(chat._id)}
+                                                        isSelectMode={isSelectMode}
+                                                    />
                                                 ))}
                                             </motion.div>
                                         )}
@@ -540,8 +652,8 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
                                 <div className="w-14 h-14 bg-sunken rounded-[1.5rem] flex items-center justify-center mb-4">
                                     <Search className="w-6 h-6 text-tertiary" />
                                 </div>
-                                <p className="text-[12px] font-black text-primary">{memberSearch ? 'No results' : 'Start searching'}</p>
-                                <p className="text-[10px] text-tertiary mt-1">{memberSearch ? 'Try a different name' : 'Type a name to find teammates'}</p>
+                                <p className="text-[12px] font-black text-primary">{memberSearch ? 'No results' : 'Search your connections'}</p>
+                                <p className="text-[10px] text-tertiary mt-1">{memberSearch ? 'Try a different name' : 'Type a name to find your connections'}</p>
                             </div>
                         ) : (
                             <div className="space-y-1 pb-4">
@@ -593,20 +705,49 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose }) => {
                         style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x }}
                         className="z-[9999] bg-elevated border border-glass rounded-2xl shadow-modal py-1.5 overflow-hidden min-w-[160px]"
                     >
-                        <button
-                            onClick={() => handleArchive(contextMenu.chatId)}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
-                        >
-                            <Archive className="w-3.5 h-3.5" />
-                            Archive Chat
-                        </button>
-                        <button
-                            onClick={() => handleDelete(contextMenu.chatId)}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-danger hover:bg-danger/5 transition-all"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Delete Chat
-                        </button>
+                        {(() => {
+                            const chat = chats.find(c => c._id === contextMenu.chatId);
+                            const isBubbled = bubbledChatIds.includes(contextMenu.chatId);
+                            return (
+                                <>
+                                    <button
+                                        onClick={() => handleArchive(contextMenu.chatId)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                    >
+                                        <Archive className="w-3.5 h-3.5" />
+                                        {chat?.isArchived ? 'Unarchive Chat' : 'Archive Chat'}
+                                    </button>
+                                    <button
+                                        onClick={() => { setContextMenu(null); toggleBubble(contextMenu.chatId); }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                    >
+                                        {isBubbled ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                                        {isBubbled ? 'Unpin from Bubble' : 'Pin to Bubble'}
+                                    </button>
+                                    <button
+                                        onClick={() => { setContextMenu(null); setIsSelectMode(true); setSelectedChatIds([contextMenu.chatId]); }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        Select Conversation
+                                    </button>
+                                    <button
+                                        onClick={() => handleClear(contextMenu.chatId)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Clear My History
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(contextMenu.chatId)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-danger hover:bg-danger/5 transition-all"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Delete Conversation
+                                    </button>
+                                </>
+                            );
+                        })()}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -695,12 +836,14 @@ const formatLastMessage = (msg, currentUserId, chatType) => {
 };
 
 // ─── Chat List Item ────────────────────────────────────────────────────────────
-const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed }) => {
+const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed, isSelected, isSelectMode }) => {
     const { onlineUsers } = useSocketStore();
+    const { bubbledChatIds } = useChatStore();
     const other = chat.type === 'private' 
         ? chat.participants.find(p => p._id !== user?._id)
         : null;
     const unreadCount = chat.unreadCounts?.[user?._id] || 0;
+    const isBubbled = bubbledChatIds.includes(chat._id);
     
     // Use ground-truth socket presence state
     const isOnline = other && onlineUsers.some(u => u.userId === other._id);
@@ -713,19 +856,43 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed 
             className={cn(
                 "w-full p-2.5 rounded-2xl flex items-center gap-3 hover:bg-theme/5 transition-all text-left group relative",
                 chat._id === activeChat?._id ? "bg-theme/5 before:absolute before:left-0 before:top-3 before:bottom-3 before:w-0.5 before:bg-theme before:rounded-full" : "",
-                dimmed && "opacity-50"
+                dimmed && "opacity-50",
+                isSelected && "bg-theme/10 hover:bg-theme/15"
             )}
         >
-            <div className="relative shrink-0">
-                <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm bg-sunken group-hover:scale-105 transition-transform duration-300">
-                    <img 
-                        src={getOptimizedAvatar(chat.type === 'group' ? chat.avatar : other?.avatar, 'md', chat.type === 'group' ? chat.name : other?.name)} 
-                        className="w-full h-full object-cover" 
-                        referrerPolicy="no-referrer"
-                        alt="" 
-                    />
-                </div>
-                {chat.type === 'private' && (
+            <div className="relative shrink-0 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                    {isSelectMode ? (
+                        <motion.div
+                            key="select"
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            className={cn(
+                                "w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all",
+                                isSelected ? "bg-theme border-theme" : "bg-sunken border-glass"
+                            )}
+                        >
+                            {isSelected && <div className="w-2.5 h-2.5 bg-elevated rounded-full" />}
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="avatar"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="w-10 h-10 rounded-full overflow-hidden shadow-sm bg-sunken group-hover:scale-105 transition-transform duration-300"
+                        >
+                            <img 
+                                src={getOptimizedAvatar(chat.type === 'group' ? chat.avatar : other?.avatar, 'md', chat.type === 'group' ? chat.name : other?.name)} 
+                                className="w-full h-full object-cover" 
+                                referrerPolicy="no-referrer"
+                                alt="" 
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                
+                {chat.type === 'private' && !isSelectMode && (
                     <div className={cn(
                         "absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-surface shadow-sm",
                         isOnline ? "bg-success" : "bg-neutral-400"
@@ -734,9 +901,12 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed 
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[13px] font-black text-primary truncate tracking-tight">
-                        {chat.type === 'group' ? chat.name : other?.name}
-                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[13px] font-black text-primary truncate tracking-tight">
+                            {chat.type === 'group' ? chat.name : other?.name}
+                        </span>
+                        {isBubbled && <Pin size={10} className="text-theme shrink-0" />}
+                    </div>
                     <span className="text-[10px] font-bold text-tertiary opacity-40 tabular-nums lowercase">
                         {chat.lastMessage ? format(new Date(chat.lastMessage.createdAt), 'h:mm a') : ''}
                     </span>
@@ -757,10 +927,10 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed 
 };
 
 // ─── Chat Box ─────────────────────────────────────────────────────────────────
-const ChatBox = ({ chat, onBack, isBubbleMode }) => {
+const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
     const { user } = useAuthStore();
     const { onlineUsers } = useSocketStore();
-    const { messages, sendMessage, unsendMessage, toggleBubble, bubbledChatIds, typingUsers } = useChatStore();
+    const { messages, sendMessage, unsendMessage, toggleBubble, bubbledChatIds, typingUsers, clearChatHistory } = useChatStore();
     const { scrollRef, checkScroll, scrollToBottom } = useSmartScroll(messages[chat._id]);
     const [replyTo, setReplyTo] = useState(null);
 
@@ -841,9 +1011,31 @@ const ChatBox = ({ chat, onBack, isBubbleMode }) => {
                     <button 
                         onClick={() => toggleBubble(chat._id)}
                         className={cn("p-1.5 rounded-lg transition-all", isBubbled ? "text-theme bg-theme/10" : "text-tertiary hover:bg-glass hover:text-primary")}
+                        title="Toggle Chat Bubble"
                     >
                         {isBubbled ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
                     </button>
+                    <div className="relative group/menu">
+                        <button className="p-1.5 hover:bg-glass rounded-lg transition-all text-tertiary hover:text-primary">
+                            <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="absolute top-full right-0 mt-2 w-40 bg-elevated border border-glass rounded-2xl shadow-huge opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-all z-50 overflow-hidden py-1.5">
+                            <button 
+                                onClick={() => {
+                                    setConfirmConfig({
+                                        title: 'Clear My History?',
+                                        message: 'Messages will be removed from your view only. The other participant will still see the full conversation.',
+                                        confirmText: 'Clear for Me',
+                                        onConfirm: () => clearChatHistory(chat._id)
+                                    });
+                                }}
+                                className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-[10px] font-black text-secondary hover:bg-danger/10 hover:text-danger transition-all uppercase tracking-widest"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                                Clear My History
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

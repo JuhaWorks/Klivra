@@ -59,6 +59,11 @@ const socketService = {
                 // Broadcast dragging position to everyone else in the project room
                 socket.to(`project_${projectId}`).emit('whiteboard:noteMoved', { noteId, projectId, x, y });
             });
+
+            socket.on('whiteboard:noteUpdated', ({ projectId, noteId, data }) => {
+                // Broadcast granular updates (content, color) to everyone else in the project room
+                socket.to(`project_${projectId}`).emit('whiteboard:noteUpdated', { _id: noteId, projectId, ...data });
+            });
             
             // --- ADVANCED CHAT SYNC (Room-based) ---
             socket.on('join_chat', (chatId) => {

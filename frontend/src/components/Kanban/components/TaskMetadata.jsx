@@ -133,10 +133,10 @@ const TaskMetadata = ({
     isAuthorized 
 }) => {
     return (
-        <div className="grid grid-cols-1 gap-5 bg-white/[0.01] border border-white/5 p-5 rounded-3xl shadow-2xl overflow-visible">
-            <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-6 p-1 overflow-visible">
+            <div className="grid grid-cols-2 gap-4">
                 <ExecutiveSelect 
-                    label="Operational Status"
+                    label="Status"
                     value={status}
                     options={['Pending', 'In Progress', 'Completed', 'Canceled']}
                     onChange={setStatus}
@@ -144,7 +144,7 @@ const TaskMetadata = ({
                     icon={Activity}
                 />
                 <ExecutiveSelect 
-                    label="Impact Priority"
+                    label="Priority"
                     value={priority}
                     options={['Low', 'Medium', 'High', 'Urgent']}
                     onChange={setPriority}
@@ -154,7 +154,7 @@ const TaskMetadata = ({
             </div>
 
             <ExecutiveSelect 
-                label="Professional Classification"
+                label="Classification"
                 value={type}
                 onChange={setType}
                 disabled={!isAuthorized}

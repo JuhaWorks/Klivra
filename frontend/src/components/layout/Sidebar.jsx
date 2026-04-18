@@ -65,7 +65,7 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
             <span className={cn(
                 "relative z-10 flex items-center justify-center shrink-0 transition-all duration-200",
                 isCollapsed ? "w-5 h-5" : "w-5 h-5",
-                isActive ? "text-theme" : "group-hover:text-theme/70"
+                isActive ? "text-theme" : "group-hover:text-accent/70"
             )}>
                 <Icon strokeWidth={isActive ? 2 : 1.75} className="w-full h-full" />
             </span>
@@ -448,7 +448,7 @@ const SidebarComponent = () => {
                                     effectiveCollapsed 
                                         ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
                                         : "gap-3 px-3 py-2.5 rounded-xl w-full",
-                                    isDrawerOpen ? "text-theme" : "text-tertiary hover:text-primary"
+                                    isDrawerOpen ? "text-theme" : "text-accent/70 hover:text-theme"
                                 )}
                             >
                                 <span className={cn(
@@ -463,7 +463,10 @@ const SidebarComponent = () => {
                                     "bg-sunken",
                                     isDrawerOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100"
                                 )} />
-                                <div className="relative z-10 w-5 h-5 flex items-center justify-center">
+                                <div className={cn(
+                                    "relative z-10 w-5 h-5 flex items-center justify-center transition-all duration-200",
+                                    isDrawerOpen ? "text-theme" : "text-accent/70 group-hover:text-theme"
+                                )}>
                                     <MessageSquare strokeWidth={isDrawerOpen ? 2 : 1.75} className="w-full h-full" />
                                     {unreadTotal > 0 && (
                                         <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] p-0.5 bg-danger rounded-full border border-base text-[8px] font-black text-white flex items-center justify-center shadow-lg">
@@ -474,7 +477,7 @@ const SidebarComponent = () => {
                                 {!effectiveCollapsed && (
                                     <span className={cn(
                                         "relative z-10 text-sm truncate leading-tight transition-colors duration-150 flex-1 text-left",
-                                        isDrawerOpen ? "font-semibold text-theme" : "font-medium"
+                                        isDrawerOpen ? "font-semibold text-theme" : "font-medium text-accent/70 group-hover:text-theme"
                                     )}>
                                         Messages
                                     </span>

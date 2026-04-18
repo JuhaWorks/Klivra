@@ -1,9 +1,10 @@
-import React, { Suspense, useMemo, useEffect, memo } from 'react';
+import React, { Suspense, useMemo, useEffect, memo } from 'react'; 
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SidebarComponent from './Sidebar';
 import TopBar from './TopBar';
-import MaintenanceNotice, { useMaintenanceStatus } from './MaintenanceNotice';
+import MaintenanceNotice from './MaintenanceNotice';
+import { useMaintenanceStatus } from '../../hooks/useMaintenanceStatus';
 import { useIdleTimer } from '../../hooks/useIdleTimer';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSocketStore } from '../../store/useSocketStore';

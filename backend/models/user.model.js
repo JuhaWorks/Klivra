@@ -164,35 +164,43 @@ const userSchema = new mongoose.Schema(
             categories: {
                 assignments: {
                     email: { type: Boolean, default: true },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 },
                 mentions: {
                     email: { type: Boolean, default: true },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 },
                 deadlines: {
                     email: { type: Boolean, default: true },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 },
                 statusUpdates: {
                     email: { type: Boolean, default: true },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 },
                 comments: {
                     email: { type: Boolean, default: true },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 },
                 messages: {
                     email: { type: Boolean, default: false },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 },
                 security: {
                     email: { type: Boolean, default: true },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 },
                 updates: {
                     email: { type: Boolean, default: true },
-                    inApp: { type: Boolean, default: true }
+                    inApp: { type: Boolean, default: true },
+                    push: { type: Boolean, default: true }
                 }
             },
             frequency: { 
@@ -227,6 +235,20 @@ const userSchema = new mongoose.Schema(
         // --- OAuth Secure Exchange (Safari Fix) ---
         tempAuthToken: { type: String, select: false },
         tempAuthTokenExpires: { type: Date, select: false },
+
+        // --- Notifications Subscriptions ---
+        pushSubscriptions: [
+            {
+                endpoint: { type: String, required: true },
+                expirationTime: { type: Number, default: null },
+                keys: {
+                    p256dh: { type: String, required: true },
+                    auth: { type: String, required: true }
+                },
+                userAgent: String,
+                createdAt: { type: Date, default: Date.now }
+            }
+        ]
     },
     {
         timestamps: true, // Automatically add createdAt and updatedAt fields

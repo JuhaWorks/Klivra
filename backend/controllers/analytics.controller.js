@@ -4,6 +4,13 @@ const ProjectSnapshot = require('../models/projectSnapshot.model');
 const mongoose = require('mongoose');
 const { catchAsync } = require('../utils/core.utils');
 
+// High-fidelity local cache for analytics (30s TTL as per mission requirements)
+const analyticsCache = {
+    workspace: { data: null, timestamp: 0 },
+    projects: {} // keyed by projectId
+};
+const ANALYTICS_CACHE_TTL = 30 * 1000;
+
 /**
  * 🚀 Professional Analytics Engine (Hybrid Intelligence Edition)
  * Deep-data analysis using live logs + historical snapshots.
@@ -11,7 +18,13 @@ const { catchAsync } = require('../utils/core.utils');
 
 const getProjectAnalytics = catchAsync(async (req, res) => {
     const projectId = new mongoose.Types.ObjectId(req.params.id);
-    const now = new Date();
+    const now = Date.now();
+
+    // Cache Retrieval
+    const cached = analyticsCache.projects[req.params.id];
+    if (cached && (now - cached.timestamp < ANALYTICS_CACHE_TTL)) {
+        return res.status(200).json({ status: 'success', data: cached.data });
+    }
 
     // 1. Fetch Contextual Data (Completed tasks for velocity, active for momentum)
     const tasks = await Task.find({ project: projectId, isArchived: false })
@@ -149,17 +162,25 @@ const getProjectAnalytics = catchAsync(async (req, res) => {
         .filter(t => t.status !== 'Completed' && t.status !== 'Canceled' && t.priority === 'Urgent')
         .slice(0, 5);
 
+    const responseData = {
+        projectProgress,
+        memberMetrics,
+        bottlenecks,
+        velocityMetrics,
+        priorityBreakdown,
+        typeBreakdown,
+        timeline
+    };
+
+    // Populate Cache
+    analyticsCache.projects[req.params.id] = {
+        data: responseData,
+        timestamp: Date.now()
+    };
+
     res.status(200).json({
         status: 'success',
-        data: {
-            projectProgress,
-            memberMetrics,
-            bottlenecks,
-            velocityMetrics,
-            priorityBreakdown,
-            typeBreakdown,
-            timeline
-        }
+        data: responseData
     });
 });
 
@@ -167,6 +188,15 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
     const Project = require('../models/project.model');
     const userId = req.user._id;
     const userRole = req.user.role;
+    const nowMs = Date.now();
+    let cacheKey = `${userId}_workspace`;
+
+    // Cache Retrieval (User-specific for workspace analytics)
+    const cached = analyticsCache.workspace[cacheKey];
+    if (cached && (nowMs - cached.timestamp < ANALYTICS_CACHE_TTL)) {
+        return res.status(200).json({ status: 'success', data: cached.data });
+    }
+
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
@@ -227,20 +257,29 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
         .sort((a, b) => b.riskScore - a.riskScore)
         .slice(0, 5);
 
+    const responseData = {
+        phi: Math.round(avgPhi),
+        chaosIndex: Math.round(maxChaos),
+        totalTasks: validTasksCount,
+        completedTasks: completedTasksCount,
+        completionPct: validTasksCount > 0 ? Math.round((completedTasksCount / validTasksCount) * 100) : 0,
+        activeProjects: projects.length,
+        bottlenecks,
+        forecast: {
+            predictedFinishDate: null
+        }
+    };
+
+    // Populate User-Specific Cache
+    cacheKey = `${userId}_workspace`;
+    analyticsCache.workspace[cacheKey] = {
+        data: responseData,
+        timestamp: Date.now()
+    };
+
     res.status(200).json({
         status: 'success',
-        data: {
-            phi: Math.round(avgPhi),
-            chaosIndex: Math.round(maxChaos),
-            totalTasks: validTasksCount,
-            completedTasks: completedTasksCount,
-            completionPct: validTasksCount > 0 ? Math.round((completedTasksCount / validTasksCount) * 100) : 0,
-            activeProjects: projects.length,
-            bottlenecks,
-            forecast: {
-                predictedFinishDate: null
-            }
-        }
+        data: responseData
     });
 });
 

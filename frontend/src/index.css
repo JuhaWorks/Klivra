@@ -428,6 +428,56 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch; /* Momentum scrolling for Safari/iOS */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Layer Promotion & Hardware Acceleration */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+/* ── Custom Platform Scrollbars ── */
+@layer base {
+  /* Root scrollbar */
+  :root {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  /* Webkit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--border-strong) 60%, transparent);
+    border: 2px solid transparent;
+    background-clip: content-box;
+    border-radius: 100px;
+    transition: background-color 0.2s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-tertiary);
+    border: 1px solid transparent;
+    background-clip: content-box;
+  }
+
+  /* Support for "hidden-until-hover" Windows 11 style */
+  .custom-scrollbar {
+    scrollbar-gutter: stable;
+  }
 }
 
 html {

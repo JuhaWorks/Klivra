@@ -47,6 +47,7 @@ chatRouter.post('/send', chatCtrl.sendMessage);
 chatRouter.patch('/messages/:messageId/unsend', chatCtrl.unsendMessage);
 chatRouter.patch('/:chatId/bubble', chatCtrl.toggleBubble);
 chatRouter.patch('/:chatId/archive', chatCtrl.archiveChat);
+chatRouter.post('/:chatId/clear', chatCtrl.clearChatHistory);
 chatRouter.delete('/:chatId', chatCtrl.deleteUserChat);
 
 chatRouter.post('/upload', upload.single('file'), (req, res) => {

@@ -207,43 +207,47 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                     {isNew ? "New Task" : "Task Details"}
                                 </h3>
                                 <p className="text-[8px] font-black text-tertiary uppercase tracking-[0.4em] mt-1">
-                                    {isNew ? "Create a new task record" : `Identifier: ${task._id}`}
+                                    {isNew ? "Create a new task" : `ID: ${task._id}`}
                                 </p>
                             </div>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-glass rounded-full transition-all group active:scale-90">
-                            <Plus className="w-6 h-6 text-tertiary rotate-45 group-hover:text-primary" />
+                            <X className="w-5 h-5 text-tertiary group-hover:text-primary transition-transform group-hover:rotate-90" />
                         </button>
                     </header>
+                    <div className="h-px bg-glass/10 my-4" />
 
                     <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
                         <div className="lg:col-span-4 space-y-4">
                             {/* Basic Info */}
                             <div className="space-y-5">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] ml-1.5">Task Title</label>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-black text-tertiary/60 uppercase tracking-[0.3em] ml-0.5">Title</label>
                                     <input
                                         value={title} onChange={(e) => setTitle(e.target.value)}
-                                        placeholder="Enter task name..."
-                                        className="w-full bg-surface border border-glass focus:border-theme/40 rounded-xl px-5 py-3 text-sm text-primary font-black transition-all outline-none"
+                                        placeholder="Enter task title..."
+                                        className="w-full bg-transparent border-none focus:ring-0 px-0 py-1 text-xl font-black text-primary transition-all outline-none placeholder:text-tertiary/20 selection:bg-theme/30"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] ml-1.5">Description</label>
+                                <div className="h-px bg-glass/5 my-2" />
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-black text-tertiary/60 uppercase tracking-[0.3em] ml-0.5">Description</label>
                                     <textarea
                                         value={description} onChange={(e) => setDescription(e.target.value)}
-                                        rows={4}
-                                        className="w-full bg-surface border border-glass focus:border-theme/40 rounded-2xl px-5 py-4 text-primary font-medium text-xs transition-all outline-none resize-none leading-relaxed"
-                                        placeholder="Outline technical requirements..."
+                                        rows={3}
+                                        className="w-full bg-transparent border-none focus:ring-0 px-0 py-1 text-primary font-medium text-[13px] transition-all outline-none resize-none leading-relaxed placeholder:text-tertiary/20"
+                                        placeholder="Enter task description..."
                                     />
                                 </div>
                             </div>
+                            <div className="h-px bg-glass/10 my-6" />
 
                             <TaskSubtasks
                                 subtasks={subtasks}
                                 setSubtasks={setSubtasks}
                                 isAuthorized={isAuthorized}
                             />
+                            <div className="h-px bg-glass/10 my-6" />
 
                             <TaskDependencies
                                 blockedBy={blockedBy} setBlockedBy={setBlockedBy}
@@ -252,11 +256,12 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                 currentTaskId={task._id}
                                 isNew={isNew}
                             />
+                            <div className="h-px bg-glass/10 my-6" />
 
                             <div className="pt-8 border-t border-glass space-y-6">
                                 <div className="flex items-center gap-3 ml-1">
                                     <Activity className="w-4 h-4 text-theme" />
-                                    <h4 className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em]">Operational History</h4>
+                                    <h4 className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em]">Activity</h4>
                                 </div>
                                 <TaskActivity taskId={task._id} projectId={projectId} />
                             </div>
@@ -285,30 +290,30 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                 isAuthorized={isAuthorized}
                             />
 
-                            <div className="p-5 bg-glass border border-glass rounded-2xl space-y-5">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] ml-1.5">Schedule</label>
-                                    <div className="grid grid-cols-1 gap-3">
-                                        <div className="flex flex-col gap-1.5">
-                                            <span className="text-[8px] font-black text-tertiary uppercase ml-1">Start Date & Time</span>
+                            <div className="p-0 space-y-5">
+                                <div className="space-y-4">
+                                    <label className="text-[9px] font-black text-tertiary/60 uppercase tracking-[0.3em] ml-0.5">Schedule</label>
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div className="flex flex-col gap-2 relative">
+                                            <span className="text-[8px] font-black text-tertiary/40 uppercase ml-0.5 tracking-widest">Start Date</span>
                                             <input
                                                 type="datetime-local"
                                                 min={projectStart}
                                                 max={projectEnd}
                                                 value={startDate}
                                                 onChange={(e) => setStartDate(e.target.value)}
-                                                className="w-full bg-surface border border-glass rounded-xl px-4 py-2.5 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30"
+                                                className="w-full bg-sunken/40 border-glass rounded-xl px-4 py-3 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30 backdrop-blur-sm transition-all"
                                             />
                                         </div>
-                                        <div className="flex flex-col gap-1.5">
-                                            <span className="text-[8px] font-black text-tertiary uppercase ml-1">Due Date & Time</span>
+                                        <div className="flex flex-col gap-2 relative">
+                                            <span className="text-[8px] font-black text-tertiary/40 uppercase ml-0.5 tracking-widest">Due Date</span>
                                             <input
                                                 type="datetime-local"
                                                 min={projectStart}
                                                 max={projectEnd}
                                                 value={dueDate}
                                                 onChange={(e) => setDueDate(e.target.value)}
-                                                className="w-full bg-surface border border-glass rounded-xl px-4 py-2.5 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30"
+                                                className="w-full bg-sunken/40 border-glass rounded-xl px-4 py-3 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30 backdrop-blur-sm transition-all"
                                             />
                                         </div>
                                     </div>
@@ -322,7 +327,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                     className="w-full py-4 bg-theme hover:bg-theme-highlight rounded-2xl text-[11px] font-black uppercase tracking-widest text-white flex items-center justify-center gap-3 shadow-theme-slight transition-all active:scale-95"
                                 >
                                     <Save className="w-5 h-5" />
-                                    {isNew ? 'Initialize Task' : 'Update Record'}
+                                    {isNew ? 'Create Task' : 'Update Task'}
                                 </button>
                                 {!isNew && (
                                     <button
@@ -330,7 +335,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                         className="w-full py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-2xl text-[11px] font-black uppercase tracking-widest text-rose-500 flex items-center justify-center gap-3 transition-all"
                                     >
                                         <Trash2 className="w-5 h-5" />
-                                        Execute Purge
+                                        Delete Task
                                     </button>
                                 )}
                             </div>

@@ -52,17 +52,17 @@ const TaskActivity = ({ taskId, projectId }) => {
 
     if (activities.length === 0) {
         return (
-            <div className="py-10 flex flex-col items-center justify-center text-center opacity-20 border border-dashed border-white/10 rounded-2xl">
-                <Activity className="w-8 h-8 mb-3" />
-                <p className="text-[10px] font-black uppercase tracking-widest">No activity recorded yet</p>
+            <div className="py-12 flex flex-col items-center justify-center text-center opacity-20">
+                <Activity className="w-8 h-8 mb-4 text-tertiary" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-tertiary">Chronicle Empty</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 relative">
+        <div className="space-y-8 relative px-1">
             {/* Timeline Line */}
-            <div className="absolute left-[15px] top-2 bottom-2 w-px bg-white/[0.03]" />
+            <div className="absolute left-[15px] top-2 bottom-2 w-px bg-glass" />
 
             {activities.map((a, i) => (
                 <motion.div 
@@ -70,11 +70,11 @@ const TaskActivity = ({ taskId, projectId }) => {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-start gap-4 group relative z-10"
+                    className="flex items-start gap-5 group relative z-10"
                 >
-                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:border-theme/30 transition-colors bg-[#0c0c0e]">
+                    <div className="w-8 h-8 rounded-xl bg-sunken border border-glass flex items-center justify-center shrink-0 group-hover:border-theme/30 transition-colors">
                         {a.user?.avatar ? (
-                            <img src={a.user.avatar} className="w-full h-full rounded-lg object-cover" alt="" />
+                            <img src={a.user.avatar} className="w-full h-full rounded-xl object-cover" alt="" />
                         ) : (
                             <span className="text-[10px] font-black text-theme">
                                 {a.user?.name?.charAt(0) || 'S'}
@@ -82,22 +82,22 @@ const TaskActivity = ({ taskId, projectId }) => {
                         )}
                     </div>
 
-                    <div className="flex-1 min-w-0 pt-0.5">
-                        <div className="flex items-center justify-between gap-4 mb-1">
-                            <span className="text-[8px] font-black text-tertiary uppercase tracking-widest opacity-40">
+                    <div className="flex-1 min-w-0 pt-1">
+                        <div className="flex items-center justify-between gap-4 mb-1.5">
+                            <span className="text-[8px] font-black text-tertiary/40 uppercase tracking-widest">
                                 {new Date(a.createdAt).toLocaleString([], { 
                                     month: 'short', day: 'numeric', 
                                     hour: '2-digit', minute: '2-digit' 
                                 })}
                             </span>
                         </div>
-                        <div className="text-[11px] leading-relaxed text-secondary group-hover:text-primary transition-colors">
+                        <div className="text-[11px] font-black uppercase tracking-tight text-primary/80 group-hover:text-primary transition-colors">
                             {renderActivityNarrative(a)}
                         </div>
-                        {a.action === 'EntityUpdate' && a.details?.summary && (
-                            <div className="mt-1.5 flex flex-wrap gap-1">
+                        {a.action === 'EntityUpdate' && a.details?.details && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
                                 {a.details.details?.map((change, idx) => (
-                                    <span key={idx} className="text-[8px] font-bold px-2 py-0.5 bg-theme/5 border border-theme/10 rounded-md text-theme/70">
+                                    <span key={idx} className="text-[7px] font-black px-2 py-0.5 bg-theme/5 border border-theme/10 rounded-lg text-theme/60 uppercase">
                                         {change}
                                     </span>
                                 ))}

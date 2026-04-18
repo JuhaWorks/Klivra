@@ -46,28 +46,28 @@ const TaskSubtasks = ({ subtasks, setSubtasks, isAuthorized }) => {
                 </div>
             </div>
             
-            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar px-0.5">
+            <div className="space-y-1 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar px-1">
                 <AnimatePresence mode="popLayout">
                     {subtasks.map(sub => (
                         <motion.div 
                             key={sub.id} 
                             layout
-                            className="flex items-center gap-2 p-2.5 bg-white/[0.01] border border-white/5 rounded-lg group hover:border-theme/30 transition-all shadow-sm"
+                            className="flex items-center gap-3 p-1.5 rounded-lg group transition-all"
                         >
                             <button 
                                 onClick={() => isAuthorized && toggleSubtask(sub.id)}
                                 className={twMerge(clsx(
-                                    "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
+                                    "w-4 h-4 rounded-full border flex items-center justify-center transition-all",
                                     sub.completed ? "bg-theme border-theme text-white shadow-lg shadow-theme/30 scale-105" : "border-white/10 hover:border-theme/40"
                                 ))}
                             >
                                 {sub.completed && <CheckCircle2 className="w-2.5 h-2.5" />}
                             </button>
-                            <span className={twMerge(clsx("flex-1 text-[11px] font-bold", sub.completed ? "text-gray-700 line-through" : "text-white/80"))}>
+                            <span className={twMerge(clsx("flex-1 text-[11px] font-black uppercase tracking-tight", sub.completed ? "text-tertiary/40 line-through" : "text-primary"))}>
                                 {sub.title}
                             </span>
                             {isAuthorized && (
-                                <button onClick={() => removeSubtask(sub.id)} className="p-1.5 opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-500/10 rounded transition-all">
+                                <button onClick={() => removeSubtask(sub.id)} className="p-1 opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-500/10 rounded transition-all">
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                             )}
@@ -77,17 +77,14 @@ const TaskSubtasks = ({ subtasks, setSubtasks, isAuthorized }) => {
             </div>
 
             {isAuthorized && (
-                <form onSubmit={addSubtask} className="flex items-center gap-3 p-3 bg-white/[0.04] border border-theme/10 rounded-xl group focus-within:border-theme/40 transition-all mx-1 shadow-2xl">
-                    <Plus className="w-4 h-4 text-theme/60 group-focus-within:text-theme transition-transform group-focus-within:rotate-90" />
+                <form onSubmit={addSubtask} className="flex items-center gap-3 py-2 px-1 group transition-all">
+                    <Plus className="w-4 h-4 text-theme/40 group-focus-within:text-theme transition-transform group-focus-within:rotate-90" />
                     <input 
                         value={newSubtask}
                         onChange={(e) => setNewSubtask(e.target.value)}
                         placeholder="Add subtask..."
-                        className="flex-1 bg-transparent border-none text-sm font-bold text-white outline-none placeholder:text-gray-800"
+                        className="flex-1 bg-transparent border-none text-[11px] font-black uppercase tracking-widest text-primary outline-none placeholder:text-tertiary/20"
                     />
-                    <button type="submit" className="px-4 py-1.5 bg-theme hover:bg-theme-highlight rounded-full text-[8.5px] font-black uppercase tracking-widest text-white transition-all opacity-0 group-focus-within:opacity-100 shadow-lg shadow-theme/20 active:scale-95">
-                        Add
-                    </button>
                 </form>
             )}
         </div>

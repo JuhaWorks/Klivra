@@ -1,7 +1,18 @@
 const Notification = require('../models/notification.model');
 const User = require('../models/user.model');
+const webpush = require('web-push');
 const { sendEmail, getIO } = require('../utils/service.utils');
 const { logger } = require('../utils/system.utils');
+
+// Initialize WebPush VAPID details
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        process.env.VAPID_MAIL_TO || 'mailto:support@klivra.com',
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+    logger.info('[NOTIFY] WebPush VAPID details configured');
+}
 
 /**
  * Service to manage centralized notifications
@@ -173,8 +184,47 @@ class NotificationService {
                 }
             }
 
+            // 4. Browser Push Delivery Logic
+            const isPushActiveGlobal = recipient?.notificationPrefs?.push ?? true;
+            const isPushEnabledForCategory = typeof categoryPrefsRecipient === 'object' 
+                ? (categoryPrefsRecipient.push ?? true) 
+                : (categoryPrefsRecipient ?? true);
+
+            if (isPushActiveGlobal && isPushEnabledForCategory && !isSelf && recipient.pushSubscriptions?.length > 0) {
+                const inQuietHours = this.isInQuietHours(recipient);
+                const isUrgent = priority === 'Urgent' || priority === 'High' || type === 'Mention' || type === 'Deadline';
+
+                if (isUrgent || !inQuietHours) {
+                    const pushPayload = JSON.stringify({
+                        title: title,
+                        body: message,
+                        icon: '/logo.png', // Assuming logo is in public folder
+                        data: {
+                            url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}${link || '/'}`
+                        }
+                    });
+
+                    // Send to all registered subscriptions
+                    recipient.pushSubscriptions.forEach(sub => {
+                        webpush.sendNotification(sub, pushPayload).catch(err => {
+                            if (err.statusCode === 410 || err.statusCode === 404) {
+                                // Subscription has expired or is no longer valid, remove it
+                                logger.info(`[NOTIFY] Removing expired push subscription for user: ${recipientId}`);
+                                User.updateOne(
+                                    { _id: recipientId },
+                                    { $pull: { pushSubscriptions: { endpoint: sub.endpoint } } }
+                                ).exec();
+                            } else {
+                                logger.error(`[NOTIFY] WebPush error for device: ${err.message}`);
+                            }
+                        });
+                    });
+                }
+            }
+
             return notification;
         } catch (error) {
+            console.error(error);
             logger.error(`[NOTIFY] Failed to send notification: ${error.message}`);
         }
     }

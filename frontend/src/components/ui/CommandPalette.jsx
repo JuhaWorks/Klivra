@@ -10,6 +10,7 @@ import {
 import { useTheme, MODES } from '../../store/useTheme';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
+import { usePlatform } from '../../hooks/usePlatform';
 
 // ── Keyboard shortcut badge ──────────────────────────
 const Kbd = ({ children }) => (
@@ -96,6 +97,7 @@ export default function CommandPalette() {
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const { mode, setMode } = useTheme();
+    const { shortcutPrefix, shortcutKey } = usePlatform();
     const { logout } = useAuthStore();
     const navigate = useNavigate();
     const inputRef = useRef(null);
@@ -104,7 +106,7 @@ export default function CommandPalette() {
     // Toggle via Ctrl/Cmd+K
     useEffect(() => {
         const handler = (e) => {
-            if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+            if (e.key === 'k' && e[shortcutKey]) {
                 e.preventDefault();
                 setOpen(prev => !prev);
             }
@@ -156,7 +158,7 @@ export default function CommandPalette() {
             { id: 'profile', type: 'page', icon: User, label: 'Profile', description: 'Edit your profile', shortcut: null, action: () => navigate('/profile') },
         ];
         const actions = [
-            { id: 'new-task', type: 'action', icon: Plus, label: 'Create New Task', description: 'Add task to current project', shortcut: '⌘N', action: () => { navigate('/tasks'); close(); } },
+            { id: 'new-task', type: 'action', icon: Plus, label: 'Create New Task', description: 'Add task to current project', shortcut: `${shortcutPrefix}N`, action: () => { navigate('/tasks'); close(); } },
             { id: 'new-project', type: 'action', icon: Target, label: 'New Project', description: 'Create a workspace project', shortcut: null, action: () => { navigate('/projects'); close(); } },
             { id: 'toggle-theme', type: 'action', icon: mode === MODES.DARK ? Sun : Moon, label: mode === MODES.DARK ? 'Switch to Light Mode' : 'Switch to Dark Mode', description: 'Toggle color theme', shortcut: null, action: () => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK) },
             { id: 'logout', type: 'action', icon: LogOut, label: 'Sign Out', description: 'Log out of your account', shortcut: null, action: () => { logout(); navigate('/login'); } },

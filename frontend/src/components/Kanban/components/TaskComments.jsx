@@ -18,36 +18,36 @@ const TaskComments = ({
     if (isNew) return null;
 
     return (
-        <div className="py-4 border-t border-white/5 space-y-4">
-            <div className="flex items-center justify-between px-1.5">
-                <label className="text-[10px] font-black text-white uppercase tracking-[0.3em] flex items-center gap-2">
+        <div className="py-6 border-t border-glass space-y-6">
+            <div className="flex items-center justify-between px-1">
+                <label className="text-[10px] font-black text-primary uppercase tracking-[0.4em] flex items-center gap-3">
                     <MessageSquare className="w-4 h-4 text-theme" />
-                    <span>Discussions ({comments.length})</span>
+                    <span>Intelligence Loop ({comments.length})</span>
                 </label>
             </div>
 
-            <div className="space-y-4">
-                <form onSubmit={handlePostComment} className="relative group">
+            <div className="space-y-6">
+                <form onSubmit={handlePostComment} className="relative group px-1">
                     <MentionInput
                         value={commentContent}
                         onChange={(text) => setCommentContent(text)}
                         onMentionChange={setMentionedIds}
                         members={members}
-                        placeholder="Type @ to mention team members..."
-                        className="min-h-[100px]"
+                        placeholder="Add to the collective intelligence..."
+                        className="min-h-[100px] bg-transparent border-glass focus:border-theme/40 transition-all rounded-2xl"
                     />
-                    <div className="flex justify-end mt-2">
-                        <button type="submit" disabled={!commentContent.trim()} className="px-6 py-2 bg-theme hover:bg-theme-highlight disabled:opacity-30 rounded-full text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg active:scale-95">
-                            Post Comment
+                    <div className="flex justify-end mt-3">
+                        <button type="submit" disabled={!commentContent.trim()} className="px-8 py-2.5 bg-theme hover:bg-theme-highlight disabled:opacity-20 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-theme-slight active:scale-95">
+                            Post Intel
                         </button>
                     </div>
                 </form>
 
-                <div className="space-y-4 pt-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-6 pt-4 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar px-1">
                     {comments.length === 0 ? (
-                        <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                            <Clock className="w-8 h-8 text-gray-800 mx-auto mb-3" />
-                            <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest">No activity yet. Start the conversation.</p>
+                        <div className="py-12 text-center opacity-20">
+                            <Clock className="w-8 h-8 text-tertiary mx-auto mb-4" />
+                            <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.4em]">Discussion Pending</p>
                         </div>
                     ) : (
                         <AnimatePresence mode="popLayout">
@@ -56,33 +56,33 @@ const TaskComments = ({
                                     key={comment._id || idx} 
                                     initial={{ opacity: 0, x: -10 }} 
                                     animate={{ opacity: 1, x: 0 }} 
-                                    className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all group/comment"
+                                    className="flex gap-5 group/comment transition-all py-1"
                                 >
-                                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-glass shrink-0 transition-transform group-hover/comment:scale-105">
                                         <img src={getOptimizedAvatar(comment.user?.avatar, 'sm')} alt={comment.user?.name} className="w-full h-full object-cover" />
                                     </div>
-                                    <div className="flex-1 space-y-2">
+                                    <div className="flex-1 space-y-2.5">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[11px] font-black text-white">{comment.user?.name}</span>
-                                                {comment.user?.role === 'Manager' && <ShieldCheck className="w-3 h-3 text-theme" />}
-                                                <span className="text-[8px] font-bold text-gray-600 uppercase">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[11px] font-black text-primary uppercase tracking-tight">{comment.user?.name}</span>
+                                                {comment.user?.role === 'Manager' && <ShieldCheck className="w-3.5 h-3.5 text-theme" />}
+                                                <span className="text-[8px] font-black text-tertiary/40 uppercase tracking-widest">{new Date(comment.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                             </div>
                                         </div>
-                                        <div className="text-[12px] text-gray-300 leading-relaxed prose prose-invert max-w-none">
+                                        <div className="text-[12px] text-primary/80 leading-relaxed max-w-none font-medium">
                                             {comment.content}
                                         </div>
                                         
                                         {/* Reactions */}
-                                        <div className="flex flex-wrap gap-2 pt-1">
+                                        <div className="flex flex-wrap gap-2 pt-2">
                                             {comment.reactions?.map(r => (
                                                 <button 
                                                     key={r.emoji} 
                                                     onClick={() => handleReaction(comment._id, r.emoji)}
-                                                    className="px-2 py-1 bg-white/5 border border-white/5 rounded-lg text-xs hover:border-theme/30 transition-all flex items-center gap-1.5"
+                                                    className="px-2.5 py-1.5 bg-sunken border border-glass rounded-xl text-xs hover:border-theme/30 transition-all flex items-center gap-2"
                                                 >
                                                     <span>{r.emoji}</span>
-                                                    <span className="text-[9px] font-black text-gray-500">{r.count || r.users?.length}</span>
+                                                    <span className="text-[9px] font-black text-tertiary">{r.count || r.users?.length}</span>
                                                 </button>
                                             ))}
                                         </div>

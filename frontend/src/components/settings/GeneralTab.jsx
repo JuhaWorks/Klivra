@@ -202,7 +202,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                     }}
                                     className={cn(
                                         "w-10 h-5 rounded-full relative transition-all duration-300",
-                                        watch('interfacePrefs.showChatBubbles') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                        watch('interfacePrefs.showChatBubbles') ? "bg-theme" : "bg-sunken border border-glass"
                                     )}
                                 >
                                     <div className={cn(

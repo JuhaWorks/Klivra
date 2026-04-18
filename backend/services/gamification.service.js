@@ -196,8 +196,8 @@ const awardXP = async (userId, xpData, sourceTask = null, context = {}) => {
         await user.save();
 
         // Socket Announcements (Silent check for Background Scripts)
-        if (socketUtil.isInitialized()) {
-            const io = socketUtil.getIO();
+        try {
+            const io = getIO();
             io.to(`user_${userId}`).emit('gamification_update', {
                 type: leveledUp ? 'level_up' : 'xp_gained',
                 xpGained: finalXp,
@@ -206,6 +206,8 @@ const awardXP = async (userId, xpData, sourceTask = null, context = {}) => {
                 newLevel: user.gamification.level,
                 totalXP: user.gamification.xp
             });
+        } catch (socketErr) {
+            // Non-fatal — socket may not be initialized during startup snapshots
         }
 
         return { xpGained: finalXp, rollResult, leveledUp, newLevel };
@@ -276,14 +278,16 @@ const revokeXP = async (userId, task) => {
         await user.save();
         
         // Socket Announcements for Loss (Transparency in Regression)
-        if (socketUtil.isInitialized()) {
-            const io = socketUtil.getIO();
+        try {
+            const io = getIO();
             io.to(`user_${userId}`).emit('gamification_update', {
                 type: 'xp_lost',
                 xpLost: xpToRevoke,
                 newLevel: user.gamification.level,
                 totalXP: user.gamification.xp
             });
+        } catch (socketErr) {
+            // Non-fatal — socket may not be initialized
         }
         
         return { xpLost: xpToRevoke, totalXP: user.gamification.xp, newLevel };

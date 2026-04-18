@@ -62,7 +62,10 @@ settingsRouter.get('/email/confirm/:token', userCtrl.confirmEmailChange);
 settingsRouter.use(protect);
 settingsRouter.put('/profile', userCtrl.updateProfile);
 settingsRouter.put('/security', userCtrl.updateSecurity);
+settingsRouter.get('/security/logs', userCtrl.getSecurityLogs);
 settingsRouter.put('/notifications', userCtrl.updateNotificationPreferences);
+settingsRouter.post('/push/subscribe', userCtrl.subscribeToPush);
+settingsRouter.post('/push/unsubscribe', userCtrl.unsubscribeFromPush);
 settingsRouter.put('/deactivate', userCtrl.deactivateAccount);
 settingsRouter.delete('/delete', userCtrl.deleteAccount);
 
