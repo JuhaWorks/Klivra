@@ -24,7 +24,7 @@ class TaskErrorBoundary extends React.Component {
             return (
                 <article className="flex flex-col items-center justify-center py-20 glass-2 bg-rose-500/5 border border-rose-500/20 rounded-[3rem] text-center space-y-6">
                     <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center">
-                        <KlivraLogo size={48} pulse={false} />
+                        <KlivraLogo pulse={false} />
                     </div>
                     <div className="space-y-2">
                         <h2 className="text-xl font-black text-primary">Failed to Load Tasks</h2>
@@ -43,7 +43,7 @@ class TaskErrorBoundary extends React.Component {
 // ── Board Loading Skeleton ──
 const TaskBoardSkeleton = () => (
     <div className="w-full flex-1 min-h-[600px] rounded-[4rem] border border-subtle bg-sunken animate-pulse aspect-[16/9] flex items-center justify-center" aria-hidden="true">
-        <KlivraLogo size={64} />
+        <KlivraLogo />
     </div>
 );
 

@@ -489,7 +489,7 @@ const ProjectWhiteboard = () => {
                 {/* Loading State Overlay */}
                 {isLoading && projectId && (
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200]">
-                         <KlivraLogo size={64} />
+                         <KlivraLogo />
                     </div>
                 )}
             </main>

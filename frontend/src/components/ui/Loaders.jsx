@@ -71,45 +71,37 @@ export const PrecisionSpinner = memo(({ diameter = 64 }) => {
     );
 });
 
-// ─── LOGO COMPONENTS ────────────────────────────────────────────────────────
-export const KlivraLogo = memo(({ size = 64, color = 'var(--accent-500)', pulse = true }) => {
-    const s = size;
+export const KlivraLogo = memo(({ pulse = true }) => {
     return (
         <motion.div 
             animate={pulse ? { 
-                opacity: [0.6, 1, 0.6],
-                scale: [0.97, 1, 0.97]
+                opacity: [0.4, 1, 0.4],
+                scale: [0.98, 1, 0.98]
             } : {}} 
             transition={{ 
                 repeat: Infinity, 
-                duration: 2.5, 
+                duration: 3, 
                 ease: "easeInOut" 
             }}
-            className="relative flex items-center justify-center"
-            style={{ width: s, height: s }}
+            className="flex items-center gap-4"
         >
-            {/* Glow Background */}
-            <div className="absolute inset-0 bg-theme/10 blur-2xl rounded-full" />
+            {/* Branded Logo Container */}
+            <div className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-white/10 bg-transparent flex items-center justify-center backdrop-blur-xl relative group">
+                <div className="absolute inset-0 bg-theme/5 opacity-50" />
+                <img 
+                    src="/logo.png" 
+                    alt="Klivra logo" 
+                    className="w-full h-full object-contain invert opacity-95 relative z-10 p-1.5"
+                />
+            </div>
             
-            {/* Outer Ring */}
-            <div className="absolute inset-0 rounded-2xl border border-theme/20 bg-gradient-to-br from-theme/5 to-transparent backdrop-blur-sm shadow-2xl" />
-            
-            {/* The 'K' */}
-            <span 
-                className="relative font-black text-theme tracking-tighter"
-                style={{ fontSize: s * 0.45, lineHeight: 1 }}
-            >
-                K
-            </span>
-
-            {/* Subtle Orbiting Dots (optional, for extra "working" feel) */}
-            <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                className="absolute inset-[-4px] pointer-events-none"
-            >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-theme/40" />
-            </motion.div>
+            {/* Brand Wordmark */}
+            <div className="flex flex-col">
+                <span className="text-3xl font-black tracking-tighter text-white leading-none">
+                    klivra
+                </span>
+                <div className="h-0.5 w-full bg-gradient-to-right from-theme to-transparent opacity-30 mt-1 rounded-full" />
+            </div>
         </motion.div>
     );
 });
@@ -121,7 +113,7 @@ export const GlobalLoadingScreen = memo(({ statusText = 'INITIALIZING' }) => {
             style={{ minHeight: '100vh', background: tokens.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 40, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(${tokens.border} 1px, transparent 1px), linear-gradient(90deg, ${tokens.border} 1px, transparent 1px)`, backgroundSize: '48px 48px', maskImage: 'radial-gradient(ellipse 55% 55% at 50% 50%, black 0%, transparent 100%)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32 }}>
-                <KlivraLogo size={80} />
+                <KlivraLogo />
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                     <StatusLabel text={statusText} />
                 </div>
@@ -134,7 +126,7 @@ export const PageLoader = memo(() => {
     return (
         <div className="w-full h-full min-h-[400px] flex items-center justify-center">
             <div className="flex flex-col items-center gap-8">
-                <KlivraLogo size={72} />
+                <KlivraLogo />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-theme/40 animate-pulse">Initializing Interface</span>
             </div>
         </div>
