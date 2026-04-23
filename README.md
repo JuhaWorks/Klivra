@@ -1,69 +1,92 @@
 <div align="center">
 
-![Klivra Hero Banner](file:///C:/Users/asus/.gemini/antigravity/brain/ac45cad6-7e82-408d-b51f-194ee5bf0c64/klivra_hero_banner_1776980744830.png)
+![Klivra Grand Vision](file:///C:/Users/asus/.gemini/antigravity/brain/ac45cad6-7e82-408d-b51f-194ee5bf0c64/klivra_full_vision_banner_1776980852572.png)
+
+<br/>
+
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="160" alt="Klivra Logo" />
 
 # 🌌 KLIVRA
-### **Strategic Intelligence & System Command Center**
+### **The Sovereign Intelligence & Strategic Command Nexus**
+*Orchestrating High-Stakes Systems with Absolute Visibility.*
+
+---
+
+[**🚀 ENTER THE TERMINAL**](https://klivra.vercel.app/)
+
+---
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Node](https://img.shields.io/badge/Node.js-LTS-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-Real--Time-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://socket.io/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Three.js](https://img.shields.io/badge/Three.js-3D--Visuals-ffffff?style=for-the-badge&logo=threedotjs&logoColor=black)](https://threejs.org/)
+[![Sentry](https://img.shields.io/badge/Sentry-Stability-362D59?style=for-the-badge&logo=sentry&logoColor=white)](https://sentry.io/)
 
-**Klivra** is a high-fidelity, real-time command center engineered for the next generation of strategic management. Beyond simple task tracking, Klivra provides an immersive, data-driven environment for elite engineering teams to orchestrate complex systems with surgical precision.
+**Klivra** is a high-fidelity operational hub designed for elite engineering squads. It transcends traditional management by synthesizing real-time telemetry, strategic communications, and visual intelligence into a singular, breathtaking command environment.
 
-[Explore Features](#-command-modules) • [Tech Stack](#-technical-dna) • [Architecture](#-system-architecture) • [Getting Started](#-deployment)
+[**Core Modules**](#-command-modules) • [**Interface Gallery**](#-the-interface-matrix) • [**Technical DNA**](#-technical-dna) • [**Architecture**](#-system-architecture) • [**Deployment**](#-deployment)
 
 </div>
 
 ---
 
-## ⚡ Command Modules
+## 🏛️ Command Modules
 
-### 🏛️ Executive Intelligence Loop
-A real-time "Grand Editorial" dashboard that aggregates project health, team velocity, and tactical updates into a singular narrative feed. Powered by **NASA APOD** imagery for an evocative, high-stakes atmosphere.
+<details open>
+<summary><b>1. Executive Intelligence Loop (EIL)</b></summary>
+A real-time "Grand Editorial" dashboard. Aggregates global project health, team velocity, and tactical updates. Integrated with **NASA APOD** telemetry for an immersive, atmospheric command experience.
+</details>
 
-### 🍱 Immersive Kanban Engine
-Advanced execution flow management featuring:
-*   **Tactical Dependency Mapping**: Visualize blockers and pathways in real-time.
-*   **Risk-Aware Filtering**: Instantly isolate high-priority bottlenecks.
-*   **Atomic Subtask Control**: Granular precision for every line of effort.
+<details>
+<summary><b>2. Immersive Kanban Engine (IKE)</b></summary>
+A zero-latency execution interface. Features **Orbital Dependency Mapping** to visualize bottlenecks in 3D-space and **Execution Risk Scoring** to isolate critical-path vulnerabilities.
+</details>
 
-### 💬 Strategic Communications
-A military-grade messaging layer integrated directly into the workspace:
-*   **Real-time Synchronization**: Centralized socket management for zero-latency alerts.
-*   **Teammate Mentions**: Tag teammates with `@` for instant high-priority intel loops.
-*   **File Intelligence**: Seamlessly share schematics and documents across the grid.
+<details>
+<summary><b>3. Strategic Communications (S-COM)</b></summary>
+Military-grade messaging. Features centralized socket management for zero-latency alerts, integrated `@teammate` mentions, and polymorphic file intelligence previews.
+</details>
 
-### 🎨 Tactical Whiteboard
-A collaborative architecture canvas for real-time system mapping. Zero-latency synchronization using **Three.js** and **GSAP** for fluid, professional interactions.
+<details>
+<summary><b>4. Tactical Whiteboard (T-WB)</b></summary>
+A collaborative architecture canvas. Leverages **Three.js** and **GSAP** for fluid, real-time architectural mapping and tactical planning.
+</details>
+
+---
+
+## 🖼️ The Interface Matrix
+
+![Klivra UI Mosaic](file:///C:/Users/asus/.gemini/antigravity/brain/ac45cad6-7e82-408d-b51f-194ee5bf0c64/klivra_ui_mosaic_1776980904536.png)
 
 ---
 
 ## 🧬 Technical DNA
 
-### The Core Grid (Frontend)
-*   **Runtime**: React 19 (Experimental Performance)
-*   **Orchestration**: TanStack Query & Zustand
-*   **Visuals**: Framer Motion, GSAP, Three.js
-*   **UI Primitives**: Custom Glassmorphism System, Lucide Pro Icons
+### **The Neural Frontend**
+*   **Engine**: React 19 (Experimental Performance Mode)
+*   **Orchestration**: TanStack Query (Data Telemetry) & Zustand (Central Neural State)
+*   **Visual Physics**: Framer Motion, GSAP, Three.js (Spatial Rendering)
+*   **Design System**: Custom Glassmorphism Framework with TailwindCSS 4.0
 
-### The Backend Nexus
-*   **Core**: Node.js & Express 5 (High-Concurrency Engine)
-*   **Persistence**: MongoDB with Mongoose ODM
-*   **Real-time Layer**: Socket.io with Redis Adpater
-*   **Security**: JWT-AES Encryption, OAuth 2.0 (Google/GitHub), Multi-layered Rate Limiting
-*   **Cloud Integrations**: Cloudinary (Assets), Brevo (SMTP), Web-Push
+### **The Backend Nexus**
+*   **Core**: Node.js & Express 5 (High-Concurrency Architecture)
+*   **Persistence**: MongoDB with Mongoose (Atomic Polymorphic Schema)
+*   **Real-time Layer**: Socket.io with Redis Clustering for global sync
+*   **Security Architecture**: JWT-AES Encryption, OAuth 2.0 (Google/GitHub), Advanced Rate Limiting
+*   **Global Services**: Cloudinary (Asset Hub), Brevo (SMTP Relay), Web-Push
 
 ---
 
 ## 📐 System Architecture
 
-Klivra is built on a **Distributed Intelligence Pattern**:
+Klivra is governed by the **Distributed Intelligence Pattern (DIP)**:
 
-1.  **Centralized Socket Nexus**: Unlike traditional apps, Klivra consolidates ALL listeners into a single source of truth (`useSocketStore`). This eliminates race conditions and ensures "One Event, One Action" system-wide.
-2.  **Polymorphic Narrative Engine**: Every action (from a code commit to a task move) is processed through the Activity Hub, translating raw logs into human-readable strategic narratives.
-3.  **Atomic Design System**: Every component is built from high-fidelity primitives (GlassSurface, BaseUI), ensuring that the executive aesthetic remains consistent across every pixel.
+> [!IMPORTANT]
+> **Centralized Socket Nexus**: Unlike legacy apps, Klivra consolidates all real-time listeners into a single source of truth (`useSocketStore`). This ensures 100% data integrity, zero event duplication, and ultra-low latency across the grid.
+
+*   **Strategic Narrative Auditing**: Every system event is captured and translated by a custom narrative engine into human-readable tactical logs.
+*   **Atomic Design System**: A strictly governed component library built on high-fidelity primitives (GlassSurface, BaseUI), ensuring visual dominance across every module.
 
 ---
 
@@ -94,7 +117,9 @@ npm run dev
 
 <div align="center">
 
-**Built for those who demand absolute visibility.**
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="80" alt="Klivra Logo" />
+
+**Engineered for Absolute Visibility.**
 
 [Documentation](https://github.com/JuhaWorks/Klivra) • [Support](https://github.com/JuhaWorks/Klivra) • [API Reference](https://github.com/JuhaWorks/Klivra)
 
