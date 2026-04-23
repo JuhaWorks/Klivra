@@ -1,8 +1,10 @@
 <div align="center">
 
+![Klivra Grand Vision](./assets/hero-banner.png)
+
 <br/>
 
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="180" alt="Klivra Logo" />
+<img src="./frontend/public/logo.png" width="180" alt="Klivra Logo" />
 
 # 🌌 KLIVRA
 ### **Modern Project Management & Team Collaboration Hub**
@@ -35,13 +37,13 @@
 <tr>
 <td width="50%">
 <details open>
-<summary>📊 <b>Interactive Dashboard & Networking</b></summary>
+<summary>📊 <b>Interactive Dashboard</b></summary>
 <br/>
-A central hub for project health, activity narratives, and team networking. View teammate intelligence and manage connections in real-time.
+A central hub for project health, activity narratives, and team updates. Features a daily "Astronomy Picture of the Day" for an inspiring workspace.
 <br/><br/>
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/networking-preview.png" width="100%" alt="Networking Preview" />
+![Dashboard](./assets/dashboard-preview.png)
 <br/><br/>
-<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Home.jsx">View Source →</a>
+<a href="./frontend/src/pages/Home.jsx">View Source →</a>
 </details>
 </td>
 <td width="50%">
@@ -50,7 +52,7 @@ A central hub for project health, activity narratives, and team networking. View
 <br/>
 Highly responsive task management. Drag-and-drop cards, track dependencies, and manage complex projects with zero latency.
 <br/><br/>
-<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Tasks.jsx">View Source →</a>
+<a href="./frontend/src/pages/Tasks.jsx">View Source →</a>
 </details>
 </td>
 </tr>
@@ -61,9 +63,9 @@ Highly responsive task management. Drag-and-drop cards, track dependencies, and 
 <br/>
 Real-time chat with teammate mentions, file sharing, and instant notifications to keep everyone in sync.
 <br/><br/>
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/messaging-preview.png" width="100%" alt="Messaging Preview" />
+![Messaging](./assets/messaging-preview.png)
 <br/><br/>
-<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Networking.jsx">View Source →</a>
+<a href="./frontend/src/pages/Networking.jsx">View Source →</a>
 </details>
 </td>
 <td width="50%">
@@ -72,9 +74,9 @@ Real-time chat with teammate mentions, file sharing, and instant notifications t
 <br/>
 A shared canvas for architectural mapping and planning. Visualize ideas together in real-time.
 <br/><br/>
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/whiteboard-preview.png" width="100%" alt="Whiteboard Preview" />
+![Whiteboard](./assets/whiteboard-preview.png)
 <br/><br/>
-<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/ProjectWhiteboard.jsx">View Source →</a>
+<a href="./frontend/src/pages/ProjectWhiteboard.jsx">View Source →</a>
 </details>
 </td>
 </tr>
@@ -85,14 +87,14 @@ A shared canvas for architectural mapping and planning. Visualize ideas together
 
 ## 🖼️ Interface Gallery
 
-![Klivra Dashboard Preview](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/dashboard-preview.png)
+![Klivra UI Mosaic](./assets/ui-mosaic.png)
 
 ---
 
 ## 💻 Tech Stack
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/tech-blueprint.png" width="100%" />
+<img src="./assets/tech-blueprint.png" width="100%" />
 </div>
 
 <br/>
@@ -116,7 +118,7 @@ A shared canvas for architectural mapping and planning. Visualize ideas together
 Klivra is designed for speed and data integrity:
 
 > [!TIP]
-> **Centralized Real-time Logic**: All live updates are managed through a single store ([useSocketStore.js](https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/store/useSocketStore.js)). This ensures that notifications and messages appear instantly across all tabs without duplication.
+> **Centralized Real-time Logic**: All live updates are managed through a single store (`useSocketStore.js`). This ensures that notifications and messages appear instantly across all tabs without duplication.
 
 *   **Activity Logging**: Every project update is automatically logged into a readable history feed.
 *   **Component-Driven Design**: Built with reusable, high-quality components for a consistent professional look.
@@ -150,7 +152,7 @@ npm run dev
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="80" alt="Klivra Logo" />
+<img src="./frontend/public/logo.png" width="80" alt="Klivra Logo" />
 
 **Professional Project Management.**
 
