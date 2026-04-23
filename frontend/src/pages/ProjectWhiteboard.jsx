@@ -12,6 +12,7 @@ import { useSocketStore } from '../store/useSocketStore';
 import { cn } from '../utils/cn';
 import StickyNote from '../components/whiteboard/StickyNote';
 import { Button, Tooltip } from '../components/ui/BaseUI';
+import { KlivraLogo } from '../components/ui/Loaders';
 import { toast } from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import { RefreshCcw } from 'lucide-react';
@@ -488,7 +489,7 @@ const ProjectWhiteboard = () => {
                 {/* Loading State Overlay */}
                 {isLoading && projectId && (
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[200]">
-                        < Zap className="w-8 h-8 text-theme animate-pulse" />
+                         <KlivraLogo size={64} />
                     </div>
                 )}
             </main>

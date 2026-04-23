@@ -31,6 +31,7 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
 const Home = lazy(() => import('./pages/Home'));
 const Networking = lazy(() => import('./pages/Networking'));
+const Messaging = lazy(() => import('./pages/Messaging'));
 
 import { GlobalLoadingScreen, PageLoader } from './components/ui/Loaders';
 import { registerServiceWorker, subscribeToNotifications } from './utils/push';
@@ -121,6 +122,7 @@ function App() {
             <Route path="projects/:id/settings" element={<ProjectSettings />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="networking" element={<Networking />} />
+            <Route path="messaging" element={<Messaging />} />
             <Route path="admin" element={<AdminDashboard />} />
             <Route path="admin/security" element={<SecurityFeed />} />
 

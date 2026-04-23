@@ -23,10 +23,11 @@ const navItems = [
     { icon: Briefcase, label: 'Projects', path: '/projects', labelDescription: 'Manage Projects' },
     { icon: Calendar, label: 'Planning', path: '/tasks', labelDescription: 'Project Roadmap' },
     { icon: Users, label: 'Network', path: '/networking', labelDescription: 'Member Directory' },
+    { icon: MessageSquare, label: 'Messages', path: '/messaging', labelDescription: 'Strategic Communications' },
     { icon: Presentation, label: 'Whiteboard', path: '/whiteboard/main-workspace', labelDescription: 'Shared Workspace' },
 ];
 
-const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
+const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed, unreadTotal }) => {
     const Icon = item.icon;
     
     return (
@@ -58,6 +59,11 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
                 isActive ? "text-theme" : "group-hover:opacity-80"
             )}>
                 <Icon strokeWidth={isActive ? (isCollapsed ? 1.75 : 2) : 1.5} className="w-full h-full" />
+                {item.path === '/messaging' && unreadTotal > 0 && (
+                    <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] p-0.5 bg-danger rounded-full border border-base text-[8px] font-black text-white flex items-center justify-center shadow-lg">
+                        {unreadTotal > 9 ? '9+' : unreadTotal}
+                    </div>
+                )}
             </span>
 
             {isCollapsed ? (
@@ -361,57 +367,11 @@ const SidebarComponent = () => {
                                 onClose={() => setSidebarExpanded(false)} 
                                 onPrefetch={handlePrefetch} 
                                 isCollapsed={effectiveCollapsed}
+                                unreadTotal={unreadTotal}
                             />
                         ))}
 
-                        {/* Special Action: Messages */}
-                        {user?.role !== 'Admin' && (
-                            <button
-                                onClick={() => {
-                                    useChatStore.getState().openChatList();
-                                    if (isMobile) setSidebarExpanded(false);
-                                }}
-                                className={cn(
-                                    "sidebar-nav-item group relative flex transition-all duration-200 select-none",
-                                    effectiveCollapsed 
-                                        ? "flex-col items-center justify-center py-3.5 w-14 mx-auto rounded-xl gap-1.5" 
-                                        : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
-                                    isDrawerOpen ? "text-theme" : "text-accent/70 hover:text-theme"
-                                )}
-                            >
-                                <span className={cn(
-                                    "absolute inset-0 transition-opacity duration-150 rounded-xl bg-sunken",
-                                    isDrawerOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100"
-                                )} />
-                                <div className={cn(
-                                    "relative z-10 flex flex-col items-center justify-center transition-all duration-200",
-                                    effectiveCollapsed ? "w-6 h-6" : "w-5 h-5",
-                                    isDrawerOpen ? "text-theme" : "text-accent/70 group-hover:text-theme"
-                                )}>
-                                    <MessageSquare strokeWidth={isDrawerOpen ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className="w-full h-full" />
-                                    {unreadTotal > 0 && (
-                                        <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] p-0.5 bg-danger rounded-full border border-base text-[8px] font-black text-white flex items-center justify-center shadow-lg">
-                                            {unreadTotal > 9 ? '9+' : unreadTotal}
-                                        </div>
-                                    )}
-                                </div>
-                                {effectiveCollapsed ? (
-                                    <span className={cn(
-                                        "relative z-10 text-[9px] leading-tight text-center truncate transition-colors duration-150 px-1 w-full",
-                                        isDrawerOpen ? "font-bold text-theme" : "font-medium opacity-70"
-                                    )}>
-                                        Messages
-                                    </span>
-                                ) : (
-                                    <span className={cn(
-                                        "relative z-10 text-sm truncate leading-tight transition-colors duration-150 flex-1 text-left",
-                                        isDrawerOpen ? "font-semibold text-theme" : "font-medium text-accent/70 group-hover:text-theme"
-                                    )}>
-                                        Messages
-                                    </span>
-                                )}
-                            </button>
-                        )}
+
                     </div>
                 </nav>
 

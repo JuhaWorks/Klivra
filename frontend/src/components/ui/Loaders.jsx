@@ -71,18 +71,57 @@ export const PrecisionSpinner = memo(({ diameter = 64 }) => {
     );
 });
 
+// ─── LOGO COMPONENTS ────────────────────────────────────────────────────────
+export const KlivraLogo = memo(({ size = 64, color = 'var(--accent-500)', pulse = true }) => {
+    const s = size;
+    return (
+        <motion.div 
+            animate={pulse ? { 
+                opacity: [0.6, 1, 0.6],
+                scale: [0.97, 1, 0.97]
+            } : {}} 
+            transition={{ 
+                repeat: Infinity, 
+                duration: 2.5, 
+                ease: "easeInOut" 
+            }}
+            className="relative flex items-center justify-center"
+            style={{ width: s, height: s }}
+        >
+            {/* Glow Background */}
+            <div className="absolute inset-0 bg-theme/10 blur-2xl rounded-full" />
+            
+            {/* Outer Ring */}
+            <div className="absolute inset-0 rounded-2xl border border-theme/20 bg-gradient-to-br from-theme/5 to-transparent backdrop-blur-sm shadow-2xl" />
+            
+            {/* The 'K' */}
+            <span 
+                className="relative font-black text-theme tracking-tighter"
+                style={{ fontSize: s * 0.45, lineHeight: 1 }}
+            >
+                K
+            </span>
+
+            {/* Subtle Orbiting Dots (optional, for extra "working" feel) */}
+            <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                className="absolute inset-[-4px] pointer-events-none"
+            >
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-theme/40" />
+            </motion.div>
+        </motion.div>
+    );
+});
+
 // ─── SCREENS ───────────────────────────────────────────────────────────────
-export const GlobalLoadingScreen = memo(({ letter = 'K', statusText = 'INITIALIZING' }) => {
+export const GlobalLoadingScreen = memo(({ statusText = 'INITIALIZING' }) => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
             style={{ minHeight: '100vh', background: tokens.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 40, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(${tokens.border} 1px, transparent 1px), linear-gradient(90deg, ${tokens.border} 1px, transparent 1px)`, backgroundSize: '48px 48px', maskImage: 'radial-gradient(ellipse 55% 55% at 50% 50%, black 0%, transparent 100%)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32 }}>
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: ease.out }} style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ position: 'relative', width: 60, height: 60, borderRadius: 12, background: tokens.bgSurface, border: `1px solid ${tokens.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)' }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#fff' }}>{letter}</span>
-                    </div>
-                </motion.div>
+                <KlivraLogo size={80} />
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                     <StatusLabel text={statusText} />
                 </div>
@@ -94,11 +133,9 @@ export const GlobalLoadingScreen = memo(({ letter = 'K', statusText = 'INITIALIZ
 export const PageLoader = memo(() => {
     return (
         <div className="w-full h-full min-h-[400px] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <div className="p-4 rounded-3xl bg-theme/5 border border-theme/10">
-                    <RefreshCw className="w-6 h-6 text-theme animate-spin" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-tertiary opacity-50">Loading</span>
+            <div className="flex flex-col items-center gap-8">
+                <KlivraLogo size={72} />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-theme/40 animate-pulse">Initializing Interface</span>
             </div>
         </div>
     );

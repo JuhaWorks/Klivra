@@ -22,7 +22,7 @@ const GlobalPresence = () => {
                 const memberId = user.userId?._id || user.userId;
                 const memberName = user.name || user.userId?.name || 'Collaborator';
                 const memberAvatar = user.avatar || user.userId?.avatar;
-                const globalUser = onlineUsers.find(u => u.userId === memberId);
+                const globalUser = onlineUsers.find(u => u.userId?.toString() === memberId?.toString());
                 const liveStatus = globalUser ? globalUser.status : 'Offline';
                 return {
                     userId: memberId,

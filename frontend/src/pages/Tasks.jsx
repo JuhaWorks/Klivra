@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Counter } from '../components/ui/BaseUI';
+import { KlivraLogo } from '../components/ui/Loaders';
 import { cn } from '../utils/cn';
 
 // ── Task Physics Configuration ──
@@ -23,7 +24,7 @@ class TaskErrorBoundary extends React.Component {
             return (
                 <article className="flex flex-col items-center justify-center py-20 glass-2 bg-rose-500/5 border border-rose-500/20 rounded-[3rem] text-center space-y-6">
                     <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center">
-                        <RefreshCw className="w-8 h-8 text-rose-500" />
+                        <KlivraLogo size={48} pulse={false} />
                     </div>
                     <div className="space-y-2">
                         <h2 className="text-xl font-black text-primary">Failed to Load Tasks</h2>
@@ -42,7 +43,7 @@ class TaskErrorBoundary extends React.Component {
 // ── Board Loading Skeleton ──
 const TaskBoardSkeleton = () => (
     <div className="w-full flex-1 min-h-[600px] rounded-[4rem] border border-subtle bg-sunken animate-pulse aspect-[16/9] flex items-center justify-center" aria-hidden="true">
-        <div className="w-10 h-10 border-2 border-theme/30 border-t-theme rounded-full animate-spin" />
+        <KlivraLogo size={64} />
     </div>
 );
 
@@ -62,7 +63,15 @@ const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activePro
                     transition={LIQUID_SPRING}
                     className="w-full flex-1 flex flex-col min-h-0"
                 >
-                    {viewMode === 'kanban' ? (
+                    {!projectId ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-20 text-center animate-in fade-in zoom-in-95 duration-1000">
+                            <div className="w-24 h-24 bg-theme/5 rounded-[2.5rem] flex items-center justify-center mb-8 border border-theme/10 shadow-glow-sm">
+                                <Target className="w-10 h-10 text-theme opacity-60" />
+                            </div>
+                            <h2 className="text-3xl font-black text-primary tracking-tighter uppercase mb-3">Select a Project</h2>
+                            <p className="text-sm text-tertiary max-w-[340px] leading-relaxed opacity-60">Choose a specific project from the workspace filter above to view and manage its strategic task board.</p>
+                        </div>
+                    ) : viewMode === 'kanban' ? (
                         <KanbanBoard
                             projectId={projectId}
                             searchQuery={searchQuery}
@@ -143,14 +152,16 @@ export default function Tasks() {
         }
     }, [projectId, joinProject, leaveProject]);
 
-    // Fetch tasks to compute global metrics
+    // Fetch tasks to compute metrics (only when project is selected)
     const { data: rawTasks = [] } = useQuery({
         queryKey: ['tasks', projectId],
         queryFn: async ({ signal }) => {
-            const url = projectId ? `/projects/${projectId}/tasks` : '/tasks';
+            if (!projectId) return [];
+            const url = `/projects/${projectId}/tasks`;
             const res = await api.get(url, { signal });
             return res.data.data;
-        }
+        },
+        enabled: !!projectId
     });
 
     // Fetch workspace stats for global metrics

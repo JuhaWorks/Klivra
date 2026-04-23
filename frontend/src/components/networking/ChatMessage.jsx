@@ -10,13 +10,10 @@ import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
 import { getOptimizedAvatar } from '../../utils/avatar';
 
-// ─── Lightbox (Enterprise Grade: a11y, Escape key binding) ─────────────────────
+// ─── Lightbox ──────────────────────────────────────────────────────────────────
 const LightboxComponent = ({ src, type, name, onClose }) => {
-    // Handle Escape key to close
     useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') onClose();
-        };
+        const handleKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [onClose]);
@@ -26,30 +23,31 @@ const LightboxComponent = ({ src, type, name, onClose }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
             onClick={onClose}
             role="dialog"
             aria-modal="true"
-            className="fixed inset-0 z-[99999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[99999] bg-black/95 flex items-center justify-center p-6"
         >
             <button
                 onClick={onClose}
-                aria-label="Close fullscreen view"
-                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Close"
+                className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all focus:outline-none"
             >
-                <X className="w-6 h-6" />
+                <X className="w-4 h-4" />
             </button>
             <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
+                initial={{ scale: 0.97, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                exit={{ scale: 0.97, opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className="max-w-[95vw] max-h-[95vh] overflow-hidden rounded-2xl shadow-2xl"
+                className="overflow-hidden rounded-xl shadow-2xl"
             >
                 {type === 'image' ? (
-                    <img src={src} alt={name || 'Fullscreen media'} className="max-w-[95vw] max-h-[95vh] object-contain" referrerPolicy="no-referrer" />
+                    <img src={src} alt={name || 'Media'} className="max-w-[92vw] max-h-[92vh] object-contain" referrerPolicy="no-referrer" />
                 ) : (
-                    <video src={src} controls autoPlay className="max-w-[95vw] max-h-[95vh] rounded-2xl" />
+                    <video src={src} controls autoPlay className="max-w-[92vw] max-h-[92vh] rounded-xl" />
                 )}
             </motion.div>
         </motion.div>,
@@ -63,16 +61,15 @@ Lightbox.displayName = 'Lightbox';
 // ─── Media Content ─────────────────────────────────────────────────────────────
 const MediaContentComponent = ({ message, isMe }) => {
     const [lightbox, setLightbox] = useState(false);
-    const [videoPlaying, setVideoPlaying] = useState(false);
 
     const src = message.localPreview || message.content;
     const isUploading = message.status === 'sending';
     const fileName = message.metadata?.name || 'File';
 
     const handleKeyDown = useCallback((e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if ((e.key === 'Enter' || e.key === ' ') && !isUploading) {
             e.preventDefault();
-            if (!isUploading) setLightbox(true);
+            setLightbox(true);
         }
     }, [isUploading]);
 
@@ -83,24 +80,24 @@ const MediaContentComponent = ({ message, isMe }) => {
                     role="button"
                     tabIndex={isUploading ? -1 : 0}
                     onKeyDown={handleKeyDown}
-                    className="relative overflow-hidden rounded-[inherit] cursor-zoom-in max-w-[280px] sm:max-w-[320px] focus:outline-none focus:ring-2 focus:ring-theme/50"
+                    className="relative overflow-hidden rounded-[inherit] cursor-pointer max-w-[260px] sm:max-w-[300px] focus:outline-none"
                     onClick={() => !isUploading && setLightbox(true)}
                 >
                     <img
                         src={src}
                         alt={fileName}
-                        className="block w-full h-auto max-h-[300px] object-cover transition-transform duration-300 hover:scale-[1.02]"
+                        className="block w-full h-auto max-h-[280px] object-cover"
                         loading="lazy"
                         decoding="async"
                     />
                     {isUploading && (
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                            <div className="w-6 h-6 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                            <div className="w-5 h-5 border-[1.5px] border-white/70 border-t-transparent rounded-full animate-spin" />
                         </div>
                     )}
                     {!isUploading && (
-                        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                            <ZoomIn className="w-6 h-6 text-white drop-shadow-md" />
+                        <div className="absolute inset-0 bg-black/0 hover:bg-black/15 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
+                            <ZoomIn className="w-5 h-5 text-white drop-shadow" />
                         </div>
                     )}
                 </div>
@@ -114,35 +111,25 @@ const MediaContentComponent = ({ message, isMe }) => {
     if (message.type === 'video') {
         return (
             <>
-                {videoPlaying ? (
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={handleKeyDown}
+                    className="relative cursor-pointer group/video rounded-[inherit] overflow-hidden focus:outline-none"
+                    onClick={() => setLightbox(true)}
+                >
                     <video
                         src={src}
-                        controls
-                        autoPlay
-                        className="block max-w-[280px] max-h-[220px] rounded-[inherit] object-cover bg-black"
-                        onEnded={() => setVideoPlaying(false)}
+                        className="block max-w-[260px] max-h-[200px] rounded-[inherit] object-cover bg-black"
+                        preload="metadata"
+                        muted
                     />
-                ) : (
-                    <div
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={handleKeyDown}
-                        className="relative cursor-pointer group/video rounded-[inherit] overflow-hidden focus:outline-none focus:ring-2 focus:ring-theme/50"
-                        onClick={() => setLightbox(true)}
-                    >
-                        <video
-                            src={src}
-                            className="block max-w-[280px] max-h-[220px] rounded-[inherit] object-cover bg-neutral-900"
-                            preload="metadata"
-                            muted
-                        />
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover/video:bg-black/40 transition-colors">
-                            <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-lg transform group-hover/video:scale-110 transition-transform">
-                                <Play className="w-6 h-6 text-white fill-white ml-1" />
-                            </div>
+                    <div className="absolute inset-0 bg-black/25 flex items-center justify-center group-hover/video:bg-black/40 transition-colors duration-200">
+                        <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                            <Play className="w-4 h-4 text-white fill-white ml-0.5" />
                         </div>
                     </div>
-                )}
+                </div>
                 <AnimatePresence>
                     {lightbox && <Lightbox src={message.content} type="video" name={fileName} onClose={() => setLightbox(false)} />}
                 </AnimatePresence>
@@ -150,7 +137,7 @@ const MediaContentComponent = ({ message, isMe }) => {
         );
     }
 
-    // Generic file card
+    // File card
     const ext = fileName.split('.').pop().toUpperCase().slice(0, 4);
     const fileSize = message.metadata?.size
         ? message.metadata.size < 1024 * 1024
@@ -159,17 +146,17 @@ const MediaContentComponent = ({ message, isMe }) => {
         : '';
 
     return (
-        <div className="flex items-center gap-3 px-3.5 py-3 min-w-[200px] max-w-[280px]">
+        <div className="flex items-center gap-3 px-3.5 py-3 min-w-[180px] max-w-[260px]">
             <div className={cn(
-                'w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 text-[9px] font-bold gap-0.5 shadow-sm',
-                isMe ? 'bg-white/20 text-white' : 'bg-theme/10 text-theme'
+                'w-9 h-9 rounded-lg flex flex-col items-center justify-center shrink-0 text-[8px] font-semibold gap-0.5 tracking-wide',
+                isMe ? 'bg-white/15 text-white/80' : 'bg-black/6 text-primary/60'
             )}>
-                <FileText className="w-4 h-4" />
+                <FileText className="w-3.5 h-3.5" />
                 <span>{ext}</span>
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold truncate leading-tight">{fileName}</p>
-                <p className="text-[11px] opacity-70 leading-tight mt-0.5">{fileSize}</p>
+                <p className="text-[12.5px] font-medium truncate">{fileName}</p>
+                {fileSize && <p className="text-[11px] opacity-50 mt-0.5">{fileSize}</p>}
             </div>
             {message.content?.startsWith('http') && (
                 <a
@@ -177,13 +164,10 @@ const MediaContentComponent = ({ message, isMe }) => {
                     target="_blank"
                     rel="noreferrer"
                     onClick={e => e.stopPropagation()}
-                    className={cn(
-                        'p-2 rounded-full transition-colors shrink-0 focus:outline-none focus:ring-2',
-                        isMe ? 'hover:bg-white/20 focus:ring-white/50' : 'hover:bg-theme/10 focus:ring-theme/50'
-                    )}
-                    aria-label="Download file"
+                    className="p-1.5 rounded-md opacity-50 hover:opacity-100 transition-opacity focus:outline-none shrink-0"
+                    aria-label="Download"
                 >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-3.5 h-3.5" />
                 </a>
             )}
         </div>
@@ -193,7 +177,7 @@ const MediaContentComponent = ({ message, isMe }) => {
 const MediaContent = React.memo(MediaContentComponent);
 MediaContent.displayName = 'MediaContent';
 
-// ─── Main Chat Bubble ─────────────────────────────────────────────────────────
+// ─── Chat Message ─────────────────────────────────────────────────────────────
 const ChatMessageComponent = ({
     message,
     isMe,
@@ -211,75 +195,64 @@ const ChatMessageComponent = ({
     const isDeleted = message.deleted;
     const isMedia = ['image', 'video', 'file'].includes(message.type);
 
-    // Messenger-Perfect Bubble Radii Logic
-    // Groups calculate corners based on message position to create seamless "stacks"
-    // Minimalist Bubble Geometry
+    // Bubble corner radius — seamless grouping
     const bubbleRadius = useMemo(() => {
-        const baseRadius = 'rounded-[1.5rem]'; 
-        const tightRadius = '0.5rem';
-
+        const full = 'rounded-[1.75rem]';
+        const tight = 'rounded-[0.65rem]';
         if (isMe) {
             return cn(
-                baseRadius,
-                !isFirstInGroup && !isLastInGroup && `rounded-tr-[${tightRadius}] rounded-br-[${tightRadius}]`,
-                isFirstInGroup && !isLastInGroup && `rounded-br-[${tightRadius}]`,
-                !isFirstInGroup && isLastInGroup && `rounded-tr-[${tightRadius}]`
+                full,
+                !isFirstInGroup && !isLastInGroup && `!rounded-tr-${tight} !rounded-br-${tight}`,
+                isFirstInGroup && !isLastInGroup && `!rounded-br-${tight}`,
+                !isFirstInGroup && isLastInGroup && `!rounded-tr-${tight}`
             );
         } else {
             return cn(
-                baseRadius,
-                !isFirstInGroup && !isLastInGroup && `rounded-tl-[${tightRadius}] rounded-bl-[${tightRadius}]`,
-                isFirstInGroup && !isLastInGroup && `rounded-bl-[${tightRadius}]`,
-                !isFirstInGroup && isLastInGroup && `rounded-tl-[${tightRadius}]`
+                full,
+                !isFirstInGroup && !isLastInGroup && `!rounded-tl-${tight} !rounded-bl-${tight}`,
+                isFirstInGroup && !isLastInGroup && `!rounded-bl-${tight}`,
+                !isFirstInGroup && isLastInGroup && `!rounded-tl-${tight}`
             );
         }
     }, [isMe, isFirstInGroup, isLastInGroup]);
 
-    // Swipe to Reply Logic
+    // Swipe-to-reply
     const x = useMotionValue(0);
     const snapX = useSpring(x, { stiffness: 600, damping: 40 });
-
-    // Icon animation values
-    const threshold = 60;
-    const iconScale = useTransform(x, [0, threshold], [0.5, 1.2]);
+    const threshold = 56;
     const iconOpacity = useTransform(x, [0, threshold / 2, threshold], [0, 0, 1]);
-    const iconRotate = useTransform(x, [0, threshold], [-45, 0]);
+    const iconScale = useTransform(x, [0, threshold], [0.6, 1]);
 
     const handleDragEnd = (_, info) => {
-        if (info.offset.x > threshold && onReply && !isDeleted) {
-            onReply(message);
-            // Visual feedback "pop"
-            animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
-        } else {
-            animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
-        }
+        if (info.offset.x > threshold && onReply && !isDeleted) onReply(message);
+        animate(x, 0, { type: 'spring', stiffness: 500, damping: 35 });
     };
 
     return (
         <motion.div
             layout="position"
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-                'group flex w-full gap-2 px-3 sm:px-4 select-none',
+                'flex w-full gap-2 px-3 sm:px-4 select-none',
                 isMe ? 'flex-row-reverse' : 'flex-row',
-                isFirstInGroup ? 'mt-2 sm:mt-3' : 'mt-[1.5px] sm:mt-[2px]',
-                isLastInGroup ? 'mb-0.5 sm:mb-1' : 'mb-0'
+                isFirstInGroup ? 'mt-2' : 'mt-0.5',
+                isLastInGroup ? 'mb-0.5' : 'mb-0'
             )}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
         >
-            {/* Avatar Column */}
+            {/* Avatar */}
             {!isMe && (
-                <div className="w-7 sm:w-8 shrink-0 flex flex-col justify-end">
+                <div className="w-8 shrink-0 flex flex-col justify-start">
                     <div className={cn(
-                        'w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden bg-surface shadow-sm transition-opacity duration-200 mb-0.5',
-                        isLastInGroup ? 'opacity-100' : 'opacity-0'
+                        'w-7 h-7 rounded-[0.85rem] overflow-hidden bg-sunken border border-glass shadow-sm transition-all duration-300',
+                        isFirstInGroup ? 'opacity-100' : 'opacity-0 scale-90 h-0'
                     )}>
                         <img
                             src={getOptimizedAvatar(message.sender?.avatar, 'sm', message.sender?.name)}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                             referrerPolicy="no-referrer"
                             alt={message.sender?.name || 'User'}
                         />
@@ -287,148 +260,145 @@ const ChatMessageComponent = ({
                 </div>
             )}
 
-            {/* Message Column */}
-            <div className={cn('flex flex-col flex-1', isMe ? 'items-end' : 'items-start', 'max-w-[85%]')}>
+            {/* Content */}
+            <div className={cn('flex flex-col flex-1 min-w-0', isMe ? 'items-end' : 'items-start')}>
                 {showName && !isMe && isFirstInGroup && (
-                    <span className="text-[10px] sm:text-[11px] font-semibold text-tertiary mb-0.5 sm:mb-1 ml-1 tracking-wide">
+                    <span className="text-[10px] font-medium text-tertiary mb-1 ml-0.5 tracking-wide">
                         {message.sender?.name}
                     </span>
                 )}
 
-                <div className={cn('flex items-end gap-1.5 w-full', isMe ? 'flex-row-reverse' : 'flex-row')}>
-                    {/* Action Buttons (Hover State) - Shifted up to align with bubble center better */}
-                    {/* Action Toolbar - Minimalistic Integrated Overlay */}
-                    <AnimatePresence>
-                        {hovering && !isDeleted && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className={cn(
-                                    "absolute top-0 flex items-center gap-0.5 bg-elevated/80 backdrop-blur-md border border-glass rounded-full p-0.5 shadow-lift z-20",
-                                    isMe ? "right-full mr-2" : "left-full ml-2"
-                                )}
-                            >
-                                {onReply && (
-                                    <button
-                                        onClick={() => onReply(message)}
-                                        className="p-1.5 rounded-full text-tertiary hover:text-theme hover:bg-theme/10 transition-all active:scale-90"
-                                        title="Reply"
-                                    >
-                                        <CornerUpLeft className="w-3.5 h-3.5" />
-                                    </button>
-                                )}
-                                {isMe && onUnsend && (
-                                    <button
-                                        onClick={onUnsend}
-                                        className="p-1.5 rounded-full text-tertiary hover:text-danger hover:bg-danger/10 transition-all active:scale-90"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                )}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                <div className={cn('flex items-end gap-1.5 w-full relative', isMe ? 'flex-row-reverse' : 'flex-row')}>
 
-                    {/* Chat Bubble Layout */}
-                    <div className="flex flex-col max-w-[92%] sm:max-w-[75%]">
-                        {/* Reply Quote Block */}
+
+
+                    <div className="flex flex-col max-w-[85%] sm:max-w-[75%]">
+                        {/* Reply quote */}
                         {message.replyTo && !isDeleted && (
                             <div className={cn(
-                                'px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl mb-1 border-l-[3px] bg-theme/5 max-w-[240px]',
-                                isMe ? 'self-end border-theme/50' : 'self-start border-theme/30'
+                                'px-3 py-2 rounded-2xl mb-1.5 border-l-[3px] max-w-[240px] backdrop-blur-sm',
+                                isMe
+                                    ? 'self-end border-theme/40 bg-theme/5'
+                                    : 'self-start border-theme/20 bg-theme/5'
                             )}>
-                                <p className="text-[9px] sm:text-[10px] font-bold text-theme uppercase tracking-wider mb-0.5 flex items-center gap-1">
-                                    <CornerUpLeft className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                <p className="text-[10px] font-black text-theme uppercase tracking-[0.15em] mb-1 flex items-center gap-1.5">
+                                    <CornerUpLeft className="w-3 h-3" />
                                     {message.replyTo.sender?.name || 'Reply'}
                                 </p>
-                                <p className="text-[11px] sm:text-[12px] text-primary truncate opacity-80">
+                                <p className="text-[12px] truncate opacity-50 font-medium tracking-tight">
                                     {message.replyTo.deleted ? 'Message removed' : message.replyTo.content}
                                 </p>
                             </div>
                         )}
 
-                        {/* Main Bubble Content Container with Drag */}
-                        <div className="relative group/bubble-container">
-                            {/* Under-layer Reply Icon */}
-                            {!isMe && !isDeleted && onReply && (
+                        {/* Bubble with drag */}
+                        <div className="relative w-fit group/bubble">
+                            {/* Action buttons */}
+                            <AnimatePresence>
+                                {hovering && !isDeleted && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.92, x: isMe ? 10 : -10 }}
+                                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                                        exit={{ opacity: 0, scale: 0.92, x: isMe ? 10 : -10 }}
+                                        transition={{ duration: 0.12 }}
+                                        className={cn(
+                                            'absolute top-1/2 -translate-y-1/2 flex items-center gap-px bg-elevated border border-white/10 rounded-xl p-0.5 shadow-huge z-30',
+                                            isMe ? 'right-full mr-3' : 'left-full ml-3'
+                                        )}
+                                    >
+                                        {onReply && (
+                                            <button
+                                                onClick={() => onReply(message)}
+                                                className="p-1.5 rounded-lg text-tertiary hover:text-theme hover:bg-theme/5 transition-all"
+                                                title="Reply"
+                                            >
+                                                <CornerUpLeft className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                        {isMe && onUnsend && (
+                                            <button
+                                                onClick={onUnsend}
+                                                className="p-1.5 rounded-lg text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Swipe icon */}
+                            {!isDeleted && onReply && (
                                 <motion.div
-                                    style={{ x: snapX, opacity: iconOpacity, scale: iconScale, rotate: iconRotate }}
-                                    className="absolute -left-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-theme"
+                                    style={{ opacity: iconOpacity, scale: iconScale }}
+                                    className="absolute -left-8 top-1/2 -translate-y-1/2 text-tertiary pointer-events-none"
                                 >
-                                    <CornerUpLeft className="w-5 h-5 shadow-glow-sm" />
+                                    <CornerUpLeft className="w-4 h-4" />
                                 </motion.div>
                             )}
 
-                            {/* Similar icon for Me messages (if we want swipe right-to-left) */}
-                            {/* But usually swipe-to-reply is always swipe-right regardless of side */}
-                            {isMe && !isDeleted && onReply && (
-                                <motion.div
-                                    style={{ x: snapX, opacity: iconOpacity, scale: iconScale, rotate: iconRotate }}
-                                    className="absolute -left-10 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-theme"
-                                >
-                                    <CornerUpLeft className="w-5 h-5 shadow-glow-sm" />
-                                </motion.div>
-                            )}
-
-                                <motion.div
-                                    drag="x"
-                                    dragConstraints={{ left: 0, right: threshold + 20 }}
-                                    dragElastic={0.15}
-                                    style={{ x }}
-                                    onDragEnd={handleDragEnd}
-                                    className="cursor-grab active:cursor-grabbing touch-none"
-                                >
-                                    {isDeleted ? (
-                                        <div className="px-5 py-2.5 rounded-[1.5rem] border border-glass/30 bg-sunken/40 backdrop-blur-sm">
-                                            <p className="text-[12px] italic text-tertiary opacity-40">Message removed</p>
-                                        </div>
-                                    ) : isMedia ? (
-                                        <div className={cn(
-                                            'overflow-hidden shadow-modal transition-all border border-glass',
-                                            bubbleRadius,
-                                            isMe
-                                                ? cn('bg-theme text-white', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                                : cn('bg-surface text-primary', isError && 'ring-2 ring-danger')
-                                        )}>
-                                            <MediaContent message={message} isMe={isMe} />
-                                        </div>
-                                    ) : (
-                                        <div className={cn(
-                                            'px-4 py-2.5 text-[14px] sm:text-[14.5px] leading-relaxed transition-all shadow-sm border border-white/5',
-                                            bubbleRadius,
-                                            isMe
-                                                ? cn('bg-theme text-white font-medium', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                                : cn('bg-elevated text-primary font-medium', isError && 'ring-2 ring-danger')
-                                        )}>
-                                            <p className="whitespace-pre-wrap break-words tracking-tight opacity-90">{message.content}</p>
-                                        </div>
-                                    )}
-                                </motion.div>
+                            <motion.div
+                                drag="x"
+                                dragConstraints={{ left: 0, right: threshold + 16 }}
+                                dragElastic={0.12}
+                                style={{ x }}
+                                onDragEnd={handleDragEnd}
+                                className="cursor-grab active:cursor-grabbing touch-none"
+                            >
+                                {isDeleted ? (
+                                    <div className="px-5 py-3 rounded-[1.75rem] border border-glass/20 bg-sunken/30 backdrop-blur-sm">
+                                        <p className="text-[13px] italic text-tertiary opacity-30 font-medium">Message removed</p>
+                                    </div>
+                                ) : isMedia ? (
+                                    <div className={cn(
+                                        'overflow-hidden shadow-panel border border-glass/40 transition-all',
+                                        bubbleRadius,
+                                        isMe
+                                            ? cn('bg-theme text-white', isSending && 'opacity-60', isError && 'ring-1 ring-danger/50')
+                                            : cn('bg-surface text-primary', isError && 'ring-1 ring-danger/50')
+                                    )}>
+                                        <MediaContent message={message} isMe={isMe} />
+                                    </div>
+                                ) : (
+                                    <div className={cn(
+                                        'px-5 py-3 text-[15px] sm:text-[15.5px] leading-relaxed transition-all shadow-panel border border-white/5',
+                                        bubbleRadius,
+                                        isMe
+                                            ? cn(
+                                                'bg-theme !text-white font-bold tracking-tight',
+                                                isSending && 'opacity-60',
+                                                isError && 'ring-1 ring-danger/50'
+                                            )
+                                            : cn(
+                                                'bg-elevated/90 backdrop-blur-xl text-primary font-bold tracking-tight',
+                                                isError && 'ring-1 ring-danger/50'
+                                            )
+                                    )}>
+                                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                                    </div>
+                                )}
+                            </motion.div>
                         </div>
                     </div>
                 </div>
 
-                {/* Metadata Column - Outside the bubble row for proper vertical alignment of avatar */}
+                {/* Timestamp + status */}
                 <div className={cn(
-                    'flex items-center gap-1 mt-1 transition-opacity duration-300',
-                    isMe ? 'justify-end pr-1' : 'justify-start pl-1',
-                    (isLastInGroup || hovering) ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'
-                )} style={{ marginLeft: !isMe ? '0px' : 'auto' }}>
-                    <span className="text-[10px] font-medium text-tertiary tracking-wide tabular-nums">
+                    'flex items-center gap-1 mt-0.5 transition-all duration-200',
+                    isMe ? 'justify-end pr-0.5' : 'justify-start pl-0.5',
+                    (isLastInGroup || hovering) ? 'opacity-100 h-auto' : 'opacity-0 h-0 overflow-hidden'
+                )}>
+                    <span className="text-[10px] text-tertiary/60 tabular-nums">
                         {format(new Date(message.createdAt), 'h:mm a')}
                     </span>
                     {isMe && !isSending && !isDeleted && (
-                        <span className="ml-0.5">
-                            {isRead
-                                ? <CheckCheck className="w-3.5 h-3.5 text-blue-500" aria-label="Read" />
-                                : <Check className="w-3.5 h-3.5 text-tertiary" aria-label="Delivered" />
-                            }
-                        </span>
+                        isRead
+                            ? <CheckCheck className="w-3 h-3 text-blue-400" aria-label="Read" />
+                            : <Check className="w-3 h-3 text-tertiary/50" aria-label="Delivered" />
                     )}
-                    {isSending && <Clock className="w-3 h-3 text-tertiary animate-spin-slow" />}
-                    {isError && <AlertCircle className="w-3.5 h-3.5 text-danger" title="Failed to send" />}
+                    {isSending && <Clock className="w-3 h-3 text-tertiary/40 animate-spin-slow" />}
+                    {isError && <AlertCircle className="w-3 h-3 text-danger" title="Failed to send" />}
                 </div>
             </div>
         </motion.div>

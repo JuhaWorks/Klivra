@@ -177,7 +177,7 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
     const hasContent = input.trim() || attachments.length > 0;
 
     return (
-        <div className="shrink-0 bg-surface border-t border-glass">
+        <div className="shrink-0 bg-black/20 border-t border-white/5 px-4">
             {/* ─── Reply banner ─── */}
             <AnimatePresence>
                 {replyTo && (
@@ -188,18 +188,18 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                         transition={{ duration: 0.15 }}
                         className="overflow-hidden"
                     >
-                        <div className="flex items-center gap-2 px-4 py-2 bg-theme/5 border-b border-theme/10">
-                            <Reply className="w-3 h-3 text-theme shrink-0" />
+                        <div className="flex items-center gap-3 px-5 py-3 bg-theme/5 border-b border-theme/10 backdrop-blur-md">
+                            <Reply className="w-3.5 h-3.5 text-theme shrink-0" />
                             <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-black text-theme uppercase tracking-widest">
+                                <p className="text-[10px] font-black text-theme uppercase tracking-[0.15em]">
                                     Replying to {replyTo.sender?.name || 'message'}
                                 </p>
-                                <p className="text-[11px] text-tertiary truncate opacity-60 leading-tight">
+                                <p className="text-[12px] text-tertiary truncate opacity-40 leading-tight font-medium mt-0.5">
                                     {replyTo.deleted ? 'Message removed' : replyTo.content}
                                 </p>
                             </div>
-                            <button onClick={onCancelReply} className="p-0.5 rounded-full text-tertiary hover:text-primary hover:bg-glass transition-all shrink-0">
-                                <X className="w-3 h-3" />
+                            <button onClick={onCancelReply} className="p-1.5 rounded-xl text-tertiary hover:text-primary hover:bg-glass transition-all shrink-0 active:scale-90">
+                                <X className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     </motion.div>
@@ -220,19 +220,19 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                             {attachments.map(att => (
                                 <div key={att.id} className="relative shrink-0 group/att">
                                     {att.preview ? (
-                                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-glass bg-sunken">
+                                        <div className="w-16 h-16 rounded-2xl overflow-hidden border border-glass shadow-md bg-sunken group-hover:scale-105 transition-transform duration-500">
                                             <img src={att.preview} className="w-full h-full object-cover" alt="" />
                                         </div>
                                     ) : (
-                                        <div className="w-14 h-14 rounded-xl border border-glass bg-sunken flex flex-col items-center justify-center gap-1 px-1">
-                                            <span className="text-tertiary">{fileIcon(att.type)}</span>
-                                            <p className="text-[8px] font-black text-tertiary truncate w-full text-center leading-none">
+                                        <div className="w-16 h-16 rounded-2xl border border-glass bg-sunken flex flex-col items-center justify-center gap-1.5 px-2 group-hover:scale-105 transition-transform duration-500 shadow-sm">
+                                            <span className="text-theme opacity-60">{fileIcon(att.type)}</span>
+                                            <p className="text-[9px] font-black text-tertiary truncate w-full text-center leading-none uppercase tracking-tighter">
                                                 {att.name.split('.').pop().toUpperCase()}
                                             </p>
                                         </div>
                                     )}
                                     {/* Size badge */}
-                                    <span className="absolute bottom-0.5 left-0.5 right-0.5 text-center text-[7px] font-black bg-black/60 text-white rounded-md px-0.5 leading-tight py-0.5">
+                                    <span className="absolute bottom-1 left-1 right-1 text-center text-[8px] font-black bg-black/60 backdrop-blur-md text-white rounded-lg px-1 py-0.5 leading-none shadow-sm">
                                         {formatBytes(att.size)}
                                     </span>
                                     {/* Remove button */}
@@ -250,26 +250,26 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
             </AnimatePresence>
 
             {/* ─── Input row ─── */}
-            <div className="flex items-center gap-1.5 px-2 pb-3 pt-2 relative">
+            <div className="flex items-center gap-4 pb-6 pt-4 relative">
                 {/* Left: add file */}
                 <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-1.5 text-tertiary hover:bg-glass rounded-full transition-all shrink-0"
+                    className="p-2 text-theme hover:bg-theme/10 rounded-2xl transition-all shrink-0 active:scale-90"
                 >
-                    <Plus className="w-4.5 h-4.5" />
+                    <Plus className="w-6 h-6" />
                 </button>
 
                 {/* Input capsule */}
-                <div className="flex-1 flex items-end bg-sunken/50 hover:bg-sunken border border-glass rounded-[1.5rem] py-1 px-3 transition-all focus-within:bg-sunken/80" ref={emojiRef}>
+                <div className="flex-1 flex items-end bg-white/[0.03] hover:bg-white/[0.05] border border-white/5 rounded-[1.5rem] py-2 px-5 transition-all focus-within:bg-white/[0.06] focus-within:border-white/10" ref={emojiRef}>
                     <textarea
                         ref={textareaRef}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={replyTo ? `Reply to ${replyTo.sender?.name || 'message'}…` : placeholder}
+                        placeholder={replyTo ? `Reply...` : placeholder}
                         rows={1}
-                        className="flex-1 bg-transparent border-none outline-none text-[14px] py-1.5 px-0.5 resize-none font-black placeholder:text-tertiary/20 custom-scrollbar max-h-[120px] tracking-tight leading-relaxed"
+                        className="flex-1 bg-transparent border-none !border-none outline-none !outline-none ring-0 !ring-0 focus:ring-0 focus:outline-none text-[15px] py-1.5 px-0.5 resize-none font-bold text-primary placeholder:text-white/30 custom-scrollbar max-h-[160px] tracking-tight leading-relaxed"
                     />
                     {/* Emoji */}
                     <div className="relative">
@@ -289,9 +289,9 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                         <button
                             type="button"
                             onClick={() => setShowEmoji(v => !v)}
-                            className={cn('p-1.5 rounded-full transition-all', showEmoji ? 'text-theme' : 'text-tertiary hover:text-theme')}
+                            className={cn('p-2 rounded-xl transition-all active:scale-90', showEmoji ? 'text-theme bg-theme/5' : 'text-tertiary hover:text-theme')}
                         >
-                            <Smile className="w-4.5 h-4.5" />
+                            <Smile className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
@@ -301,19 +301,19 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                     <button
                         onClick={handleSubmit}
                         disabled={uploading}
-                        className="p-2 bg-theme text-white rounded-full shadow-glow-sm hover:scale-105 active:scale-95 transition-all disabled:opacity-60 shrink-0"
+                        className="p-3 bg-theme text-white rounded-2xl shadow-glow-sm hover:scale-105 active:scale-95 transition-all disabled:opacity-60 shrink-0"
                     >
                         {uploading
-                            ? <Loader2 className="w-4 h-4 animate-spin" />
-                            : <Send className="w-4 h-4 fill-current" />
+                            ? <Loader2 className="w-5 h-5 animate-spin" />
+                            : <Send className="w-5 h-5 fill-current" />
                         }
                     </button>
                 ) : (
                     <button
                         onClick={() => !disabled && onSend({ content: '👍', attachments: [] })}
-                        className="p-2 text-theme hover:bg-theme/5 rounded-full transition-all hover:scale-110 active:scale-90 shrink-0"
+                        className="p-3 text-theme hover:bg-theme/5 rounded-2xl transition-all hover:scale-110 active:scale-90 shrink-0"
                     >
-                        <ThumbsUp className="w-4.5 h-4.5 fill-current" />
+                        <ThumbsUp className="w-5 h-5 fill-current" />
                     </button>
                 )}
             </div>

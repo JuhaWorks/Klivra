@@ -105,9 +105,11 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     const { data: rawTasks = [], isLoading } = useQuery({
         queryKey: ['tasks', projectId],
         queryFn: async () => {
-            const url = projectId ? `/projects/${projectId}/tasks` : '/tasks';
+            if (!projectId) return [];
+            const url = `/projects/${projectId}/tasks`;
             return (await api.get(url)).data.data;
-        }
+        },
+        enabled: !!projectId
     });
 
     const blockedTaskIds = useMemo(() => {

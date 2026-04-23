@@ -11,6 +11,7 @@ import { useSocketStore } from '../../store/useSocketStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { RefreshCw, Bell } from 'lucide-react';
+import { KlivraLogo } from '../ui/Loaders';
 import { toast } from 'react-hot-toast';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -34,7 +35,7 @@ class GlobalErrorBoundary extends React.Component {
             return (
                 <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] p-10 m-6 glass-2 bg-rose-500/5 border border-rose-500/20 rounded-[3rem] text-center">
                     <div className="w-20 h-20 rounded-[2rem] bg-rose-500/10 flex items-center justify-center mb-6">
-                        <RefreshCw className="w-10 h-10 text-rose-500" />
+                        <KlivraLogo size={64} pulse={false} />
                     </div>
                     <h2 className="text-2xl font-black text-white tracking-tighter mb-2">Segment Desynchronized</h2>
                     <p className="text-gray-500 text-sm max-w-md mb-8">{this.state.error?.message || "A critical error occurred in the application."}</p>
@@ -146,7 +147,8 @@ const Layout = ({ checkingAuth }) => {
                         transition={LIQUID_SPRING}
                         style={{ willChange: 'transform, opacity' }}
                         className={twMerge(clsx(
-                            "px-4 sm:px-6 lg:px-10 h-full transition-opacity duration-300",
+                            location.pathname === '/messaging' ? "px-0" : "px-4 sm:px-6 lg:px-10",
+                            "h-full transition-opacity duration-300",
                             (isPending || isActuallyCheckingAuth) && "opacity-50 blur-sm pointer-events-none"
                         ))}
                     >

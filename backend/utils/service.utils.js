@@ -35,23 +35,86 @@ const socketService = {
             });
         });
 
+        // Global Presence Tracking (In-memory for current worker)
+        const onlineUsers = new Map(); // userId -> { name, avatar, lastSeen, sockets: Set }
+
+        const broadcastGlobalPresence = () => {
+            const presenceList = Array.from(onlineUsers.entries()).map(([id, data]) => ({
+                userId: id,
+                status: 'Online', // Status is derived from connectivity
+                lastSeen: data.lastSeen
+            }));
+            io.emit('globalPresenceUpdate', presenceList);
+        };
+
         io.on('connection', (socket) => {
-            logger.info(`🔌 Socket Connected: ${socket.user.id} (${socket.id})`);
-            socket.join(`user_${socket.user.id}`);
+            const userId = socket.user.id;
+            logger.info(`🔌 Socket Connected: ${userId} (${socket.id})`);
             
+            // Manage multi-tab connectivity
+            if (!onlineUsers.has(userId)) {
+                onlineUsers.set(userId, { 
+                    sockets: new Set([socket.id]),
+                    lastSeen: new Date()
+                });
+            } else {
+                onlineUsers.get(userId).sockets.add(socket.id);
+            }
+
+            socket.join(`user_${userId}`);
+            
+            // Broadcast the new connection
+            broadcastGlobalPresence();
+            
+            socket.on('requestPresenceSync', () => {
+                const presenceList = Array.from(onlineUsers.entries()).map(([id, data]) => ({
+                    userId: id,
+                    status: 'Online',
+                    lastSeen: data.lastSeen
+                }));
+                socket.emit('globalPresenceUpdate', presenceList);
+            });
+
             socket.on('join_project', (projectId) => {
                 socket.join(`project_${projectId}`);
-                logger.info(`📂 User ${socket.user.id} joined project room: ${projectId}`);
+                logger.info(`📂 User ${userId} joined project room: ${projectId}`);
+                
+                // Also broadcast project-specific viewers
+                const room = io.sockets.adapter.rooms.get(`project_${projectId}`);
+                if (room) {
+                    const viewers = Array.from(room).map(sId => {
+                        const s = io.sockets.sockets.get(sId);
+                        return { userId: s?.user?.id };
+                    }).filter(v => v.userId);
+                    io.to(`project_${projectId}`).emit('presenceUpdate', viewers);
+                }
             });
 
             socket.on('joinProject', (projectId) => {
                 socket.join(`project_${projectId}`);
-                logger.info(`📂 User ${socket.user.id} joined project room (compat): ${projectId}`);
+                logger.info(`📂 User ${userId} joined project room (compat): ${projectId}`);
+                
+                // Broadcast presence update to project room
+                const room = io.sockets.adapter.rooms.get(`project_${projectId}`);
+                if (room) {
+                    const viewers = Array.from(room).map(sId => {
+                        const s = io.sockets.sockets.get(sId);
+                        return { userId: s?.user?.id };
+                    }).filter(v => v.userId);
+                    io.to(`project_${projectId}`).emit('presenceUpdate', viewers);
+                }
             });
 
             socket.on('leaveProject', (projectId) => {
                 socket.leave(`project_${projectId}`);
-                logger.info(`📂 User ${socket.user.id} left project room: ${projectId}`);
+                logger.info(`📂 User ${userId} left project room: ${projectId}`);
+                
+                const room = io.sockets.adapter.rooms.get(`project_${projectId}`);
+                const viewers = room ? Array.from(room).map(sId => {
+                    const s = io.sockets.sockets.get(sId);
+                    return { userId: s?.user?.id };
+                }).filter(v => v.userId) : [];
+                io.to(`project_${projectId}`).emit('presenceUpdate', viewers);
             });
             
             // --- WHITEBOARD SYNC ---
@@ -68,21 +131,29 @@ const socketService = {
             // --- ADVANCED CHAT SYNC (Room-based) ---
             socket.on('join_chat', (chatId) => {
                 socket.join(`chat_${chatId}`);
-                logger.debug(`💬 User ${socket.user.id} joined chat room: ${chatId}`);
+                logger.debug(`💬 User ${userId} joined chat room: ${chatId}`);
             });
 
             socket.on('leave_chat', (chatId) => {
                 socket.leave(`chat_${chatId}`);
-                logger.debug(`💬 User ${socket.user.id} left chat room: ${chatId}`);
+                logger.debug(`💬 User ${userId} left chat room: ${chatId}`);
             });
 
             socket.on('typing', ({ chatId, isTyping }) => {
                 // Secure broadcasting: only send to users joined to THIS specific chat room
-                socket.to(`chat_${chatId}`).emit('typing', { chat: chatId, userId: socket.user.id, isTyping });
+                socket.to(`chat_${chatId}`).emit('typing', { chat: chatId, userId: userId, isTyping });
             });
 
             socket.on('disconnect', () => {
                 logger.info(`🔌 Socket Disconnected: ${socket.id}`);
+                const userPresence = onlineUsers.get(userId);
+                if (userPresence) {
+                    userPresence.sockets.delete(socket.id);
+                    if (userPresence.sockets.size === 0) {
+                        onlineUsers.delete(userId);
+                    }
+                }
+                broadcastGlobalPresence();
             });
         });
 

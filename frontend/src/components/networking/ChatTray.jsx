@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
     MessageSquare, X, Search, 
     ArrowLeft, Pin, PinOff,
@@ -72,7 +73,8 @@ const fireChatNotification = (message, chat, currentUser, onOpen) => {
 };
 
 // ─── Main ChatTray ────────────────────────────────────────────────────────────
-const ChatTray = () => {
+const ChatTray = ({ isPageMode = false }) => {
+    const navigate = useNavigate();
     const { 
         chats, fetchChats, addIncomingMessage, setTyping,
         isDrawerOpen, setDrawerOpen, bubbledChatIds, setActiveChat, activeChat,
@@ -129,6 +131,114 @@ const ChatTray = () => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     const bubbledChats = chats.filter(c => bubbledChatIds.includes(c._id));
 
+    const handleClose = useCallback(() => {
+        if (isPageMode && navigate) {
+            navigate(-1);
+        } else {
+            setDrawerOpen(false);
+        }
+    }, [isPageMode, navigate, setDrawerOpen]);
+
+    const DashboardContent = (
+        <motion.div
+            initial={isPageMode ? { opacity: 0, y: 10 } : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={isPageMode ? { opacity: 0, y: 10 } : { opacity: 0, y: 20 }}
+            className={cn(
+                "flex-1 flex flex-row overflow-hidden relative transition-all duration-500",
+                isPageMode 
+                    ? "rounded-none border-none bg-transparent shadow-none" 
+                    : "rounded-[3rem] border border-white/5 bg-black/20 shadow-huge h-full"
+            )}
+        >
+            {/* Background depth for page mode */}
+            {isPageMode && (
+                <div className="absolute inset-0 z-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent" />
+                    <div className="absolute top-0 left-0 w-[460px] h-full bg-white/[0.01] border-r border-white/5" />
+                </div>
+            )}
+            {/* Panel 1: Chat List */}
+            <AnimatePresence mode="wait">
+                {(!isMobile || !activeChat) && (
+                    <motion.div 
+                        initial={isMobile ? { opacity: 0 } : false}
+                        animate={{ opacity: 1 }}
+                        exit={isMobile ? { opacity: 0 } : false}
+                        className={cn(
+                            "h-full shrink-0 flex flex-col relative z-20 transition-all duration-700 ease-in-out",
+                            isPageMode ? "bg-black/20 border-r border-white/5" : "bg-black/10",
+                            isMobile ? "w-full" : (activeChat ? "w-[460px] border-r border-white/5 shadow-2xl" : "w-full")
+                        )}
+                    >
+                        <ChatList 
+                            chats={chats} 
+                            activeChat={activeChat}
+                            setConfirmConfig={setConfirmConfig}
+                            onSelectChat={(chat) => {
+                                setActiveChat(chat);
+                                setOpenBubbleId(null);
+                            }} 
+                            onClose={handleClose} 
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            {/* Panel 2: Chat Box */}
+            <AnimatePresence mode="wait">
+                {(activeChat) && (
+                    <motion.div 
+                        initial={isMobile ? { x: '100%' } : { opacity: 0, x: 20 }} 
+                        animate={{ opacity: 1, x: 0 }} 
+                        exit={isMobile ? { x: '100%' } : { opacity: 0, x: -20 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300, duration: 0.2 }}
+                        className={cn(
+                            "h-full relative transition-opacity duration-300 bg-surface flex flex-col",
+                            isMobile ? "absolute inset-0 z-30" : "flex-1"
+                        )}
+                    >
+                        <ChatBox 
+                            chat={activeChat} 
+                            setConfirmConfig={setConfirmConfig}
+                            onBack={() => setActiveChat(null)} 
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+
+            
+            {/* Global Close Button (Only in drawer mode) */}
+            {!isPageMode && (
+                <button 
+                    onClick={handleClose}
+                    className="absolute top-8 right-8 z-[100] p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-tertiary hover:text-white transition-all active:scale-90 shadow-2xl backdrop-blur-xl"
+                >
+                    <X className="w-6 h-6" />
+                </button>
+            )}
+        </motion.div>
+    );
+
+    if (isPageMode) {
+        return (
+            <div className="flex-1 flex flex-col h-full relative z-10">
+                {DashboardContent}
+                
+                <ConfirmModal 
+                    {...confirmConfig}
+                    isOpen={!!confirmConfig}
+                    onClose={() => setConfirmConfig(null)}
+                    onConfirm={() => {
+                        confirmConfig?.onConfirm?.();
+                        setConfirmConfig(null);
+                    }}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
             {/* Main Chat Drawer */}
@@ -137,88 +247,20 @@ const ChatTray = () => {
                     <div className="absolute inset-0 flex pointer-events-none">
                         <motion.div 
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            onClick={() => setDrawerOpen(false)}
+                            onClick={handleClose}
                             className="absolute inset-0 bg-black/60 backdrop-blur-xl pointer-events-auto"
                         />
                         <motion.div
-                            initial={{ x: isMobile ? 0 : -420, y: isMobile ? 100 : 0, opacity: 0, scale: 0.95 }} 
-                            animate={{ 
-                                x: isMobile ? 0 : 0,
-                                y: 0,
-                                opacity: 1,
-                                scale: 1,
-                                width: isMobile ? '100%' : (activeChat ? 740 : 320),
-                                height: isMobile ? '100%' : 744,
-                                borderRadius: isMobile ? 0 : '2.5rem',
-                                left: isMobile ? 0 : 32,
-                                top: isMobile ? 0 : 32
-                            }} 
-                            exit={{ x: isMobile ? 0 : -420, y: isMobile ? 100 : 0, opacity: 0, scale: 0.95 }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="absolute bg-surface border border-glass shadow-modal pointer-events-auto flex flex-row overflow-hidden z-50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[9999] bg-[#0a0a0c] pointer-events-auto flex flex-col pt-8 sm:pt-16 px-4 sm:px-12 pb-8"
                         >
-                            {/* Panel 1: Chat List */}
-                            <AnimatePresence mode="wait">
-                                {(!isMobile || !activeChat) && (
-                                    <motion.div 
-                                        initial={isMobile ? { opacity: 0 } : false}
-                                        animate={{ opacity: 1 }}
-                                        exit={isMobile ? { opacity: 0 } : false}
-                                        className={cn(
-                                            "h-full shrink-0 flex flex-col relative z-20 shadow-[8px_0_24px_-12px_rgba(0,0,0,0.1)]",
-                                            isMobile ? "w-full" : "w-[320px]"
-                                        )}
-                                    >
-                                        <ChatList 
-                                            chats={chats} 
-                                            activeChat={activeChat}
-                                            setConfirmConfig={setConfirmConfig}
-                                            onSelectChat={(chat) => {
-                                                setActiveChat(chat);
-                                                setOpenBubbleId(null);
-                                            }} 
-                                            onClose={() => setDrawerOpen(false)} 
-                                        />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                            
-                            {/* Panel 2: Chat Box */}
-                            <AnimatePresence mode="wait">
-                                {(activeChat) && (
-                                    <motion.div 
-                                        initial={isMobile ? { x: '100%' } : { opacity: 0, x: 20 }} 
-                                        animate={{ opacity: 1, x: 0 }} 
-                                        exit={isMobile ? { x: '100%' } : { opacity: 0, x: -20 }}
-                                        transition={{ type: 'spring', damping: 25, stiffness: 300, duration: 0.2 }}
-                                        className={cn(
-                                            "h-full relative transition-opacity duration-300 bg-surface flex flex-col",
-                                            isMobile ? "absolute inset-0 z-30" : "flex-1"
-                                        )}
-                                    >
-                                        <ChatBox 
-                                            chat={activeChat} 
-                                            setConfirmConfig={setConfirmConfig}
-                                            onBack={() => setActiveChat(null)} 
-                                        />
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* Empty State placeholder for Desktop */}
-                            {!isMobile && !activeChat && (
-                                <div className="flex-1 h-full flex flex-col items-center justify-center p-12 text-center opacity-30 select-none">
-                                    <div className="w-20 h-20 bg-sunken rounded-[2.5rem] flex items-center justify-center mb-6">
-                                        <MessageSquare className="w-10 h-10 text-tertiary" />
-                                    </div>
-                                    <h3 className="text-lg font-black text-primary">Select a Conversation</h3>
-                                    <p className="text-[11px] text-tertiary mt-2 max-w-[200px]">Choose a chat from the sidebar to start collaborating.</p>
-                                </div>
-                            )}
+                            {DashboardContent}
                         </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
+        </AnimatePresence>
 
             <ConfirmModal 
                 {...confirmConfig}
@@ -305,7 +347,7 @@ const BubbleItem = ({ chat, isOpened, onToggle }) => {
             <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 whileHover={{ opacity: 1, x: -10 }}
-                className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-neutral-900 px-3 py-1.5 rounded-xl text-[10px] font-black text-white whitespace-nowrap pointer-events-none shadow-panel"
+                className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-2xl text-[11px] font-black text-white whitespace-nowrap pointer-events-none shadow-float uppercase tracking-widest"
             >
                 {chat.type === 'group' ? chat.name : other?.name}
             </motion.div>
@@ -463,14 +505,17 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                         key="header-list"
                         initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.18 }}
-                        className="p-6 pb-4 flex items-start justify-between shrink-0"
+                        className="p-8 pb-4 flex items-start justify-between shrink-0"
                     >
                         <div>
-                            <h2 className="text-xl font-black text-primary tracking-tighter flex items-center gap-2">
+                            <h2 className="text-2xl font-black text-primary tracking-[-0.04em] flex items-center gap-3">
                                 Messages
-                                <span className="bg-theme/10 text-theme text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest shadow-sm">Sync</span>
+                                <div className="flex items-center gap-1.5 bg-theme/10 px-2.5 py-1 rounded-full border border-theme/20 shadow-sm">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse" />
+                                    <span className="text-theme text-[9px] font-black uppercase tracking-[0.15em]">Sync</span>
+                                </div>
                             </h2>
-                            <p className="text-[10px] font-black text-tertiary mt-0.5 opacity-20 uppercase tracking-[0.2em]">Connected Workspace</p>
+                            <p className="text-[10px] font-black text-tertiary mt-1 opacity-40 uppercase tracking-[0.25em]">Network Infrastructure</p>
                         </div>
                         <div className="flex items-center gap-1.5">
                             {isSelectMode ? (
@@ -532,15 +577,15 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                             </div>
                         </div>
                         {/* Prominent search input */}
-                        <div className="relative">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme opacity-50" />
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-theme opacity-40 group-focus-within:opacity-100 transition-all" />
                             <input
                                 ref={memberInputRef}
                                 type="text"
                                 placeholder="Search by name or email..."
                                 value={memberSearch}
                                 onChange={e => setMemberSearch(e.target.value)}
-                                className="w-full bg-sunken border border-glass rounded-2xl py-2.5 pl-10 pr-4 text-[12px] font-semibold text-primary placeholder:text-tertiary/30 outline-none focus:border-theme/40 focus:bg-surface transition-all"
+                                className="w-full bg-sunken/40 hover:bg-sunken border border-glass rounded-[1.25rem] py-3 pl-11 pr-4 text-[13px] font-semibold text-primary placeholder:text-tertiary/20 outline-none focus:border-theme/30 focus:bg-surface/50 transition-all shadow-inner-sm"
                             />
                         </div>
                     </motion.div>
@@ -564,15 +609,15 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                         />
 
                         {/* Search bar */}
-                        <div className="px-5 mb-3">
+                        <div className="px-8 mb-6">
                             <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme opacity-30 group-focus-within:opacity-100 transition-all" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-theme opacity-20 group-focus-within:opacity-100 transition-all" />
                                 <input
                                     type="text"
-                                    placeholder="Search conversations..."
+                                    placeholder="Find a conversation..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="w-full bg-surface/40 border-none rounded-2xl py-2.5 pl-10 pr-4 text-[12px] placeholder:text-tertiary/20 focus:outline-none focus:bg-surface/80 transition-all font-black tracking-tight"
+                                    className="w-full bg-sunken/30 border border-glass/10 rounded-[1.25rem] py-3 pl-11 pr-4 text-[13px] placeholder:text-tertiary/30 focus:outline-none focus:bg-surface/80 transition-all font-semibold tracking-tight shadow-inner-sm"
                                 />
                             </div>
                         </div>
@@ -594,19 +639,19 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                                     ))}
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center py-16 text-center">
-                                    <div className="w-16 h-16 bg-sunken rounded-[2rem] flex items-center justify-center mb-4 opacity-40">
-                                        <MessageSquare className="w-8 h-8 text-tertiary" />
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <div className="w-12 h-12 bg-sunken rounded-[1.5rem] flex items-center justify-center mb-3 opacity-40">
+                                        <MessageSquare className="w-6 h-6 text-tertiary" />
                                     </div>
-                                    <h3 className="text-sm font-black text-primary">No conversations</h3>
-                                    <p className="text-[11px] text-tertiary mt-1 px-10 opacity-60">Click <strong>+</strong> to message a team member.</p>
+                                    <h3 className="text-xs font-black text-primary">No conversations</h3>
+                                    <p className="text-[9px] text-tertiary mt-1 px-8 opacity-60">Click <strong>+</strong> to message a team member.</p>
                                 </div>
                             )}
 
                             {archivedChats.length > 0 && (
-                                <div className="mt-4 border-t border-glass pt-3">
-                                    <button onClick={() => setShowArchived(v => !v)} className="w-full flex items-center justify-between px-2 py-1.5 text-left text-tertiary hover:text-primary transition-all">
-                                        <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2 opacity-40">
+                                <div className="mt-2 border-t border-glass pt-2">
+                                    <button onClick={() => setShowArchived(v => !v)} className="w-full flex items-center justify-between px-2 py-1 text-left text-tertiary hover:text-primary transition-all">
+                                        <span className="text-[8px] font-black uppercase tracking-widest flex items-center gap-2 opacity-40">
                                             <Archive className="w-3 h-3" />
                                             Archived ({archivedChats.length})
                                         </span>
@@ -643,44 +688,44 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                         className="flex-1 overflow-y-auto custom-scrollbar px-4 py-2"
                     >
                         {membersLoading ? (
-                            <div className="flex flex-col items-center justify-center py-12 gap-3">
-                                <div className="w-6 h-6 border-2 border-theme border-t-transparent rounded-full animate-spin" />
-                                <p className="text-[10px] font-bold text-tertiary opacity-40 uppercase tracking-widest">Searching...</p>
+                            <div className="flex flex-col items-center justify-center py-8 gap-2">
+                                <div className="w-5 h-5 border-2 border-theme border-t-transparent rounded-full animate-spin" />
+                                <p className="text-[9px] font-bold text-tertiary opacity-40 uppercase tracking-widest">Searching...</p>
                             </div>
                         ) : members.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-center opacity-40">
-                                <div className="w-14 h-14 bg-sunken rounded-[1.5rem] flex items-center justify-center mb-4">
-                                    <Search className="w-6 h-6 text-tertiary" />
+                            <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
+                                <div className="w-12 h-12 bg-sunken rounded-[1.25rem] flex items-center justify-center mb-3">
+                                    <Search className="w-5 h-5 text-tertiary" />
                                 </div>
-                                <p className="text-[12px] font-black text-primary">{memberSearch ? 'No results' : 'Search your connections'}</p>
-                                <p className="text-[10px] text-tertiary mt-1">{memberSearch ? 'Try a different name' : 'Type a name to find your connections'}</p>
+                                <p className="text-[11px] font-black text-primary">{memberSearch ? 'No results' : 'Search your connections'}</p>
+                                <p className="text-[9px] text-tertiary mt-0.5">{memberSearch ? 'Try a different name' : 'Type a name to find your connections'}</p>
                             </div>
                         ) : (
-                            <div className="space-y-1 pb-4">
-                                <p className="text-[9px] font-black text-tertiary uppercase tracking-widest px-1 mb-2 opacity-40">
+                            <div className="space-y-0.5 pb-4">
+                                <p className="text-[8px] font-black text-tertiary uppercase tracking-widest px-1 mb-2 opacity-40">
                                     {members.length} member{members.length !== 1 ? 's' : ''} found
                                 </p>
                                 {members.map(member => (
                                     <button
                                         key={member._id}
                                         onClick={() => handleStartNewConversation(member)}
-                                        className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-theme/5 active:bg-theme/10 transition-all text-left group"
+                                        className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-theme/5 active:bg-theme/10 transition-all text-left group"
                                     >
                                         <div className="relative shrink-0">
-                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-sunken group-hover:scale-105 transition-transform duration-300">
+                                            <div className="w-8 h-8 rounded-full overflow-hidden bg-sunken group-hover:scale-105 transition-transform duration-300">
                                                 <img src={getOptimizedAvatar(member.avatar, 'sm', member.name)} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="" />
                                             </div>
                                             <div className={cn(
-                                                "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-surface",
+                                                "absolute bottom-0 right-0 w-2 h-2 rounded-full border-2 border-surface",
                                                 member.status === 'Online' ? "bg-success" : "bg-neutral-400"
                                             )} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[13px] font-black text-primary truncate">{member.name}</p>
-                                            <p className="text-[10px] text-tertiary opacity-50 truncate uppercase tracking-wider">{member.role}</p>
+                                            <p className="text-[12px] font-black text-primary truncate">{member.name}</p>
+                                            <p className="text-[9px] text-tertiary opacity-50 truncate uppercase tracking-wider">{member.role}</p>
                                         </div>
                                         <div className={cn(
-                                            "text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-widest",
+                                            "text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest",
                                             member.status === 'Online' ? "bg-success/10 text-success" : "bg-neutral-400/10 text-neutral-400"
                                         )}>
                                             {member.status || 'Offline'}
@@ -703,7 +748,7 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x }}
-                        className="z-[9999] bg-elevated border border-glass rounded-2xl shadow-modal py-1.5 overflow-hidden min-w-[160px]"
+                        className="z-[9999] bg-elevated border border-glass rounded-2xl shadow-modal py-1.5 overflow-hidden min-w-[140px]"
                     >
                         {(() => {
                             const chat = chats.find(c => c._id === contextMenu.chatId);
@@ -712,35 +757,35 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                                 <>
                                     <button
                                         onClick={() => handleArchive(contextMenu.chatId)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-[10px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
                                     >
                                         <Archive className="w-3.5 h-3.5" />
                                         {chat?.isArchived ? 'Unarchive Chat' : 'Archive Chat'}
                                     </button>
                                     <button
                                         onClick={() => { setContextMenu(null); toggleBubble(contextMenu.chatId); }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-[10px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
                                     >
                                         {isBubbled ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
                                         {isBubbled ? 'Unpin from Bubble' : 'Pin to Bubble'}
                                     </button>
                                     <button
                                         onClick={() => { setContextMenu(null); setIsSelectMode(true); setSelectedChatIds([contextMenu.chatId]); }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-[10px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
                                     >
                                         <Plus className="w-3.5 h-3.5" />
                                         Select Conversation
                                     </button>
                                     <button
                                         onClick={() => handleClear(contextMenu.chatId)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-[10px] font-bold text-secondary hover:bg-theme/5 hover:text-primary transition-all"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                         Clear My History
                                     </button>
                                     <button
                                         onClick={() => handleDelete(contextMenu.chatId)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] font-bold text-danger hover:bg-danger/5 transition-all"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-[10px] font-bold text-danger hover:bg-danger/5 transition-all"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                         Delete Conversation
@@ -762,46 +807,57 @@ const OnlinePulse = ({ users, currentUser, onSelectUser }) => {
     if (displayUsers.length === 0) return null;
 
     return (
-        <div className="px-5 mb-4 shrink-0 transition-all animate-in fade-in slide-in-from-top-2 duration-500">
-            <h3 className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-3 opacity-30">Active Now</h3>
+        <div className="px-8 mb-8 shrink-0 transition-all animate-in fade-in slide-in-from-top-3 duration-700">
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[8px] font-black text-tertiary uppercase tracking-[0.3em] opacity-40">Active Now</h3>
+                <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                    <span className="text-[8px] font-black text-success uppercase tracking-widest">{displayUsers.length}</span>
+                </div>
+            </div>
             <div className="flex gap-4 overflow-x-auto no-scrollbar py-1">
                 {displayUsers.map((u) => (
-                    <div key={u.userId} className="relative group/user">
+                    <div key={u.userId} className="relative group/user shrink-0">
                         <button
                             onClick={() => onSelectUser({ _id: u.userId, name: u.name, avatar: u.avatar })}
-                            className="flex flex-col items-center gap-2 group shrink-0"
+                            className="flex flex-col items-center gap-2 group"
                         >
                             <div className="relative">
-                                <div className="w-12 h-12 rounded-2xl overflow-hidden border-[2px] border-glass bg-sunken group-hover:border-theme/50 transition-all duration-300 group-active:scale-95 shadow-lg group-hover:shadow-theme/10">
+                                <div className="w-12 h-12 rounded-[1.25rem] overflow-hidden border-[1.5px] border-glass bg-sunken group-hover:border-theme transition-all duration-500 group-active:scale-90 shadow-lg group-hover:shadow-theme/20">
                                     <img 
-                                        src={getOptimizedAvatar(u.avatar, 'sm', u.name)} 
-                                        className="w-full h-full object-cover" 
+                                        src={getOptimizedAvatar(u.avatar, 'md', u.name)} 
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                                         referrerPolicy="no-referrer"
                                         alt="" 
                                     />
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-[3px] border-surface shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-status-pulse" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-[2.5px] border-surface shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-status-pulse" />
                             </div>
-                            <span className="text-[9px] font-black text-primary truncate w-12 text-center opacity-60 group-hover:opacity-100 transition-opacity uppercase tracking-tighter">
+                            <span className="text-[9px] font-black text-primary truncate w-12 text-center opacity-40 group-hover:opacity-100 transition-all uppercase tracking-tighter">
                                 {u.name.split(' ')[0]}
                             </span>
                         </button>
 
                         {/* Professional Quick Card on Hover */}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-40 z-50 opacity-0 pointer-events-none group-hover/user:opacity-100 group-hover/user:pointer-events-auto transition-all duration-300 translate-y-2 group-hover/user:translate-y-0">
-                            <div className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 shadow-huge overflow-hidden">
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-40 z-50 opacity-0 pointer-events-none group-hover/user:opacity-100 group-hover/user:pointer-events-auto transition-all duration-500 translate-y-2 group-hover/user:translate-y-0">
+                            <div className="bg-elevated/90 backdrop-blur-3xl border border-glass rounded-3xl p-3 shadow-modal overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-br from-theme/5 to-transparent pointer-events-none" />
                                 <div className="relative z-10 flex flex-col items-center gap-2">
-                                    <p className="text-[11px] font-black text-white truncate w-full text-center">{u.name}</p>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 bg-success rounded-full animate-status-pulse" />
-                                        <span className="text-[9px] font-bold text-success uppercase tracking-wider">Active</span>
+                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-glass shadow-sm">
+                                        <img src={getOptimizedAvatar(u.avatar, 'sm', u.name)} className="w-full h-full object-cover" alt="" />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[11px] font-black text-primary truncate w-full">{u.name}</p>
+                                        <div className="flex items-center justify-center my-2 gap-1.5 mt-0.5">
+                                            <div className="w-1.5 h-1.5 bg-success rounded-full animate-status-pulse" />
+                                            <span className="text-[8px] font-black text-success uppercase tracking-[0.2em]">Active</span>
+                                        </div>
                                     </div>
                                     <button 
                                         onClick={() => onSelectUser({ _id: u.userId, name: u.name, avatar: u.avatar })}
-                                        className="mt-1 w-full py-1.5 rounded-xl bg-theme/10 hover:bg-theme/20 border border-theme/20 text-[9px] font-black text-theme uppercase tracking-wider transition-all"
+                                        className="w-full py-1.5 rounded-xl bg-theme text-white text-[9px] font-black uppercase tracking-widest transition-all shadow-glow-sm active:scale-95"
                                     >
-                                        Quick Message
+                                        Message
                                     </button>
                                 </div>
                             </div>
@@ -855,9 +911,9 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed,
             onClick={() => onSelect(chat)}
             className={cn(
                 "w-full p-2.5 rounded-2xl flex items-center gap-3 hover:bg-theme/5 transition-all text-left group relative",
-                chat._id === activeChat?._id ? "bg-theme/5 before:absolute before:left-0 before:top-3 before:bottom-3 before:w-0.5 before:bg-theme before:rounded-full" : "",
-                dimmed && "opacity-50",
-                isSelected && "bg-theme/10 hover:bg-theme/15"
+                chat._id === activeChat?._id ? "bg-theme/5 before:absolute before:left-0 before:top-4 before:bottom-4 before:w-1 before:bg-theme before:rounded-full" : "",
+                dimmed && "opacity-40 grayscale-[0.5]",
+                isSelected && "bg-theme/10"
             )}
         >
             <div className="relative shrink-0 flex items-center justify-center">
@@ -869,18 +925,18 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed,
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
                             className={cn(
-                                "w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all",
+                                "w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all",
                                 isSelected ? "bg-theme border-theme" : "bg-sunken border-glass"
                             )}
                         >
-                            {isSelected && <div className="w-2.5 h-2.5 bg-elevated rounded-full" />}
+                            {isSelected && <div className="w-2 h-2 bg-elevated rounded-full" />}
                         </motion.div>
                     ) : (
                         <motion.div
                             key="avatar"
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="w-10 h-10 rounded-full overflow-hidden shadow-sm bg-sunken group-hover:scale-105 transition-transform duration-300"
+                            className="w-9 h-9 rounded-full overflow-hidden shadow-sm bg-sunken group-hover:scale-105 transition-transform duration-300"
                         >
                             <img 
                                 src={getOptimizedAvatar(chat.type === 'group' ? chat.avatar : other?.avatar, 'md', chat.type === 'group' ? chat.name : other?.name)} 
@@ -894,7 +950,7 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed,
                 
                 {chat.type === 'private' && !isSelectMode && (
                     <div className={cn(
-                        "absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-surface shadow-sm",
+                        "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-surface shadow-sm",
                         isOnline ? "bg-success" : "bg-neutral-400"
                     )} />
                 )}
@@ -902,21 +958,21 @@ const ChatListItem = ({ chat, activeChat, user, onSelect, onContextMenu, dimmed,
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                     <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[13px] font-black text-primary truncate tracking-tight">
+                        <span className="text-[13px] font-black text-primary truncate tracking-[-0.02em] group-hover:text-theme transition-colors">
                             {chat.type === 'group' ? chat.name : other?.name}
                         </span>
-                        {isBubbled && <Pin size={10} className="text-theme shrink-0" />}
+                        {isBubbled && <Pin size={10} className="text-theme shrink-0 opacity-70" />}
                     </div>
-                    <span className="text-[10px] font-bold text-tertiary opacity-40 tabular-nums lowercase">
+                    <span className="text-[11px] font-black text-secondary opacity-60 tabular-nums uppercase tracking-tighter">
                         {chat.lastMessage ? format(new Date(chat.lastMessage.createdAt), 'h:mm a') : ''}
                     </span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <p className="text-[11px] truncate text-tertiary font-bold opacity-60 flex-1 pr-4">
+                    <p className="text-[11px] truncate text-tertiary font-medium opacity-50 flex-1 pr-4 tracking-tight leading-none">
                         {formatLastMessage(chat.lastMessage, user?._id, chat.type)}
                     </p>
                     {unreadCount > 0 && (
-                        <div className="px-1.5 py-0.5 min-w-[18px] h-[18px] bg-neutral-900 rounded-full flex items-center justify-center">
+                        <div className="px-1.5 py-0 min-w-[18px] h-[18px] bg-theme rounded-full flex items-center justify-center shadow-glow-sm">
                             <span className="text-[9px] font-black text-white">{unreadCount}</span>
                         </div>
                     )}
@@ -977,18 +1033,18 @@ const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
     };
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-surface relative">
+        <div className="flex-1 flex flex-col min-h-0 bg-[#0a0a0c] relative">
             {/* Header */}
-            <div className="px-4 py-2.5 flex items-center justify-between bg-surface/40 backdrop-blur-xl z-10 border-b border-glass">
+            <div className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-black/20">
                 <div className="flex items-center gap-2">
-                    <button onClick={onBack} className="p-1 hover:bg-glass rounded-lg transition-all text-tertiary hover:text-primary">
-                        <ArrowLeft className="w-3.5 h-3.5" />
+                    <button onClick={onBack} className="p-2 hover:bg-glass rounded-xl transition-all text-tertiary hover:text-primary active:scale-90">
+                        <ArrowLeft className="w-4 h-4" />
                     </button>
                     <div className="flex items-center gap-2">
                          <div className="relative">
-                            <div className="w-8 h-8 rounded-full overflow-hidden border border-glass shadow-sm bg-sunken">
+                            <div className="w-9 h-9 rounded-[1.25rem] overflow-hidden border border-glass shadow-md bg-sunken group-hover:scale-105 transition-transform duration-500">
                                 <img 
-                                    src={getOptimizedAvatar(chat.type === 'group' ? chat.avatar : otherUser?.avatar, 'sm', chat.type === 'group' ? chat.name : otherUser?.name)} 
+                                    src={getOptimizedAvatar(chat.type === 'group' ? chat.avatar : otherUser?.avatar, 'md', chat.type === 'group' ? chat.name : otherUser?.name)} 
                                     className="w-full h-full object-cover" 
                                     referrerPolicy="no-referrer"
                                     alt="" 
@@ -996,34 +1052,37 @@ const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
                             </div>
                             {chat.type === 'private' && (
                                 <div className={cn(
-                                    "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-surface",
+                                    "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[3px] border-surface shadow-sm",
                                     isOnline ? "bg-success" : "bg-neutral-400"
                                 )} />
                             )}
                          </div>
                          <div className="leading-tight">
-                            <p className="text-[11px] font-black text-primary tracking-tight">
+                            <p className="text-[13px] font-black text-primary tracking-[-0.03em] uppercase">
                                 {chat.type === 'group' ? chat.name : otherUser?.name}
                             </p>
-                            <p className="text-[8px] font-bold text-tertiary uppercase tracking-widest flex items-center gap-1 opacity-40">
-                                {otherUser?.status === 'Online' ? 'Online' : 'Away'}
-                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className={cn("w-1.5 h-1.5 rounded-full", isOnline ? "bg-success animate-pulse" : "bg-neutral-400")} />
+                                <span className="text-[8px] font-black text-tertiary uppercase tracking-[0.2em] opacity-50">
+                                    {isOnline ? 'Active Now' : 'Offline'}
+                                </span>
+                            </div>
                          </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
                     <button 
                         onClick={() => toggleBubble(chat._id)}
-                        className={cn("p-1.5 rounded-lg transition-all", isBubbled ? "text-theme bg-theme/10" : "text-tertiary hover:bg-glass hover:text-primary")}
+                        className={cn("p-2 rounded-xl transition-all active:scale-90", isBubbled ? "text-theme bg-theme/10" : "text-tertiary hover:bg-glass hover:text-primary")}
                         title="Toggle Chat Bubble"
                     >
-                        {isBubbled ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                        {isBubbled ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
                     </button>
                     <div className="relative group/menu">
-                        <button className="p-1.5 hover:bg-glass rounded-lg transition-all text-tertiary hover:text-primary">
-                            <MoreVertical className="w-3.5 h-3.5" />
+                        <button className="p-2 hover:bg-glass rounded-xl transition-all text-tertiary hover:text-primary active:scale-90">
+                            <MoreVertical className="w-4 h-4" />
                         </button>
-                        <div className="absolute top-full right-0 mt-2 w-40 bg-elevated border border-glass rounded-2xl shadow-huge opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-all z-50 overflow-hidden py-1.5">
+                        <div className="absolute top-full right-0 mt-3 w-44 bg-elevated/95 backdrop-blur-3xl border border-glass rounded-[1.25rem] shadow-huge opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-all z-50 overflow-hidden py-1.5">
                             <button 
                                 onClick={() => {
                                     setConfirmConfig({
@@ -1033,9 +1092,9 @@ const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
                                         onConfirm: () => clearChatHistory(chat._id)
                                     });
                                 }}
-                                className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-[10px] font-black text-secondary hover:bg-danger/10 hover:text-danger transition-all uppercase tracking-widest"
+                                className="w-full flex items-center gap-2 px-4 py-2 text-left text-[10px] font-black text-secondary hover:bg-danger/10 hover:text-danger transition-all uppercase tracking-[0.1em]"
                             >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                                 Clear My History
                             </button>
                         </div>
@@ -1043,15 +1102,15 @@ const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
                 </div>
             </div>
 
-            <div 
-                ref={scrollRef} 
+            <div
+                ref={scrollRef}
                 onScroll={checkScroll}
-                className="flex-1 min-h-0 overflow-y-auto pb-6 custom-scrollbar scroll-smooth"
+                className="flex-1 min-h-0 overflow-y-auto pb-4 custom-scrollbar scroll-smooth"
             >
                 {groupedMessages.map((item, idx) => {
                     if (item.type === 'date') {
                         return (
-                            <div key={`date-${item.date}`} className="flex justify-center my-4 relative">
+                            <div key={`date-${item.date}`} className="flex justify-center my-3 relative">
                                 <div className="absolute inset-0 flex items-center px-12">
                                     <div className="w-full h-px bg-glass" />
                                 </div>
