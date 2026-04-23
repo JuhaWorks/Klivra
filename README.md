@@ -1,6 +1,5 @@
 <div align="center">
 
-![Klivra Grand Vision](file:///C:/Users/asus/.gemini/antigravity/brain/ac45cad6-7e82-408d-b51f-194ee5bf0c64/klivra_full_vision_banner_1776980852572.png)
 
 <br/>
 
