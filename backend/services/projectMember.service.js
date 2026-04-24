@@ -7,6 +7,7 @@ const { logActivity } = require('../utils/system.utils');
 const { sendStandardEmail } = require('../utils/service.utils');
 const { catchAsync, getFrontendUrl } = require('../utils/core.utils');
 const notificationService = require('./notification.service');
+const { PROJECT_ROLES, MEMBERSHIP_STATUS, NOTIFICATION_TYPES, TASK_PRIORITIES } = require('../constants');
 
 /**
  * Service to handle all project member related operations.
@@ -38,10 +39,10 @@ class ProjectMemberService {
             // Idempotency check
             const existingMember = project.members.find(m => m.userId.toString() === userToAdd._id.toString());
             if (existingMember) {
-                if (existingMember.status === 'rejected') {
+                if (existingMember.status === MEMBERSHIP_STATUS.REJECTED) {
                     // Re-invite
-                    existingMember.status = 'pending';
-                    existingMember.role = role || 'Viewer';
+                    existingMember.status = MEMBERSHIP_STATUS.PENDING;
+                    existingMember.role = role || PROJECT_ROLES.VIEWER;
                     await project.save({ session });
                     result = { status: 'success', message: 'User re-invited successfully.', data: project.members };
                     return;
@@ -51,8 +52,8 @@ class ProjectMemberService {
                 }
             }
 
-            const finalRole = role || 'Viewer';
-            project.members.push({ userId: userToAdd._id, role: finalRole, status: 'pending' });
+            const finalRole = role || PROJECT_ROLES.VIEWER;
+            project.members.push({ userId: userToAdd._id, role: finalRole, status: MEMBERSHIP_STATUS.PENDING });
             await project.save({ session });
 
             // ── GENERATE SECURE INVITATION TOKEN ──
@@ -69,8 +70,8 @@ class ProjectMemberService {
 
             // ── SEND PROFESSIONAL INVITATION EMAIL ──
             const frontendUrl = getFrontendUrl();
-            const acceptUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/projects/invitations/token/respond?token=${rawToken}&status=active`;
-            const rejectUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/projects/invitations/token/respond?token=${rawToken}&status=rejected`;
+            const acceptUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/projects/invitations/token/respond?token=${rawToken}&status=${MEMBERSHIP_STATUS.ACTIVE}`;
+            const rejectUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/projects/invitations/token/respond?token=${rawToken}&status=${MEMBERSHIP_STATUS.REJECTED}`;
 
             // Prepare email body with professional copy
             const emailBody = `
@@ -108,15 +109,15 @@ class ProjectMemberService {
                 memberName: userToAdd.name,
                 projectName: project.name,
                 role: finalRole,
-                status: 'pending'
+                status: MEMBERSHIP_STATUS.PENDING
             }, 'Security', { session });
             
             // ── SEND REAL-TIME NOTIFICATION (TOAST + HISTORY) ──
             await notificationService.notify({
                 recipientId: userToAdd._id,
                 senderId: actorId,
-                type: 'Assignment', // Maps to project invitation/assignment
-                priority: 'High',
+                type: NOTIFICATION_TYPES.ASSIGNMENT, // Maps to project invitation/assignment
+                priority: TASK_PRIORITIES[2],
                 title: 'New Project Invitation',
                 message: `You've been invited to join the project "${project.name}" as a ${finalRole}.`,
                 link: '/projects?tab=invites',
@@ -138,7 +139,7 @@ class ProjectMemberService {
                     payload: {
                         id: project._id,
                         type: 'MEMBER_ADDED',
-                        member: { userId: userToAdd._id, role: finalRole, status: 'pending' }
+                        member: { userId: userToAdd._id, role: finalRole, status: MEMBERSHIP_STATUS.PENDING }
                     }
                 }
             };
@@ -232,7 +233,7 @@ class ProjectMemberService {
             }
 
             // Block demoting self if only manager
-            if (userId === actorId.toString() && project.members[memberIndex].role === 'Manager' && role !== 'Manager') {
+            if (userId === actorId.toString() && project.members[memberIndex].role === PROJECT_ROLES.MANAGER && role !== PROJECT_ROLES.MANAGER) {
                 if (project.getManagerCount() === 1) {
                     const error = new Error('You cannot demote yourself. Assign another Manager first.');
                     error.statusCode = 400;
@@ -298,7 +299,7 @@ class ProjectMemberService {
             }
 
             // Last Manager Standing Check
-            if (member.role === 'Manager') {
+            if (member.role === PROJECT_ROLES.MANAGER) {
                 if (project.getManagerCount() === 1) {
                     const error = new Error('You cannot leave or be removed without transferring ownership first. Assign a new Manager or delete the project.');
                     error.statusCode = 400;
@@ -366,7 +367,7 @@ class ProjectMemberService {
         const result = await this.respondToInvite({
             projectId: project._id,
             userId: user._id,
-            responseStatus: responseStatus === 'active' ? 'active' : 'rejected',
+            responseStatus: responseStatus === MEMBERSHIP_STATUS.ACTIVE ? MEMBERSHIP_STATUS.ACTIVE : MEMBERSHIP_STATUS.REJECTED,
             io
         });
 

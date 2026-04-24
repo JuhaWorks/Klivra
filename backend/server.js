@@ -117,7 +117,10 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 
-app.use(express.static('public'));
+app.use(express.static('public', {
+  maxAge: process.env.NODE_ENV === 'production' ? '1y' : 0,
+  etag: true
+}));
 app.use('/uploads', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();

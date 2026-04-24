@@ -4,12 +4,13 @@ const Task = require('../models/task.model');
 const User = require('../models/user.model');
 const notificationService = require('../services/notification.service');
 const { logger } = require('../utils/system.utils');
+const { PROJECT_ROLES, PROJECT_STATUSES, TASK_STATUSES, TASK_PRIORITIES, NOTIFICATION_TYPES } = require('../constants');
 
 // ─── 1. Project Deadline Logic ──────────────────────────────────────────
 const checkProjectDeadlines = async () => {
     try {
         const projects = await Project.find({
-            status: { $in: ['Active', 'Paused'] },
+            status: { $in: [PROJECT_STATUSES.ACTIVE, 'Paused'] },
             deletedAt: null
         }).populate('members.userId', 'email name');
 
@@ -19,7 +20,7 @@ const checkProjectDeadlines = async () => {
         for (const project of projects) {
             if (!project.endDate) continue;
             const timeDiff = project.endDate.getTime() - now.getTime();
-            const managers = project.members.filter(m => m.role === 'Manager').map(m => m.userId);
+            const managers = project.members.filter(m => m.role === PROJECT_ROLES.MANAGER).map(m => m.userId);
             if (managers.length === 0) continue;
 
             // Exceeded
@@ -27,8 +28,8 @@ const checkProjectDeadlines = async () => {
                 for (const manager of managers) {
                     await notificationService.notify({
                         recipientId: manager._id || manager,
-                        type: 'Deadline',
-                        priority: 'Urgent',
+                        type: NOTIFICATION_TYPES.DEADLINE,
+                        priority: TASK_PRIORITIES[3],
                         title: 'Deadline Exceeded',
                         message: `Critical: The deadline for project "${project.name}" has been exceeded.`,
                         link: `/projects/${project._id}/settings`,
@@ -44,8 +45,8 @@ const checkProjectDeadlines = async () => {
                 for (const manager of managers) {
                     await notificationService.notify({
                         recipientId: manager._id || manager,
-                        type: 'Deadline',
-                        priority: 'High',
+                        type: NOTIFICATION_TYPES.DEADLINE,
+                        priority: TASK_PRIORITIES[2],
                         title: 'Deadline Approaching',
                         message: `Reminder: Project "${project.name}" is due in ${daysLeft} day(s).`,
                         link: `/projects/${project._id}/settings`,
@@ -70,7 +71,7 @@ const checkTaskDeadlines = async () => {
         const tasks = await Task.find({
             dueDate: { $gte: now, $lte: tomorrow },
             reminderSent: false,
-            status: { $ne: 'Completed' },
+            status: { $ne: TASK_STATUSES[2] },
             isArchived: false
         }).populate('project', 'name');
 
@@ -79,8 +80,8 @@ const checkTaskDeadlines = async () => {
             for (const recipientId of recipients) {
                 await notificationService.notify({
                     recipientId: recipientId._id || recipientId,
-                    type: 'Deadline',
-                    priority: 'High',
+                    type: NOTIFICATION_TYPES.DEADLINE,
+                    priority: TASK_PRIORITIES[2],
                     title: 'Task Due Soon',
                     message: `Reminder: Your task "${task.title}" is due within 24 hours.`,
                     link: `/tasks?project=${task.project._id || task.project}`,

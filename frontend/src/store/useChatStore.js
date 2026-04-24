@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api, useAuthStore } from './useAuthStore';
 import { useSocketStore } from './useSocketStore';
+import { API_ENDPOINTS } from '../constants';
 
 export const useChatStore = create((set, get) => ({
     chats: [],
@@ -15,7 +16,7 @@ export const useChatStore = create((set, get) => ({
     fetchChats: async () => {
         set({ isLoading: true });
         try {
-            const res = await api.get('/chats');
+            const res = await api.get(API_ENDPOINTS.CHATS);
             const chats = res.data.data;
             const unreadTotal = chats.reduce((acc, chat) => {
                 const myId = useAuthStore.getState().user?._id;
@@ -38,7 +39,7 @@ export const useChatStore = create((set, get) => ({
 
     fetchMessages: async (chatId) => {
         try {
-            const res = await api.get(`/chats/${chatId}/messages`);
+            const res = await api.get(API_ENDPOINTS.CHATS_MESSAGES(chatId));
             // Cap stored messages at 200 most-recent to prevent unbounded memory growth
             const history = (res.data.data || []).slice(-200);
             set((state) => ({
@@ -94,13 +95,13 @@ export const useChatStore = create((set, get) => ({
             if (isMedia) {
                 const formData = new FormData();
                 formData.append('file', attachments[0].file);
-                const uploadRes = await api.post('/chats/upload', formData, {
+                const uploadRes = await api.post(API_ENDPOINTS.CHATS_UPLOAD, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 mediaData = uploadRes.data.data;
             }
 
-            const res = await api.post('/chats/send', { 
+            const res = await api.post(API_ENDPOINTS.CHATS_SEND, { 
                 chatId, 
                 recipientId, 
                 content: mediaData ? mediaData.url : (content || '👋'),
@@ -268,8 +269,13 @@ export const useChatStore = create((set, get) => ({
     setTyping: (chatId, userId, isTyping) => {
         set((state) => {
             const current = state.typingUsers[chatId] || [];
+            const isAlreadyTyping = current.includes(userId);
+
+            if (isTyping && isAlreadyTyping) return state;
+            if (!isTyping && !isAlreadyTyping) return state;
+
             const updated = isTyping 
-                ? [...new Set([...current, userId])]
+                ? [...current, userId]
                 : current.filter(id => id !== userId);
             
             return {
@@ -277,6 +283,7 @@ export const useChatStore = create((set, get) => ({
             };
         });
     },
+
 
     sendTypingIndicator: (chatId, isTyping) => {
         const socket = useSocketStore.getState().socket;
@@ -294,7 +301,7 @@ export const useChatStore = create((set, get) => ({
 
     toggleBubble: async (chatId) => {
         try {
-            const res = await api.patch(`/chats/${chatId}/bubble`);
+            const res = await api.patch(API_ENDPOINTS.CHATS_BUBBLE(chatId));
             const { isBubbled } = res.data;
             
             set((state) => {
@@ -315,7 +322,7 @@ export const useChatStore = create((set, get) => ({
 
     archiveChat: async (chatId) => {
         try {
-            const res = await api.patch(`/chats/${chatId}/archive`);
+            const res = await api.patch(API_ENDPOINTS.CHATS_ARCHIVE(chatId));
             const { isArchived } = res.data;
             set((state) => ({
                 chats: state.chats.map(c =>
@@ -344,7 +351,7 @@ export const useChatStore = create((set, get) => ({
             };
         });
         try {
-            await api.patch(`/chats/messages/${messageId}/unsend`);
+            await api.patch(API_ENDPOINTS.CHATS_UNSEND(messageId));
         } catch (error) {
             console.error('Unsend message error:', error);
         }
@@ -368,7 +375,7 @@ export const useChatStore = create((set, get) => ({
 
     deleteChat: async (chatId) => {
         try {
-            await api.delete(`/chats/${chatId}`);
+            await api.delete(API_ENDPOINTS.CHATS_DELETE(chatId));
             set((state) => {
                 // Also free the in-memory message history for this chat
                 const { [chatId]: _, ...remainingMessages } = state.messages;
@@ -390,7 +397,7 @@ export const useChatStore = create((set, get) => ({
         }));
         
         try {
-            await api.post(`/chats/${chatId}/clear`);
+            await api.post(API_ENDPOINTS.CHATS_CLEAR(chatId));
             // Optionally refresh chats to update lastMessage preview if it's now cleared
             get().fetchChats();
         } catch (error) {

@@ -10,12 +10,13 @@ const { getFrontendUrl, formatUserResponse } = require('../utils/core.utils');
 const { sendStandardEmail } = require('../utils/service.utils');
 const { logSecurityEvent } = require('../utils/system.utils');
 const { catchAsync } = require('../utils/core.utils');
+const { DOMAIN_MAPPING, TASK_STATUSES, USER_STATUSES, PROJECT_ROLES, NOTIFICATION_TYPES, TASK_PRIORITIES, CONNECTION_STATUS, PROJECT_STATUSES } = require('../constants');
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 
 const updateProfileSchema = z.object({
     name: z.string().min(1, 'Name cannot be empty').max(50, 'Name must be 50 characters or fewer').optional(),
-    status: z.enum(['Online', 'Away', 'Do Not Disturb', 'Offline']).optional(),
+    status: z.enum(Object.values(USER_STATUSES)).optional(),
 
     location: z.string().max(100, 'Location must be 100 characters or fewer').optional(),
     lat: z.number().optional(),
@@ -480,17 +481,17 @@ const getPublicProfile = async (req, res, next) => {
 
             connectionCount = await Connection.countDocuments({
                 $or: [{ requester: userToView._id }, { recipient: userToView._id }],
-                status: 'accepted'
+                status: CONNECTION_STATUS.ACCEPTED
             });
 
             mutualProjects = await Project.countDocuments({
                 'members.userId': { $all: [currentUserId, userToView._id] },
-                status: { $ne: 'Archived' }
+                status: { $ne: PROJECT_STATUSES.ARCHIVED }
             });
 
             mutualTasks = await Task.countDocuments({
                 assignees: { $all: [currentUserId, userToView._id] },
-                status: 'Completed'
+                status: TASK_STATUSES[2]
             });
         } catch(err) {}
 
@@ -541,10 +542,10 @@ const getHeatmap = async (req, res, next) => {
                     // Weighted impact: Captures both transitions AND direct completions
                     isCompletion: {
                         $or: [
-                            { $regexMatch: { input: "$summary", regex: /to Completed/i } },
+                            { $regexMatch: { input: "$summary", regex: new RegExp(`to ${TASK_STATUSES[2]}`, 'i') } },
                             { $and: [
                                 { $eq: ["$action", "EntityCreate"] },
-                                { $eq: ["$taskStatus", "Completed"] }
+                                { $eq: ["$taskStatus", TASK_STATUSES[2]] }
                             ]}
                         ]
                     }
@@ -564,19 +565,19 @@ const getHeatmap = async (req, res, next) => {
                         $switch: {
                             branches: [
                                 { 
-                                    case: { $in: ["$taskType", ["Epic", "Feature", "Research", "Discovery", "Story"]] }, 
+                                    case: { $in: ["$taskType", DOMAIN_MAPPING.Strategic] }, 
                                     then: "Strategic" 
                                 },
                                 { 
-                                    case: { $in: ["$taskType", ["Refactor", "DevOps", "Technical Debt", "QA", "Performance"]] }, 
+                                    case: { $in: ["$taskType", DOMAIN_MAPPING.Engineering] }, 
                                     then: "Engineering" 
                                 },
                                 { 
-                                    case: { $in: ["$taskType", ["Maintenance", "Hygiene", "Task"]] }, 
+                                    case: { $in: ["$taskType", DOMAIN_MAPPING.Sustainability] }, 
                                     then: "Sustainability" 
                                 },
                                 { 
-                                    case: { $in: ["$taskType", ["Bug", "Security", "Compliance", "Meeting", "Review", "Support"]] }, 
+                                    case: { $in: ["$taskType", DOMAIN_MAPPING.Operations] }, 
                                     then: "Operations" 
                                 }
                             ],
@@ -628,7 +629,7 @@ const getWorkspaceMembers = async (req, res, next) => {
 
         const members = await User.find({
             _id: { $ne: req.user._id },
-            role: { $ne: 'Admin' },
+            role: { $ne: PROJECT_ROLES.ADMIN },
             isActive: true,
             isBanned: false,
             ...searchFilter
@@ -788,14 +789,19 @@ const sendTestNotification = catchAsync(async (req, res) => {
     await notificationService.notify({
         recipientId: req.user._id,
         senderId: req.user._id,
-        type: 'Mention',
-        priority: 'Medium',
+        type: NOTIFICATION_TYPES.MENTION,
+        priority: TASK_PRIORITIES[1],
         title: 'Diagnostic System',
         message: `Your ${type} notification layer is active.`,
         link: '/settings/notifications',
         metadata: { projectName: 'System' }
     });
     res.status(200).json({ status: 'success', message: `Test ${type} dispatched` });
+});
+
+const getUnreadCount = catchAsync(async (req, res) => {
+    const unreadCount = await Notification.countDocuments({ recipient: req.user._id, isRead: false, isArchived: false });
+    res.status(200).json({ status: 'success', data: unreadCount });
 });
 
 const getSecurityLogs = catchAsync(async (req, res) => {
@@ -882,5 +888,6 @@ module.exports = {
     updateSecurity,
     subscribeToPush,
     unsubscribeFromPush,
-    getSecurityLogs
+    getSecurityLogs,
+    getUnreadCount
 };

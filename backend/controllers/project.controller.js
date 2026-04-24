@@ -11,6 +11,7 @@ const { catchAsync, getFrontendUrl } = require('../utils/core.utils');
 const { checkSingleProject } = require('../cron/deadline.cron');
 const { clearUserCache } = require('../utils/system.utils');
 const notificationService = require('../services/notification.service');
+const { TASK_STATUSES, TASK_PRIORITIES, PROJECT_ROLES, MEMBERSHIP_STATUS, NOTIFICATION_TYPES, PROJECT_STATUSES, AUDIT_LOG_TYPES, SYSTEM_MESSAGES } = require('../constants');
 
 // --- Core Project Operations ---
 
@@ -21,7 +22,7 @@ const getProjects = async (req, res, next) => {
             members: { 
                 $elemMatch: { 
                     userId: req.user._id, 
-                    status: { $nin: ['pending', 'rejected'] } 
+                    status: { $nin: [MEMBERSHIP_STATUS.PENDING, MEMBERSHIP_STATUS.REJECTED] } 
                 } 
             } 
         };
@@ -37,7 +38,7 @@ const getProjects = async (req, res, next) => {
         // Filter out pending/rejected members so the frontend team count is accurate
         const formattedProjects = projects.map(p => ({
             ...p,
-            members: (p.members || []).filter(m => m.status !== 'pending' && m.status !== 'rejected')
+            members: (p.members || []).filter(m => m.status !== MEMBERSHIP_STATUS.PENDING && m.status !== MEMBERSHIP_STATUS.REJECTED)
         }));
 
         res.status(200).json({ status: 'success', results: formattedProjects.length, data: formattedProjects });
@@ -56,15 +57,15 @@ const getProject = async (req, res, next) => {
 
         if (!project || project.deletedAt !== null) {
             res.status(404);
-            throw new Error('Project not found or has been deleted.');
+            throw new Error(SYSTEM_MESSAGES.PROJECT_NOT_FOUND);
         }
 
         const memberData = project.members.find(m => (m.userId?._id?.toString() || m.userId?.toString()) === req.user._id.toString());
-        const isMember = memberData && memberData.status !== 'pending' && memberData.status !== 'rejected';
+        const isMember = memberData && memberData.status !== MEMBERSHIP_STATUS.PENDING && memberData.status !== MEMBERSHIP_STATUS.REJECTED;
         
-        if (!isMember && req.user.role !== 'Admin') {
+        if (!isMember && req.user.role !== PROJECT_ROLES.ADMIN) {
             res.status(403);
-            throw new Error('Access denied. You are not an active member of this project.');
+            throw new Error(SYSTEM_MESSAGES.ERROR_ACCESS_DENIED);
         }
 
         res.status(200).json({ status: 'success', data: project });
@@ -77,13 +78,13 @@ const createProject = async (req, res, next) => {
         const project = await Project.create({
             name, description, category, startDate, endDate, coverImageUrl,
             createdBy: req.user._id,
-            members: [{ userId: req.user._id, role: 'Manager', status: 'active' }]
+            members: [{ userId: req.user._id, role: PROJECT_ROLES.MANAGER, status: MEMBERSHIP_STATUS.ACTIVE }]
         });
         
         // Invalidate cache so user sees new project immediately
         await clearUserCache('projects_list', req.user._id);
         
-        await logActivity(project._id, req.user._id, 'EntityCreate', { name });
+        await logActivity(project._id, req.user._id, AUDIT_LOG_TYPES.ENTITY_CREATE, { name });
 
         // Automated Chat Sync
         await ensureProjectChat(project).catch(err => logger.error(`Chat creation error: ${err.message}`));
@@ -97,7 +98,7 @@ const updateProject = async (req, res, next) => {
         const project = await Project.findOne({ _id: req.params.id, deletedAt: null });
         if (!project) {
             res.status(404);
-            throw new Error('Project not found');
+            throw new Error(SYSTEM_MESSAGES.PROJECT_NOT_FOUND);
         }
 
         // Strict Optimistic Concurrency Control
@@ -140,7 +141,7 @@ const updateProject = async (req, res, next) => {
             throw saveError;
         }
 
-        await logActivity(project._id, req.user._id, 'EntityUpdate', req.body);
+        await logActivity(project._id, req.user._id, AUDIT_LOG_TYPES.ENTITY_UPDATE, req.body);
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, update: req.body });
         req.io.to(`project_${project._id}`).emit('projectActivity', { userName: req.user.name, action: 'updated the project details' });
 
@@ -152,12 +153,12 @@ const updateProject = async (req, res, next) => {
             );
 
             if (req.body.endDate !== undefined) {
-                const managers = project.members.filter(m => m.role === 'Manager');
+                const managers = project.members.filter(m => m.role === PROJECT_ROLES.MANAGER);
                 for (const manager of managers) {
                     notificationService.notify({
                         recipientId: manager.userId._id || manager.userId,
-                        type: 'Deadline',
-                        priority: 'High',
+                        type: NOTIFICATION_TYPES.DEADLINE,
+                        priority: TASK_PRIORITIES[2],
                         title: 'Strategic Schedule Adjustment',
                         message: `Notice: The deadline for project "${project.name}" has been synchronized to ${new Date(req.body.endDate).toLocaleDateString()}.`,
                         link: `/projects/${project._id}/settings`,
@@ -189,20 +190,20 @@ const deleteProject = async (req, res, next) => {
 
         // RBAC: Only the creator (or Admin) can archive/delete the project
         const creatorId = project.createdBy || project.members?.[0]?.userId;
-        if (creatorId?.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+        if (creatorId?.toString() !== req.user._id.toString() && req.user.role !== PROJECT_ROLES.ADMIN) {
             res.status(403);
             throw new Error('Permission Denied: Only the project creator can archive this workspace.');
         }
 
         project.deletedAt = new Date();
-        project.status = 'Archived';
+        project.status = PROJECT_STATUSES.ARCHIVED;
         await project.save();
 
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, status: 'Archived', deletedAt: project.deletedAt });
 
         // ARCHIVE tasks instead of deleting them to support Restoration
         await Task.updateMany({ project: req.params.id }, { $set: { isArchived: true } });
-        await logActivity(project._id, req.user._id, 'EntityDelete', { name: project.name, ipAddress: req.ip }, 'Security');
+        await logActivity(project._id, req.user._id, AUDIT_LOG_TYPES.ENTITY_DELETE, { name: project.name, ipAddress: req.ip }, 'Security');
 
         // Clear cache for all members so the project moves to "Archived" view for everyone
         const memberIds = project.members.map(m => (m.userId?._id || m.userId).toString());
@@ -221,13 +222,13 @@ const purgeProject = async (req, res, next) => {
 
         // RBAC Verification
         const creatorId = project.createdBy || project.members?.[0]?.userId;
-        if (creatorId?.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+        if (creatorId?.toString() !== req.user._id.toString() && req.user.role !== PROJECT_ROLES.ADMIN) {
             res.status(403);
             throw new Error('Permission Denied: Only the project creator can permanently delete this workspace.');
         }
 
         // Project must be archived first (sanity check)
-        if (project.status !== 'Archived' && project.deletedAt === null) {
+        if (project.status !== PROJECT_STATUSES.ARCHIVED && project.deletedAt === null) {
             res.status(400);
             throw new Error('Only archived projects can be purged.');
         }
@@ -238,7 +239,7 @@ const purgeProject = async (req, res, next) => {
         // Final Deletion
         await Project.findByIdAndDelete(project._id);
 
-        await logActivity(project._id, req.user._id, 'EntityPurge', { name: project.name }, 'Security');
+        await logActivity(project._id, req.user._id, AUDIT_LOG_TYPES.ENTITY_DELETE, { name: project.name, action: 'Permanent Purge' }, 'Security');
         
         // Clear cache
         await clearUserCache('projects_list', req.user._id);
@@ -252,14 +253,14 @@ const restoreProject = async (req, res, next) => {
         const project = await Project.findById(req.params.id);
         if (!project) { res.status(404); throw new Error('Project not found'); }
         project.deletedAt = null;
-        project.status = 'Active';
+        project.status = PROJECT_STATUSES.ACTIVE;
         await project.save();
 
         // Restore tasks associated with the project
         await Task.updateMany({ project: req.params.id }, { $set: { isArchived: false } });
 
-        req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, status: 'Active', deletedAt: null });
-        await logActivity(project._id, req.user._id, 'EntityRestore');
+        req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, status: PROJECT_STATUSES.ACTIVE, deletedAt: null });
+        await logActivity(project._id, req.user._id, AUDIT_LOG_TYPES.ENTITY_UPDATE, { action: 'Restore' });
 
         // Clear cache for all members
         const memberIds = project.members.map(m => (m.userId?._id || m.userId).toString());
@@ -280,7 +281,7 @@ const uploadProjectImage = async (req, res, next) => {
         project.coverImageUrl = req.file.path;
         project.coverImageId = req.file.filename;
         await project.save();
-        await logActivity(project._id, req.user._id, 'EntityUpdate', { coverImageUrl: project.coverImageUrl });
+        await logActivity(project._id, req.user._id, AUDIT_LOG_TYPES.ENTITY_UPDATE, { coverImageUrl: project.coverImageUrl });
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, update: { coverImageUrl: project.coverImageUrl } });
         req.io.to(`project_${project._id}`).emit('projectActivity', { userName: req.user.name, action: 'changed the project cover image' });
         res.status(200).json({ status: 'success', data: project });
@@ -349,7 +350,7 @@ const getWorkspaceStats = async (req, res, next) => {
         // 1. Fetch Projects user is associated with
         const projects = await Project.find({ 
             'members.userId': userId, 
-            'members.status': { $in: ['active', 'pending'] },
+            'members.status': { $in: [MEMBERSHIP_STATUS.ACTIVE, MEMBERSHIP_STATUS.PENDING] },
             deletedAt: null 
         }).select('_id status').lean();
 
@@ -375,19 +376,19 @@ const getWorkspaceStats = async (req, res, next) => {
                 $group: {
                     _id: null,
                     totalTasks: { $sum: 1 },
-                    completedTasks: { $sum: { $cond: [{ $eq: ['$status', 'Completed'] }, 1, 0] } },
-                    inProgressTasks: { $sum: { $cond: [{ $eq: ['$status', 'In Progress'] }, 1, 0] } },
-                    pendingTasks: { $sum: { $cond: [{ $eq: ['$status', 'Pending'] }, 1, 0] } },
-                    canceledTasks: { $sum: { $cond: [{ $eq: ['$status', 'Canceled'] }, 1, 0] } },
+                    completedTasks: { $sum: { $cond: [{ $eq: ['$status', TASK_STATUSES[2]] }, 1, 0] } },
+                    inProgressTasks: { $sum: { $cond: [{ $eq: ['$status', TASK_STATUSES[1]] }, 1, 0] } },
+                    pendingTasks: { $sum: { $cond: [{ $eq: ['$status', TASK_STATUSES[0]] }, 1, 0] } },
+                    canceledTasks: { $sum: { $cond: [{ $eq: ['$status', TASK_STATUSES[3]] }, 1, 0] } },
                     atRiskTasks: { 
                         $sum: { 
                             $cond: [
                                 { 
                                     $and: [
-                                        { $not: { $in: ['$status', ['Completed', 'Canceled']] } },
+                                        { $not: { $in: ['$status', [TASK_STATUSES[2], TASK_STATUSES[3]]] } },
                                         { 
                                             $or: [
-                                                { $in: ['$priority', ['Urgent', 'High']] },
+                                                { $in: ['$priority', [TASK_PRIORITIES[3], TASK_PRIORITIES[2]]] },
                                                 {
                                                     $and: [
                                                         { $ne: ['$dueDate', null] }, 
@@ -414,8 +415,8 @@ const getWorkspaceStats = async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             data: {
-                activeProjects: projects.filter(p => p.status === 'Active').length,
-                archivedProjects: projects.filter(p => p.status === 'Archived').length,
+                activeProjects: projects.filter(p => p.status === PROJECT_STATUSES.ACTIVE).length,
+                archivedProjects: projects.filter(p => p.status === PROJECT_STATUSES.ARCHIVED).length,
                 totalProjects: projects.length,
                 totalTasks: (stats.totalTasks || 0),
                 completedTasks: (stats.completedTasks || 0),
@@ -462,9 +463,9 @@ const globalSearch = async (req, res, next) => {
             .sort({ score: { $meta: "textScore" } }).populate('project', 'name').limit(10).lean();
 
         const projectsPromise = Project.find(
-            req.user.role === 'Admin' ? { $text: { $search: query } } : { 
+            req.user.role === PROJECT_ROLES.ADMIN ? { $text: { $search: query } } : { 
                 $text: { $search: query }, 
-                members: { $elemMatch: { userId: req.user._id, status: 'active' } } 
+                members: { $elemMatch: { userId: req.user._id, status: MEMBERSHIP_STATUS.ACTIVE } } 
             },
             { score: { $meta: "textScore" } }
         ).populate('members.userId', 'name email avatar').sort({ score: { $meta: "textScore" } }).limit(5).lean();
@@ -482,7 +483,7 @@ const getProjectInvitations = async (req, res, next) => {
         // Find projects where user is in members array with status 'pending'
         const projects = await Project.find({
             members: { 
-                $elemMatch: { userId: req.user._id, status: 'pending' } 
+                $elemMatch: { userId: req.user._id, status: MEMBERSHIP_STATUS.PENDING } 
             },
             deletedAt: null
         })
@@ -502,7 +503,7 @@ const getProjectInvitations = async (req, res, next) => {
                 status: p.status,
                 startDate: p.startDate,
                 endDate: p.endDate,
-                members: (p.members || []).filter(m => m.status !== 'pending' && m.status !== 'rejected'),
+                members: (p.members || []).filter(m => m.status !== MEMBERSHIP_STATUS.PENDING && m.status !== MEMBERSHIP_STATUS.REJECTED),
                 offeredRole: memberDoc?.role,
                 invitedAt: memberDoc?.joinedAt
             };
@@ -517,7 +518,7 @@ const respondToProjectInvite = catchAsync(async (req, res) => {
         return res.status(403).json({ status: 'error', message: 'Your account is suspended. Action denied.' });
     }
     const { status } = req.body;
-    if (!['active', 'rejected'].includes(status)) {
+    if (![MEMBERSHIP_STATUS.ACTIVE, MEMBERSHIP_STATUS.REJECTED].includes(status)) {
         return res.status(400).json({ status: 'error', message: 'Invalid response status' });
     }
     const result = await ProjectMemberService.respondToInvite({

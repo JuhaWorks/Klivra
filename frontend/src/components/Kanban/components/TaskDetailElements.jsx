@@ -15,6 +15,7 @@ import { renderActivityNarrative } from '../../../utils/activityNarrative';
 import { cn } from '../../../utils/cn';
 import { getOptimizedAvatar } from '../../../utils/avatar';
 import MentionInput from '../../ui/MentionInput';
+import { TASK_STATUSES, TASK_PRIORITIES, TASK_COHORTS, UI_LABELS } from '../../../constants';
 
 // --- TaskActivity Component ---
 export const TaskActivity = ({ taskId, projectId }) => {
@@ -63,7 +64,7 @@ export const TaskActivity = ({ taskId, projectId }) => {
         return (
             <div className="py-12 flex flex-col items-center justify-center text-center opacity-20">
                 <Activity className="w-8 h-8 mb-4 text-tertiary" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-tertiary">Chronicle Empty</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-tertiary">{UI_LABELS.CHRONICLE_EMPTY}</p>
             </div>
         );
     }
@@ -242,7 +243,7 @@ export const TaskComments = ({
                     {comments.length === 0 ? (
                         <div className="py-12 text-center opacity-20">
                             <Clock className="w-8 h-8 text-tertiary mx-auto mb-4" />
-                            <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.4em]">Discussion Pending</p>
+                            <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.4em]">{UI_LABELS.DISCUSSION_PENDING}</p>
                         </div>
                     ) : (
                         <AnimatePresence mode="popLayout">
@@ -377,7 +378,7 @@ export const TaskDependencies = ({
                     {depSearchQuery.trim().length > 0 && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-50 w-full left-0 mt-2 border border-glass rounded-[2rem] bg-base/95 shadow-elevation-heavy overflow-hidden backdrop-blur-3xl max-h-[150px] overflow-y-auto custom-scrollbar">
                             {filteredAvailable.length === 0 ? (
-                                <p className="text-[8px] font-black text-tertiary/40 uppercase text-center py-6 tracking-widest italic">No match found</p>
+                        <p className="text-[8px] font-black text-tertiary/40 uppercase text-center py-6 tracking-widest italic">{UI_LABELS.NO_MATCH_FOUND}</p>
                             ) : (
                                 filteredAvailable.map(t => (
                                     <button
@@ -431,14 +432,6 @@ export const TaskDependencies = ({
     );
 };
 
-// --- TaskMetadata Helpers ---
-const COHORTS = [
-    { id: 'Strategic', label: 'Strategic', icon: Target, color: 'text-indigo-400', types: ['Epic', 'Feature', 'Story', 'Research', 'Discovery'] },
-    { id: 'Engineering', label: 'Engineering', icon: Cpu, color: 'text-emerald-400', types: ['Refactor', 'DevOps', 'Technical Debt', 'QA', 'Performance'] },
-    { id: 'Sustainability', label: 'Sustainability', icon: ShieldCheck, color: 'text-rose-400', types: ['Bug', 'Security', 'Maintenance', 'Hygiene', 'Compliance'] },
-    { id: 'Operations', label: 'Operations', icon: Briefcase, color: 'text-slate-400', types: ['Task', 'Support', 'Admin', 'Meeting', 'Review'] }
-];
-
 const ExecutiveSelect = ({ label, value, options, onChange, disabled, icon: Icon, isCohort = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
@@ -479,26 +472,31 @@ const ExecutiveSelect = ({ label, value, options, onChange, disabled, icon: Icon
                         >
                             <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
                                 {isCohort ? (
-                                    COHORTS.map(cohort => (
-                                        <div key={cohort.id} className="space-y-1">
-                                            <div className="flex items-center gap-2 px-3 py-2 mt-2 first:mt-0">
-                                                <cohort.icon className={`w-3 h-3 ${cohort.color}`} />
-                                                <span className={`text-[9px] font-black uppercase tracking-[0.15em] ${cohort.color}`}>{cohort.label}</span>
+                                    TASK_COHORTS.map(cohort => {
+                                        const CohortIcon = { Strategic: Target, Engineering: Cpu, Sustainability: ShieldCheck, Operations: Briefcase }[cohort.id] || Zap;
+                                        const colorClass = { Strategic: 'text-indigo-400', Engineering: 'text-emerald-400', Sustainability: 'text-rose-400', Operations: 'text-slate-400' }[cohort.id] || 'text-theme';
+                                        
+                                        return (
+                                            <div key={cohort.id} className="space-y-1">
+                                                <div className="flex items-center gap-2 px-3 py-2 mt-2 first:mt-0">
+                                                    <CohortIcon className={`w-3 h-3 ${colorClass}`} />
+                                                    <span className={`text-[9px] font-black uppercase tracking-[0.15em] ${colorClass}`}>{cohort.label}</span>
+                                                </div>
+                                                {cohort.types.map(t => (
+                                                    <button
+                                                        key={t}
+                                                        onClick={() => { onChange(t); setIsOpen(false); }}
+                                                        className={`
+                                                            w-full text-left px-7 py-2 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap
+                                                            ${value === t ? 'bg-theme/20 text-theme' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                                                        `}
+                                                    >
+                                                        {t}
+                                                    </button>
+                                                ))}
                                             </div>
-                                            {cohort.types.map(t => (
-                                                <button
-                                                    key={t}
-                                                    onClick={() => { onChange(t); setIsOpen(false); }}
-                                                    className={`
-                                                        w-full text-left px-7 py-2 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap
-                                                        ${value === t ? 'bg-theme/20 text-theme' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
-                                                    `}
-                                                >
-                                                    {t}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     options.map(opt => (
                                         <button
@@ -535,7 +533,7 @@ export const TaskMetadata = ({
                 <ExecutiveSelect 
                     label="Status"
                     value={status}
-                    options={['Pending', 'In Progress', 'Completed', 'Canceled']}
+                    options={TASK_STATUSES}
                     onChange={setStatus}
                     disabled={!isAuthorized}
                     icon={Activity}
@@ -543,7 +541,7 @@ export const TaskMetadata = ({
                 <ExecutiveSelect 
                     label="Priority"
                     value={priority}
-                    options={['Low', 'Medium', 'High', 'Urgent']}
+                    options={TASK_PRIORITIES}
                     onChange={setPriority}
                     disabled={!isAuthorized}
                     icon={Zap}

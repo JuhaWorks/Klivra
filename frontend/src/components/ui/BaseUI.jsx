@@ -81,7 +81,7 @@ export const Button = memo(forwardRef(({
 Button.displayName = 'Button';
 
 // ─── CARD ────────────────────────────────────────────────────────────────────
-export const Card = memo(({ children, className, glow = false, compact, variant = 'default', padding, ...props }) => {
+export const Card = memo(({ children, className, glow = false, compact, variant = 'default', padding, hoverable, ...props }) => {
   const variants = {
     default: 'bg-surface border-default',
     glass: 'bg-glass backdrop-blur-xl border-glass shadow-glass',

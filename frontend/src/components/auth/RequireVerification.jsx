@@ -37,7 +37,7 @@ const RequireVerification = ({ children }) => {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
                 <div className="fixed inset-0 pointer-events-none opacity-[0.02] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] z-50" />
 
-                <Card className="max-w-md w-full text-center" hoverable={false}>
+                <Card className="max-w-md w-full text-center">
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}

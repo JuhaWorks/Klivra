@@ -29,7 +29,7 @@ class ErrorBoundary extends React.Component {
         if (this.state.hasError) {
             return (
                 <div className="w-full h-full flex items-center justify-center p-6 min-h-[400px]">
-                    <Card className="max-w-md w-full text-center" hoverable={false}>
+                    <Card className="max-w-md w-full text-center">
                         <motion.div
                             initial={{ rotate: -10, opacity: 0 }}
                             animate={{ rotate: 0, opacity: 1 }}

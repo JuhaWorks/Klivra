@@ -3,6 +3,7 @@ const User = require('../models/user.model');
 const webpush = require('web-push');
 const { sendEmail, getIO } = require('../utils/service.utils');
 const { logger } = require('../utils/system.utils');
+const { TASK_PRIORITIES, NOTIFICATION_TYPES, EMERGENCY_TASK_TYPES } = require('../constants');
 
 // Initialize WebPush VAPID details
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -47,7 +48,7 @@ class NotificationService {
     /**
      * Core method to create and dispatch notifications
      */
-    async notify({ recipientId, senderId, type, priority = 'Medium', title, message, link, metadata }) {
+    async notify({ recipientId, senderId, type, priority = TASK_PRIORITIES[1], title, message, link, metadata }) {
         try {
             // 1. Save to Database
             const notification = await Notification.create({
@@ -67,18 +68,18 @@ class NotificationService {
 
             // 2. Real-time Delivery (Always try if recipient is online)
             const CATEGORY_MAP = {
-                'Assignment': 'assignments',
-                'Mention': 'mentions',
-                'Deadline': 'deadlines',
-                'StatusUpdate': 'statusUpdates',
-                'MetadataUpdate': 'updates',
-                'Comment': 'comments',
-                'Chat': 'messages',
-                'Security': 'security',
-                'ConnectionRequest': 'updates', // Categorize under updates for now
-                'ConnectionAccepted': 'updates',
-                'Endorsement': 'updates',
-                'System': 'updates'
+                [NOTIFICATION_TYPES.ASSIGNMENT]: 'assignments',
+                [NOTIFICATION_TYPES.MENTION]: 'mentions',
+                [NOTIFICATION_TYPES.DEADLINE]: 'deadlines',
+                [NOTIFICATION_TYPES.STATUS_UPDATE]: 'statusUpdates',
+                [NOTIFICATION_TYPES.METADATA_UPDATE]: 'updates',
+                [NOTIFICATION_TYPES.COMMENT]: 'comments',
+                [NOTIFICATION_TYPES.CHAT]: 'messages',
+                [NOTIFICATION_TYPES.SECURITY]: 'security',
+                [NOTIFICATION_TYPES.CONNECTION_REQUEST]: 'updates',
+                [NOTIFICATION_TYPES.CONNECTION_ACCEPTED]: 'updates',
+                [NOTIFICATION_TYPES.ENDORSEMENT]: 'updates',
+                [NOTIFICATION_TYPES.SYSTEM]: 'updates'
             };
             const prefKey = CATEGORY_MAP[type];
 
@@ -124,9 +125,9 @@ class NotificationService {
                 // --- Emergency Command Bypass ---
                 // Strategic types like Security/Compliance and High/Urgent priority bypass all restrictions
                 const taskType = metadata?.taskType || '';
-                const isEmergencyType = ['Security', 'Compliance'].includes(taskType);
-                const isHighPriority = priority === 'Urgent' || priority === 'High';
-                const isMentionOrDeadline = type === 'Mention' || type === 'Deadline';
+                const isEmergencyType = EMERGENCY_TASK_TYPES.includes(taskType);
+                const isHighPriority = priority === TASK_PRIORITIES[3] || priority === TASK_PRIORITIES[2];
+                const isMentionOrDeadline = type === NOTIFICATION_TYPES.MENTION || type === NOTIFICATION_TYPES.DEADLINE;
                 
                 const isUrgent = isEmergencyType || isHighPriority || isMentionOrDeadline;
 
@@ -197,7 +198,7 @@ class NotificationService {
 
             if (isPushActiveGlobal && isPushEnabledForCategory && !isSelf && recipient.pushSubscriptions?.length > 0) {
                 const inQuietHours = this.isInQuietHours(recipient);
-                const isUrgent = priority === 'Urgent' || priority === 'High' || type === 'Mention' || type === 'Deadline';
+                const isUrgent = priority === TASK_PRIORITIES[3] || priority === TASK_PRIORITIES[2] || type === NOTIFICATION_TYPES.MENTION || type === NOTIFICATION_TYPES.DEADLINE;
 
                 if (isUrgent || !inQuietHours) {
                     const pushPayload = JSON.stringify({

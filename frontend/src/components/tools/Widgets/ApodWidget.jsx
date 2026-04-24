@@ -72,8 +72,10 @@ const ApodWidget = () => {
                     <img
                         src={display.url}
                         alt={display.title}
+                        width={1024}
+                        height={676}
+                        fetchPriority="high"
                         className="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-[1.05]"
-                        loading="lazy"
                     />
                 )}
                 

@@ -52,7 +52,7 @@ const ProjectSettingsDashboard = () => {
 
     const presenceMembers = useMemo(() => {
         if (!project?.members) return [];
-        const activeMembers = project.members.filter(m => !m.status || m.status === 'active');
+        const activeMembers = project.members.filter(m => m.userId && (!m.status || m.status === 'active'));
         return activeMembers.map(m => {
             const memberId = m.userId?._id || m.userId;
             const memberIdStr = memberId.toString();

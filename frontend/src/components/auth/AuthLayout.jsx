@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Layout as Kanban, Shapes, Check, ArrowRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import InteractiveGridBackground from '../ui/InteractiveGridBackground';
+import { InteractiveGridBackground } from '../ui/Aesthetics';
 
 
 const WORDS = ['high-quality software.', 'your team projects.', 'your workflow efficiently.'];

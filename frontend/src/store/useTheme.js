@@ -19,6 +19,12 @@ export const MODES = {
 
 const applyThemeToDOM = (theme, mode) => {
   const root = document.documentElement;
+  
+  // Apply a temporary transition class to avoid constant main-thread overhead
+  root.classList.add('theme-transitioning');
+  const timer = setTimeout(() => {
+    root.classList.remove('theme-transitioning');
+  }, 450);
 
   if (theme === THEMES.EMERALD) {
     root.removeAttribute('data-theme');
@@ -31,6 +37,8 @@ const applyThemeToDOM = (theme, mode) => {
   } else {
     root.classList.remove('dark');
   }
+  
+  return () => clearTimeout(timer);
 };
 
 export const useTheme = create((set, get) => ({

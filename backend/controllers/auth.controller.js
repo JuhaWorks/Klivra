@@ -4,16 +4,17 @@ const crypto = require('crypto');
 const { logSecurityEvent } = require('../utils/system.utils');
 const { getFrontendUrl, formatUserResponse, getCookieOptions } = require('../utils/core.utils');
 const { sendStandardEmail } = require('../utils/service.utils');
+const { AUTH_MESSAGES, SECURITY_CONFIG, PROJECT_ROLES, USER_STATUSES, COOKIE_CONFIG } = require('../constants');
 
 // Generate JWT Access Token (Short-lived)
 const generateAccessToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: SECURITY_CONFIG.ACCESS_TOKEN_EXPIRY });
 };
 
 // Generate JWT Refresh Token (Long-lived)
 const generateRefreshToken = (id) => {
     const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
-    return jwt.sign({ id }, secret, { expiresIn: '7d' });
+    return jwt.sign({ id }, secret, { expiresIn: SECURITY_CONFIG.REFRESH_TOKEN_EXPIRY });
 };
 
 // Utility function to send JWT inside an HttpOnly Cookie
@@ -28,7 +29,7 @@ const sendTokenResponse = async (user, statusCode, res, rememberMe = false) => {
     user.refreshTokens.push({ token: hashedToken });
 
     // Limit active sessions per user (e.g., 10)
-    if (user.refreshTokens.length > 10) {
+    if (user.refreshTokens.length > SECURITY_CONFIG.MAX_REFRESH_TOKENS) {
         user.refreshTokens.shift();
     }
 
@@ -36,7 +37,7 @@ const sendTokenResponse = async (user, statusCode, res, rememberMe = false) => {
 
     res
         .status(statusCode)
-        .cookie('refreshToken', refreshToken, getCookieOptions(rememberMe))
+        .cookie(COOKIE_CONFIG.REFRESH_TOKEN_NAME, refreshToken, getCookieOptions(rememberMe))
         .json({
             status: 'success',
             accessToken,
@@ -58,12 +59,12 @@ const registerUser = async (req, res, next) => {
         if (userExists) {
             if (userExists.isEmailVerified) {
                 res.status(400);
-                throw new Error('User already exists. Please log in.');
+                throw new Error(AUTH_MESSAGES.USER_EXISTS);
             } else {
                 // The Unverified Lockout Fix: Treat this as a resend request
                 const verificationToken = crypto.randomBytes(32).toString('hex');
                 userExists.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
-                userExists.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+                userExists.emailVerificationExpires = Date.now() + SECURITY_CONFIG.VERIFICATION_TOKEN_EXPIRY;
                 await userExists.save();
 
                 const verifyUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`;
@@ -71,7 +72,7 @@ const registerUser = async (req, res, next) => {
                 try {
                     await sendStandardEmail({
                         to: userExists.email,
-                        subject: 'Verify your Klivra account',
+                        subject: AUTH_MESSAGES.VERIFY_SUBJECT,
                         title: 'Welcome back to Klivra!',
                         body: 'It looks like you previously signed up but didn\'t verify your account. Please verify your email address to access your workspace.',
                         ctaText: 'Verify Account',
@@ -83,7 +84,7 @@ const registerUser = async (req, res, next) => {
 
                 return res.status(200).json({
                     status: 'success',
-                    message: 'Verification email resent. Please check your inbox.',
+                    message: AUTH_MESSAGES.VERIFICATION_RESENT,
                     data: formatUserResponse(userExists)
                 });
             }
@@ -94,7 +95,7 @@ const registerUser = async (req, res, next) => {
             name,
             email,
             password,
-            role,
+            role: role || PROJECT_ROLES.DEVELOPER,
             avatar
         });
 
@@ -103,7 +104,7 @@ const registerUser = async (req, res, next) => {
             const verificationToken = crypto.randomBytes(32).toString('hex');
 
             user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
-            user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+            user.emailVerificationExpires = Date.now() + SECURITY_CONFIG.VERIFICATION_TOKEN_EXPIRY;
             await user.save();
 
             const verifyUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`;
@@ -111,7 +112,7 @@ const registerUser = async (req, res, next) => {
             try {
                 await sendStandardEmail({
                     to: user.email,
-                    subject: 'Verify your Klivra account',
+                    subject: AUTH_MESSAGES.VERIFY_SUBJECT,
                     title: 'Welcome to Klivra!',
                     body: 'Thanks for signing up. Please verify your email address to access your workspace.',
                     ctaText: 'Verify Account',
@@ -124,7 +125,7 @@ const registerUser = async (req, res, next) => {
 
             res.status(201).json({
                 status: 'success',
-                message: 'Registration successful. Please verify your email.',
+                message: AUTH_MESSAGES.REGISTRATION_SUCCESS,
                 data: formatUserResponse(user)
             });
         } else {
@@ -176,7 +177,7 @@ const loginUser = async (req, res, next) => {
                     ipAddress: req.ip
                 });
                 res.status(403);
-                return next(new Error('Your account has been suspended for violating terms of service.'));
+                return next(new Error(AUTH_MESSAGES.ACCOUNT_BANNED));
             }
 
             // Handle timed/manual deactivation reactivations
@@ -191,14 +192,14 @@ const loginUser = async (req, res, next) => {
                     // Pre-flight check: Account is deactivated, tell the frontend to prompt them
                     res.status(403);
                     return next({
-                        message: 'Your account is currently deactivated. Would you like to reactivate it and log in?',
+                        message: AUTH_MESSAGES.DEACTIVATED_PROMPT,
                         requiresReactivation: true
                     });
                 }
             }
 
             // Set status to Online on login
-            user.status = 'Online';
+            user.status = USER_STATUSES.ONLINE;
             await user.save();
 
             await logSecurityEvent(user._id, 'AuthLogin', {
@@ -215,7 +216,7 @@ const loginUser = async (req, res, next) => {
                 ipAddress: req.ip
             });
             res.status(401);
-            throw new Error('Invalid email or password');
+            throw new Error(AUTH_MESSAGES.INVALID_CREDENTIALS);
         }
     } catch (error) {
         next(error);
@@ -230,14 +231,14 @@ const logoutUser = async (req, res, next) => {
         const options = getCookieOptions();
         options.expires = new Date(Date.now() + 10 * 1000); // Expires in 10 seconds
         
-        const refreshToken = req.cookies.refreshToken;
-        res.cookie('refreshToken', 'none', options);
+        const refreshToken = req.cookies[COOKIE_CONFIG.REFRESH_TOKEN_NAME];
+        res.cookie(COOKIE_CONFIG.REFRESH_TOKEN_NAME, 'none', options);
 
         // Revoke the token in the database if the user is authenticated
         if (req.user) {
             const user = await User.findById(req.user._id);
             if (user) {
-                user.status = 'Offline';
+                user.status = USER_STATUSES.OFFLINE;
                 
                 // --- Revoke specific token (Security Hardening) ---
                 if (refreshToken) {
@@ -268,10 +269,10 @@ const logoutUser = async (req, res, next) => {
 // @access  Public
 const refreshTokenUser = async (req, res, next) => {
     try {
-        const refreshToken = req.cookies.refreshToken;
+        const refreshToken = req.cookies[COOKIE_CONFIG.REFRESH_TOKEN_NAME];
         if (!refreshToken || refreshToken === 'none') {
             res.status(401);
-            return next(new Error('Not authorized, no refresh token'));
+            return next(new Error(AUTH_MESSAGES.NOT_AUTHORIZED));
         }
 
         const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
@@ -280,9 +281,9 @@ const refreshTokenUser = async (req, res, next) => {
         // Find user and their tokens
         const user = await User.findById(decoded.id);
         if (!user || user.isActive === false || user.isBanned) {
-            res.clearCookie('refreshToken', getCookieOptions());
+            res.clearCookie(COOKIE_CONFIG.REFRESH_TOKEN_NAME, getCookieOptions());
             res.status(401);
-            return next(new Error(user?.isBanned ? 'Your account has been suspended' : 'Not authorized, user not found or deactivated'));
+            return next(new Error(user?.isBanned ? AUTH_MESSAGES.ACCOUNT_BANNED : 'Not authorized, user not found or deactivated'));
         }
 
         // --- Refresh Token Rotation Logic (Security Hardening) ---
@@ -295,7 +296,7 @@ const refreshTokenUser = async (req, res, next) => {
             // DETECTED: Token reuse attempt (possible theft!)
             // Strategy: Revoke ALL active sessions for this user as a precaution
             user.refreshTokens = [];
-            user.status = 'Offline';
+            user.status = USER_STATUSES.OFFLINE;
             await user.save();
 
             await logSecurityEvent(user._id, 'TokenAbuseDetected', {
@@ -303,9 +304,9 @@ const refreshTokenUser = async (req, res, next) => {
                 action: 'Automatic session revocation triggered'
             });
             
-            res.clearCookie('refreshToken', getCookieOptions());
+            res.clearCookie(COOKIE_CONFIG.REFRESH_TOKEN_NAME, getCookieOptions());
             res.status(401);
-            return next(new Error('Security alert: Token reuse detected. Please log in again.'));
+            return next(new Error(AUTH_MESSAGES.TOKEN_ABUSE));
         }
 
         // Valid token found! Rotate it.
@@ -320,7 +321,7 @@ const refreshTokenUser = async (req, res, next) => {
         await sendTokenResponse(user, 200, res, false);
 
     } catch (error) {
-        res.clearCookie('refreshToken', getCookieOptions());
+        res.clearCookie(COOKIE_CONFIG.REFRESH_TOKEN_NAME, getCookieOptions());
         res.status(401);
         next(new Error('Not authorized, refresh token failed/expired'));
     }
@@ -425,7 +426,7 @@ const verifyEmail = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            message: 'Email successfully verified'
+            message: AUTH_MESSAGES.EMAIL_VERIFIED
         });
     } catch (error) {
         next(error);
@@ -438,7 +439,7 @@ const verifyEmail = async (req, res, next) => {
 const updateStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
-        if (!['Online', 'Away', 'Do Not Disturb', 'Offline'].includes(status)) {
+        if (!Object.values(USER_STATUSES).includes(status)) {
             res.status(400);
             return next(new Error('Invalid status value'));
         }
@@ -458,7 +459,13 @@ const updateStatus = async (req, res, next) => {
 
 const getMe = async (req, res) => {
     if (!req.user) {
-        return res.status(401).json({ status: 'fail', message: 'Not authenticated', authenticated: false });
+        // Return 200 instead of 401 to avoid triggering global interceptors for "silent" auth checks
+        return res.status(200).json({ 
+            status: 'success', 
+            message: 'Not authenticated', 
+            authenticated: false,
+            data: null
+        });
     }
     res.status(200).json({ status: 'success', data: req.user, authenticated: true });
 };

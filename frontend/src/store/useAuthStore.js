@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../constants';
+
 const getBaseUrl = () => {
     // 1. Check for manual override in dev (e.g. testing against a remote dev server)
     const envUrl = import.meta.env.VITE_API_URL;
@@ -59,7 +61,11 @@ const processQueue = (error, token = null) => {
 };
 
 // Routes that should NEVER trigger a token refresh attempt
-const NO_REFRESH_ROUTES = ['/auth/refresh', '/auth/login', '/auth/register'];
+const NO_REFRESH_ROUTES = [
+    API_ENDPOINTS.AUTH.REFRESH, 
+    API_ENDPOINTS.AUTH.LOGIN, 
+    API_ENDPOINTS.AUTH.REGISTER
+];
 
 api.interceptors.response.use(
     (response) => response,
@@ -90,8 +96,8 @@ api.interceptors.response.use(
 
             try {
                 // Securely request a new short-lived access token using the HttpOnly refresh cookie
-                console.log(`[AUTH] Calling /auth/refresh...`);
-                const response = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+                console.log(`[AUTH] Calling ${API_ENDPOINTS.AUTH.REFRESH}...`);
+                const response = await axios.post(`${BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`, {}, { withCredentials: true });
                 const newAccessToken = response.data.accessToken;
                 const newUser = response.data.data;
 
@@ -176,7 +182,7 @@ export const useAuthStore = create(
                 set({ isCheckingAuth: true, isAuthenticating: true, error: null });
 
                 // Safety timeout to prevent "infinity loading"
-                const authCheckPromise = api.get('/auth/me');
+                const authCheckPromise = api.get(API_ENDPOINTS.AUTH.ME);
                 const timeoutPromise = new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 8000) // Increased slightly for slower live connections
                 );
@@ -220,7 +226,7 @@ export const useAuthStore = create(
             register: async (userData) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const response = await api.post('/auth/register', userData);
+                    const response = await api.post(API_ENDPOINTS.AUTH.REGISTER, userData);
                     set({ isLoading: false });
                     return response.data;
                 } catch (error) {
@@ -234,7 +240,7 @@ export const useAuthStore = create(
             login: async (email, password, rememberMe = false, reactivate = false) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const response = await api.post('/auth/login', { email, password, rememberMe, reactivate });
+                    const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, { email, password, rememberMe, reactivate });
                     set({
                         user: response.data.data,
                         accessToken: response.data.accessToken,
@@ -259,7 +265,7 @@ export const useAuthStore = create(
                 try {
                     if (!forceClientSide) {
                         console.log('[AUTH] Calling backend logout...');
-                        await api.get('/auth/logout').catch(err => console.log('[AUTH] Backend logout failed (likely expired), proceeding with client-side cleanup.'));
+                        await api.get(API_ENDPOINTS.AUTH.LOGOUT).catch(err => console.log('[AUTH] Backend logout failed (likely expired), proceeding with client-side cleanup.'));
                     }
                     set({
                         user: null,
@@ -277,7 +283,7 @@ export const useAuthStore = create(
             uploadAvatar: async (file) => {
                 const formData = new FormData();
                 formData.append('avatar', file);
-                const response = await api.post('/auth/profile/avatar', formData, {
+                const response = await api.post(API_ENDPOINTS.PROFILE.AVATAR, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 set((state) => ({ user: { ...state.user, ...response.data.data } }));
@@ -288,7 +294,7 @@ export const useAuthStore = create(
             uploadCoverImage: async (file) => {
                 const formData = new FormData();
                 formData.append('file', file);
-                const response = await api.post('/auth/profile/cover', formData, {
+                const response = await api.post(API_ENDPOINTS.PROFILE.COVER, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
                 set((state) => ({ user: { ...state.user, ...response.data.data } }));
@@ -298,27 +304,27 @@ export const useAuthStore = create(
 
             // 5.5. Remove avatar image
             removeAvatar: async () => {
-                const response = await api.delete('/auth/profile/avatar');
+                const response = await api.delete(API_ENDPOINTS.PROFILE.AVATAR);
                 set((state) => ({ user: { ...state.user, ...response.data.data } }));
                 return response.data;
             },
 
             // 6. Update profile info
             updateProfile: async (updates) => {
-                const response = await api.put('/auth/profile', updates);
+                const response = await api.put(API_ENDPOINTS.PROFILE.UPDATE, updates);
                 set((state) => ({ user: { ...state.user, ...response.data.data } }));
                 return response.data;
             },
 
             // 7. Change password
             changePassword: async (currentPassword, newPassword) => {
-                const response = await api.put('/auth/profile/password', { currentPassword, newPassword });
+                const response = await api.put(API_ENDPOINTS.PROFILE.PASSWORD, { currentPassword, newPassword });
                 return response.data;
             },
 
             // 7.5. Update status
             updateStatus: async (status) => {
-                const response = await api.put('/auth/profile/status', { status });
+                const response = await api.put(API_ENDPOINTS.PROFILE.STATUS, { status });
                 set((state) => ({ user: { ...state.user, status: response.data.data.status } }));
                 return response.data;
             },
@@ -337,7 +343,7 @@ export const useAuthStore = create(
             oauthExchange: async (token) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const response = await api.post('/auth/oauth/exchange', { token });
+                    const response = await api.post(API_ENDPOINTS.AUTH.OAUTH_EXCHANGE, { token });
                     set({
                         user: response.data.data,
                         accessToken: response.data.accessToken,

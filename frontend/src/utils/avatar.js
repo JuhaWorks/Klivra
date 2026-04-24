@@ -16,7 +16,11 @@ export const getOptimizedAvatar = (url, size = 'md', name = 'User') => {
 
     // Advanced Adaptive Cloudinary Resizing
     if (processedUrl.includes('upload/')) {
-        const dimensions = size === 'sm' ? 'w_64,h_64' : size === 'lg' ? 'w_400,h_400' : 'w_200,h_200';
+        const dimensions = 
+            size === 'xxs' ? 'w_32,h_32' :
+            size === 'xs' ? 'w_48,h_48' : 
+            size === 'sm' ? 'w_64,h_64' : 
+            size === 'lg' ? 'w_400,h_400' : 'w_200,h_200';
         return processedUrl.replace('upload/', `upload/${dimensions},c_fill,g_face,f_auto,q_auto/`);
     }
     

@@ -44,7 +44,7 @@ const QuoteWidget = () => {
     }, []);
 
     return (
-        <div className="relative group overflow-hidden rounded-[2rem] bg-transparent p-5">
+        <div className="relative group overflow-hidden rounded-[2rem] bg-transparent p-5 min-h-[140px]">
             {/* Background Accent */}
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-theme/10 rounded-full blur-[40px] pointer-events-none" />
             
@@ -67,11 +67,13 @@ const QuoteWidget = () => {
             <AnimatePresence mode="wait">
                 {isLoading ? (
                     <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-                        <div className="h-4 w-full bg-glass animate-pulse rounded-md" />
-                        <div className="h-4 w-2/3 bg-glass animate-pulse rounded-md" />
-                        <div className="flex items-center gap-3">
-                            <div className="h-px flex-1 bg-glass" />
-                            <div className="h-3 w-16 bg-glass animate-pulse rounded-md" />
+                        <div className="space-y-2">
+                            <div className="h-3 w-full bg-white/5 animate-pulse rounded-full" />
+                            <div className="h-3 w-[85%] bg-white/5 animate-pulse rounded-full" />
+                        </div>
+                        <div className="flex items-center gap-3 pt-2">
+                            <div className="h-px flex-1 bg-white/5" />
+                            <div className="h-2 w-16 bg-white/5 animate-pulse rounded-full" />
                         </div>
                     </motion.div>
                 ) : (

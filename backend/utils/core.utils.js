@@ -4,12 +4,7 @@ const path = require('path');
 /**
  * Strategic Taxonomy Mapping
  */
-const DOMAIN_MAPPING = {
-    Strategic: ['Epic', 'Feature', 'Story', 'Discovery', 'Research', 'Strategy'],
-    Engineering: ['DevOps', 'Refactor', 'Technical Debt', 'QA', 'Performance', 'Engineering', 'Architecture'],
-    Sustainability: ['Maintenance', 'Hygiene', 'Task', 'Sustainability', 'Security Patch', 'Legacy'],
-    Operations: ['Bug', 'Security', 'Compliance', 'Meeting', 'Review', 'Support', 'Operations', 'Admin']
-};
+const { DOMAIN_MAPPING } = require('../constants');
 
 /**
  * Wraps an asynchronous function to catch errors.
@@ -31,7 +26,7 @@ const getFrontendUrl = () => {
  */
 const formatUserResponse = (userDoc) => {
     const user = (userDoc && typeof userDoc.toObject === 'function') ? userDoc.toObject() : userDoc;
-    const AXES = ['Strategic', 'Engineering', 'Sustainability', 'Operations'];
+    const AXES = Object.keys(DOMAIN_MAPPING);
     const gamification = user.gamification || { 
         level: 1, xp: 0, specialties: { Strategic: 0, Engineering: 0, Sustainability: 0, Operations: 0 }, 
         badges: [], streaks: { current: 0, longest: 0, lastActivity: null }
@@ -75,22 +70,19 @@ const formatUserResponse = (userDoc) => {
  * Options for secure cookies with Safari/Chrome SameSite compatibility.
  */
 const getCookieOptions = (rememberMe = false) => {
-    const frontendUrl = getFrontendUrl();
     const isProduction = process.env.NODE_ENV === 'production';
     
-    // Improved Safari/Mobile Local Detection: 
-    // Check for localhost, 127.0.0.1, and private IP ranges (192.168, 10.x, 172.x)
-    // This ensures physical devices (iPhone/Mac) testing on the local network 
-    // don't get 'secure: true' on 'http' connections which Safari would block.
+    // Improved Safari/Mobile Local Detection
+    const frontendUrl = getFrontendUrl();
     const isLocalIP = /(^127\.)|(^192\.168\.)|(^10\.)|(^172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(frontendUrl.replace('http://', '').replace('https://', ''));
-    const isLocal = !isProduction || frontendUrl.includes('localhost') || isLocalIP;
     
-    // Safari Fix: When proxied via Vercel, everything is effectively same-site.
-    // 'lax' is much more compatible with Safari than 'none' in many proxied scenarios.
+    // Safari/ITP Fix: In production, we assume Vercel proxying is active.
+    // When proxied, the cookie is First-Party, so 'lax' is safer and more compatible than 'none'.
     const options = { 
         httpOnly: true, 
-        secure: isProduction && !isLocalIP, // Only force secure in production and NOT on local IPs
-        sameSite: isLocal ? 'lax' : 'none' 
+        secure: isProduction || frontendUrl.includes('localhost'), // Secure for prod or localhost to allow SameSite: none
+        sameSite: isProduction ? 'lax' : 'none', // 'none' for dev to support cross-origin (port mismatch)
+        path: '/'
     };
 
     if (rememberMe) options.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);

@@ -54,10 +54,30 @@ class GlobalErrorBoundary extends React.Component {
 
 // ── Zero-CLS Core Skeleton ──
 const PageSkeleton = () => (
-    <div className="w-full h-full min-height-[calc(100vh-140px)] rounded-[3rem] border border-subtle bg-surface animate-pulse flex items-center justify-center p-10" aria-hidden="true">
-        <div className="w-full h-full rounded-[2rem] bg-sunken border border-subtle" />
+    <div className="w-full h-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 flex flex-col gap-10 animate-pulse" aria-hidden="true">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between pb-8 border-bottom border-white/5">
+            <div className="flex flex-col gap-4">
+                <div className="w-48 h-8 bg-white/5 rounded-2xl" />
+                <div className="w-32 h-3 bg-white/5 rounded-full opacity-60" />
+            </div>
+            <div className="w-32 h-10 bg-white/5 rounded-full" />
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="lg:col-span-2 flex flex-col gap-8">
+                <div className="w-full h-[400px] bg-white/5 rounded-[2.5rem]" />
+                <div className="w-full h-[200px] bg-white/5 rounded-[2rem]" />
+            </div>
+            <div className="flex flex-col gap-8">
+                <div className="w-full h-[300px] bg-white/5 rounded-[2rem]" />
+                <div className="w-full h-[300px] bg-white/5 rounded-[2rem]" />
+            </div>
+        </div>
     </div>
 );
+
 
 /**
  * Layout Component (Extreme Performance Refactor)
@@ -80,32 +100,6 @@ const Layout = ({ checkingAuth }) => {
         }
         if (!accessToken && socket) {
             disconnect();
-        }
-
-        // Global Notification Listeners
-        if (socket) {
-            const handleNotification = (data) => {
-                toast((t) => (
-                    <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-theme/10 flex items-center justify-center shrink-0">
-                            <Bell className="w-5 h-5 text-theme" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs font-black uppercase text-primary">{data.type || 'Notification'}</span>
-                            <span className="text-[11px] text-tertiary leading-tight">
-                                <span className="font-bold text-white">{data.title}</span>: {data.message}
-                            </span>
-                        </div>
-                    </div>
-                ), { 
-                    duration: 5000, 
-                    position: 'top-right', 
-                    style: { background: 'rgba(9,9,11,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '12px' } 
-                });
-            };
-
-            socket.on('newNotification', handleNotification);
-            return () => socket.off('newNotification', handleNotification);
         }
     }, [accessToken, socket, connect, disconnect]);
 

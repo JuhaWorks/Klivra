@@ -4,6 +4,7 @@ const User = require('../models/user.model');
 const { z } = require('zod');
 const { getIO } = require('../utils/service.utils');
 const { getRedisClient, logger } = require('../utils/system.utils');
+const { NOTIFICATION_TYPES, CONNECTION_STATUS, PROJECT_ROLES, TASK_PRIORITIES, NETWORKING_MESSAGES, SYSTEM_MESSAGES } = require('../constants');
 
 // Local LRU/Memory cache for stats (5s TTL)
 const statsCache = new Map(); // userId -> { data, expires }
@@ -43,28 +44,28 @@ const sendRequest = async (req, res, next) => {
         const requesterId = req.user._id;
 
         // Prevent Admin users from networking
-        if (req.user.role === 'Admin') {
+        if (req.user.role === PROJECT_ROLES.ADMIN) {
             res.status(403);
-            return next(new Error('Admin accounts cannot use the networking feature'));
+            return next(new Error(NETWORKING_MESSAGES.ADMIN_RESTRICTED));
         }
 
         // Prevent self-connection
         if (requesterId.toString() === recipientId) {
             res.status(400);
-            return next(new Error('You cannot send a connection request to yourself'));
+            return next(new Error(NETWORKING_MESSAGES.SELF_CONNECT_RESTRICTED));
         }
 
         // Check if recipient exists
         const recipient = await User.findById(recipientId);
         if (!recipient) {
             res.status(404);
-            return next(new Error('User not found'));
+            return next(new Error(SYSTEM_MESSAGES.USER_NOT_FOUND));
         }
 
         // Prevent connecting with Admin accounts
-        if (recipient.role === 'Admin') {
+        if (recipient.role === PROJECT_ROLES.ADMIN) {
             res.status(400);
-            return next(new Error('Cannot connect with system administrator accounts'));
+            return next(new Error(NETWORKING_MESSAGES.ADMIN_RESTRICTED));
         }
 
         // Check for existing connection in either direction
@@ -76,28 +77,28 @@ const sendRequest = async (req, res, next) => {
         });
 
         if (existing) {
-            if (existing.status === 'accepted') {
+            if (existing.status === CONNECTION_STATUS.ACCEPTED) {
                 res.status(400);
-                return next(new Error('You are already connected with this user'));
+                return next(new Error(NETWORKING_MESSAGES.ALREADY_CONNECTED));
             }
-            if (existing.status === 'pending') {
+            if (existing.status === CONNECTION_STATUS.PENDING) {
                 // If the other user already sent us a request, auto-accept
                 if (existing.requester.toString() === recipientId) {
-                    existing.status = 'accepted';
+                    existing.status = CONNECTION_STATUS.ACCEPTED;
                     existing.respondedAt = new Date();
                     await existing.save();
                     return res.status(200).json({
                         status: 'success',
-                        message: 'Connection accepted! They had already sent you a request.',
+                        message: NETWORKING_MESSAGES.AUTO_ACCEPTED,
                         data: existing,
                     });
                 }
                 res.status(400);
-                return next(new Error('You have already sent a request to this user'));
+                return next(new Error(NETWORKING_MESSAGES.REQUEST_ALREADY_SENT));
             }
-            if (existing.status === 'declined') {
+            if (existing.status === CONNECTION_STATUS.DECLINED) {
                 // Allow re-request by updating the existing record
-                existing.status = 'pending';
+                existing.status = CONNECTION_STATUS.PENDING;
                 existing.requester = requesterId;
                 existing.recipient = recipientId;
                 existing.note = note || '';
@@ -105,7 +106,7 @@ const sendRequest = async (req, res, next) => {
                 await existing.save();
                 return res.status(201).json({
                     status: 'success',
-                    message: 'Connection request re-sent',
+                    message: NETWORKING_MESSAGES.REQUEST_RESENT,
                     data: existing,
                 });
             }
@@ -127,8 +128,8 @@ const sendRequest = async (req, res, next) => {
             await notificationService.notify({
                 recipientId,
                 senderId: requesterId,
-                type: 'ConnectionRequest',
-                priority: 'Medium',
+                type: NOTIFICATION_TYPES.CONNECTION_REQUEST,
+                priority: TASK_PRIORITIES[1],
                 title: 'New Connection Request',
                 message: `${req.user.name} wants to connect with you.`,
                 link: '/networking?tab=requests',
@@ -145,7 +146,7 @@ const sendRequest = async (req, res, next) => {
 
         res.status(201).json({
             status: 'success',
-            message: 'Connection request sent',
+            message: NETWORKING_MESSAGES.REQUEST_SENT,
             data: connection,
         });
     } catch (error) {
@@ -182,17 +183,17 @@ const respondToRequest = async (req, res, next) => {
             res.status(403);
             return next(new Error('You are not authorized to respond to this request'));
         }
-
-        if (connection.status !== 'pending') {
+ 
+        if (connection.status !== CONNECTION_STATUS.PENDING) {
             res.status(400);
             return next(new Error('This request has already been responded to'));
         }
 
         // Atomic update to ensure single execution of status change and counter increment
         const updatedConnection = await Connection.findOneAndUpdate(
-            { _id: connectionId, status: 'pending' },
+            { _id: connectionId, status: CONNECTION_STATUS.PENDING },
             { 
-                status: action === 'accept' ? 'accepted' : 'declined',
+                status: action === 'accept' ? CONNECTION_STATUS.ACCEPTED : CONNECTION_STATUS.DECLINED,
                 respondedAt: new Date()
             },
             { returnDocument: 'after' }
@@ -228,8 +229,8 @@ const respondToRequest = async (req, res, next) => {
                 await notificationService.notify({
                     recipientId: updatedConnection.requester,
                     senderId: updatedConnection.recipient,
-                    type: 'ConnectionAccepted',
-                    priority: 'Medium',
+                    type: NOTIFICATION_TYPES.CONNECTION_ACCEPTED,
+                    priority: TASK_PRIORITIES[1],
                     title: 'Connection Accepted',
                     message: `${req.user.name} accepted your connection request!`,
                     link: `/networking/profile/${updatedConnection.recipient}`,
@@ -249,7 +250,7 @@ const respondToRequest = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            message: action === 'accept' ? 'Connection accepted' : 'Connection declined',
+            message: action === 'accept' ? NETWORKING_MESSAGES.ACCEPTED : NETWORKING_MESSAGES.DECLINED,
             data: updatedConnection,
         });
     } catch (error) {
@@ -276,7 +277,7 @@ const withdrawRequest = async (req, res, next) => {
             return next(new Error('You can only withdraw your own requests'));
         }
 
-        if (connection.status !== 'pending') {
+        if (connection.status !== CONNECTION_STATUS.PENDING) {
             res.status(400);
             return next(new Error('Can only withdraw pending requests'));
         }
@@ -296,7 +297,7 @@ const withdrawRequest = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            message: 'Connection request withdrawn',
+            message: NETWORKING_MESSAGES.WITHDRAWN,
         });
     } catch (error) {
         next(error);
@@ -326,7 +327,7 @@ const removeConnection = async (req, res, next) => {
         await Connection.findByIdAndDelete(connectionId);
         
         // Only decrement counts if it was an active connection
-        if (connection.status === 'accepted') {
+        if (connection.status === CONNECTION_STATUS.ACCEPTED) {
             await User.updateMany(
                 { _id: { $in: [connection.requester, connection.recipient] } },
                 { $inc: { totalConnections: -1 } }
@@ -347,7 +348,7 @@ const removeConnection = async (req, res, next) => {
 
         res.status(200).json({
             status: 'success',
-            message: 'Connection removed',
+            message: NETWORKING_MESSAGES.REMOVED,
         });
     } catch (error) {
         next(error);
@@ -368,7 +369,7 @@ const updateLabels = async (req, res, next) => {
         const { connectionId, labels } = parsed.data;
         const connection = await Connection.findById(connectionId);
 
-        if (!connection || connection.status !== 'accepted') {
+        if (!connection || connection.status !== CONNECTION_STATUS.ACCEPTED) {
             res.status(404);
             return next(new Error('Active connection not found'));
         }
@@ -404,7 +405,7 @@ const getMyConnections = async (req, res, next) => {
 
         let query = {
             $or: [{ requester: userId }, { recipient: userId }],
-            status: 'accepted',
+            status: CONNECTION_STATUS.ACCEPTED,
         };
 
         // If a search query is provided, we need to filter by the OTHER person's details.
@@ -421,7 +422,7 @@ const getMyConnections = async (req, res, next) => {
             // Step 2: Ensure the connection involves one of these matching users
             query = {
                 $and: [
-                    { status: 'accepted' },
+                    { status: CONNECTION_STATUS.ACCEPTED },
                     { $or: [{ requester: userId }, { recipient: userId }] },
                     { $or: [{ requester: { $in: matchingUserIds } }, { recipient: { $in: matchingUserIds } }] }
                 ]
@@ -477,7 +478,7 @@ const getPendingRequests = async (req, res, next) => {
 
         const query = {
             recipient: userId,
-            status: 'pending',
+            status: CONNECTION_STATUS.PENDING,
         };
 
         if (cursor) {
@@ -515,7 +516,7 @@ const getSentRequests = async (req, res, next) => {
 
         const query = {
             requester: userId,
-            status: 'pending',
+            status: CONNECTION_STATUS.PENDING,
         };
 
         if (cursor) {
@@ -562,10 +563,10 @@ const getStats = async (req, res, next) => {
         const [acceptedCount, pendingCount, sentCount] = await Promise.all([
             Connection.countDocuments({ 
                 $or: [{ requester: userId }, { recipient: userId }], 
-                status: 'accepted' 
+                status: CONNECTION_STATUS.ACCEPTED 
             }),
-            Connection.countDocuments({ recipient: userId, status: 'pending' }),
-            Connection.countDocuments({ requester: userId, status: 'pending' }),
+            Connection.countDocuments({ recipient: userId, status: CONNECTION_STATUS.PENDING }),
+            Connection.countDocuments({ requester: userId, status: CONNECTION_STATUS.PENDING }),
         ]);
 
         const stats = {
@@ -602,7 +603,7 @@ const getMutualConnections = async (req, res, next) => {
         // Get my accepted connections
         const myConns = await Connection.find({
             $or: [{ requester: myId }, { recipient: myId }],
-            status: 'accepted',
+            status: CONNECTION_STATUS.ACCEPTED,
         });
 
         const myConnIds = myConns.map(c =>
@@ -614,7 +615,7 @@ const getMutualConnections = async (req, res, next) => {
         // Get their accepted connections
         const theirConns = await Connection.find({
             $or: [{ requester: theirId }, { recipient: theirId }],
-            status: 'accepted',
+            status: CONNECTION_STATUS.ACCEPTED,
         });
 
         const theirConnIds = theirConns.map(c =>
@@ -652,7 +653,7 @@ const searchUsers = async (req, res, next) => {
             _id: { $ne: userId },
             isActive: { $ne: false },
             isBanned: { $ne: true },
-            role: { $ne: 'Admin' },
+            role: { $ne: PROJECT_ROLES.ADMIN },
         };
 
         if (q && q.trim().length >= 2) {
@@ -667,8 +668,8 @@ const searchUsers = async (req, res, next) => {
             filter.skills = { $regex: skill, $options: 'i' };
         }
 
-        if (role && ['Manager', 'Developer'].includes(role)) {
-            filter.role = role; // This is safe because both Manager and Developer are non-Admin
+        if (role && [PROJECT_ROLES.MANAGER, PROJECT_ROLES.EDITOR, PROJECT_ROLES.VIEWER].includes(role)) {
+            filter.role = role;
         }
 
         const users = await User.find(filter)
@@ -740,7 +741,7 @@ const getSuggestions = async (req, res, next) => {
         // 2. Identify Users to Exclude (self, already connected, pending)
         const existing = await Connection.find({
             $or: [{ requester: userId }, { recipient: userId }],
-            status: { $in: ['pending', 'accepted'] },
+            status: { $in: [CONNECTION_STATUS.PENDING, CONNECTION_STATUS.ACCEPTED] },
         });
 
         const excludeIds = new Set([userId.toString()]);
@@ -750,7 +751,7 @@ const getSuggestions = async (req, res, next) => {
             const pId = c.recipient.toString();
             excludeIds.add(rId);
             excludeIds.add(pId);
-            if (c.status === 'accepted') {
+            if (c.status === CONNECTION_STATUS.ACCEPTED) {
                 myConnectionIds.push(rId === userId.toString() ? pId : rId);
             }
         });
@@ -759,8 +760,8 @@ const getSuggestions = async (req, res, next) => {
         // Find connections of my connections
         const mutualConnections = await Connection.find({
             $or: [
-                { requester: { $in: myConnectionIds }, recipient: { $nin: Array.from(excludeIds) }, status: 'accepted' },
-                { recipient: { $in: myConnectionIds }, requester: { $nin: Array.from(excludeIds) }, status: 'accepted' }
+                { requester: { $in: myConnectionIds }, recipient: { $nin: Array.from(excludeIds) }, status: CONNECTION_STATUS.ACCEPTED },
+                { recipient: { $in: myConnectionIds }, requester: { $nin: Array.from(excludeIds) }, status: CONNECTION_STATUS.ACCEPTED }
             ]
         }).limit(200);
 
@@ -791,7 +792,7 @@ const getSuggestions = async (req, res, next) => {
                 _id: { $in: mutualUserIds },
                 isActive: { $ne: false },
                 isBanned: { $ne: true },
-                role: { $ne: 'Admin' },
+                role: { $ne: PROJECT_ROLES.ADMIN },
             }).select('name email avatar role status customMessage totalConnections').lean(),
             User.find({ _id: { $in: allMutualWithIds } }).select('name').lean()
         ]);

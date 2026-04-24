@@ -6,7 +6,7 @@ const { getIO } = require('../utils/service.utils');
 const { logActivity } = require('../utils/system.utils');
 const notificationService = require('../services/notification.service');
 const gamification = require('../services/gamification.service');
-const { DOMAIN_MAPPING } = require('../utils/core.utils');
+const { DOMAIN_MAPPING, TASK_STATUSES, TASK_PRIORITIES, PROJECT_ROLES, NOTIFICATION_TYPES, MEMBERSHIP_STATUS, TASK_TYPES, SYSTEM_MESSAGES, AUDIT_LOG_TYPES } = require('../constants');
 const detectCircularDependency = async (startId, targetId) => {
     if (startId.toString() === targetId.toString()) return true;
     const visited = new Set();
@@ -33,21 +33,22 @@ const getTasks = async (req, res, next) => {
             const project = await Project.findById(projectId).lean();
             if (!project) {
                 res.status(404);
-                throw new Error('Project not found');}
+                throw new Error(SYSTEM_MESSAGES.PROJECT_NOT_FOUND);}
             const isMember = project.members.some(
-                (member) => member.userId?.toString() === req.user._id.toString() && member.status === 'active');
-            if (!isMember && req.user.role !== 'Admin') {
+                (member) => member.userId?.toString() === req.user._id.toString() && member.status === MEMBERSHIP_STATUS.ACTIVE);
+            if (!isMember) {
                 res.status(403);
-                throw new Error('User not authorized to access tasks for this project');}
+                throw new Error(SYSTEM_MESSAGES.ERROR_ACCESS_DENIED);
+            }
             query.project = projectId;
         } else {
             let projectQuery = { isArchived: false };
-            if (req.user.role !== 'Admin') {
+            if (req.user.role !== PROJECT_ROLES.ADMIN) {
                 projectQuery['members.userId'] = req.user._id;
-                projectQuery['members.status'] = 'active';}
+                projectQuery['members.status'] = MEMBERSHIP_STATUS.ACTIVE;}
             const userProjects = await Project.find(projectQuery).select('_id').lean();
             const projectIds = userProjects.map(p => p._id);
-            if (req.user.role === 'Admin') {
+            if (req.user.role === PROJECT_ROLES.ADMIN) {
                 query.project = { $in: projectIds };
             } else {
                 query.$or = [
@@ -66,8 +67,8 @@ const getTasks = async (req, res, next) => {
             .populate('assignees', 'name email avatar')
             .populate('assignee', 'name email avatar')
             .populate('watchers', 'name email avatar')
-            .populate('project', 'name color') // Added project name for "All Projects" context
-            .select('-__v')
+            .populate('project', 'name color')
+            .select('-__v -description -timeSessions -subtasks') // Payload reduction: omit heavy fields for list views
             .sort('-updatedAt')
             .skip(skip)
             .limit(limit)
@@ -116,16 +117,16 @@ const createTask = async (req, res, next) => {
 
         if (!project) {
             res.status(404);
-            throw new Error('Project not found');
+            throw new Error(SYSTEM_MESSAGES.PROJECT_NOT_FOUND);
         }
 
         const isMember = project.members.some(
-            (m) => m.userId.toString() === req.user._id.toString() && m.status === 'active'
+            (m) => m.userId.toString() === req.user._id.toString() && m.status === MEMBERSHIP_STATUS.ACTIVE
         );
 
-        if (!isMember && req.user.role !== 'Admin') {
-            res.status(401);
-            throw new Error('User not authorized to create a task in this project');
+        if (!isMember && req.user.role !== PROJECT_ROLES.ADMIN) {
+            res.status(403);
+            throw new Error(SYSTEM_MESSAGES.ERROR_ACCESS_DENIED);
         }
 
         const projectStartDate = new Date(project.startDate);
@@ -152,11 +153,11 @@ const createTask = async (req, res, next) => {
         const task = await Task.create({
             title,
             description,
-            status: status || 'Pending',
-            priority: priority || 'Medium',
+            status: status || TASK_STATUSES[0],
+            priority: priority || TASK_PRIORITIES[1],
             assignees: taskAssignees,
             assignee: taskAssignees.length > 0 ? taskAssignees[0] : null, // Mirror first assignee for legacy mobile/client support
-            type: type || 'Task',
+            type: type || TASK_TYPES.TASK,
             points: points || 1,
             labels: labels || [],
             dueDate: dueDate || null,
@@ -171,7 +172,7 @@ const createTask = async (req, res, next) => {
             .populate('project', 'name color')
             .lean();
 
-        await logActivity(req.params.projectId, req.user._id, 'EntityCreate', {
+        await logActivity(req.params.projectId, req.user._id, AUDIT_LOG_TYPES.ENTITY_CREATE, {
             title: task.title,
             priority: task.priority,
             status: task.status,
@@ -187,7 +188,7 @@ const createTask = async (req, res, next) => {
                 await notificationService.notify({
                     recipientId,
                     senderId: req.user._id,
-                    type: 'Assignment',
+                    type: NOTIFICATION_TYPES.ASSIGNMENT,
                     title: 'New Task Assigned',
                     message: `${req.user.name} assigned you to "${task.title}"`,
                     link: `/tasks?project=${task.project._id || task.project}`,
@@ -203,7 +204,7 @@ const createTask = async (req, res, next) => {
         }
 
         // --- Gamification Hook for Created "Completed" tasks ---
-        if (task.status === 'Completed') {
+        if (task.status === TASK_STATUSES[2]) {
             const xp = gamification.calculateTaskXP(task, { wasBlocked: false });
             const assigneesToReward = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : [req.user._id]);
             for (const u of assigneesToReward) {
@@ -235,13 +236,16 @@ const updateTask = async (req, res, next) => {
         const isAssignee = (task.assignees && task.assignees.some(a => a?.toString() === req.user._id.toString())) ||
             (task.assignee && task.assignee.toString() === req.user._id.toString());
 
-        const isManager = project.members.some(
-            (m) => m.userId?.toString() === req.user._id.toString() && m.role === 'Manager' && m.status === 'active'
+        const isManagerOrEditor = project.members.some(
+            (m) => m.userId?.toString() === req.user._id.toString() && 
+            (m.role === PROJECT_ROLES.MANAGER || m.role === PROJECT_ROLES.EDITOR) && 
+            m.status === MEMBERSHIP_STATUS.ACTIVE
         );
+        const isAuthorized = isAssignee || isManagerOrEditor || req.user.role === PROJECT_ROLES.ADMIN;
 
-        if (!isAssignee && !isManager && req.user.role !== 'Admin') {
-            res.status(401);
-            throw new Error('User not authorized to update this task');
+        if (!isAuthorized) {
+            res.status(403);
+            throw new Error(SYSTEM_MESSAGES.ERROR_ACCESS_DENIED);
         }
 
         const projectStartDate = new Date(project.startDate);
@@ -271,7 +275,7 @@ const updateTask = async (req, res, next) => {
 
         // Capture XP to revoke BEFORE update if task is being un-completed
         let preUpdateXpData = null;
-        if (oldStatus === 'Completed' && req.body.status && req.body.status !== 'Completed') {
+        if (oldStatus === TASK_STATUSES[2] && req.body.status && req.body.status !== TASK_STATUSES[2]) {
             preUpdateXpData = gamification.calculateTaskXP(task);
         }
         const oldBlockedBy = task.dependencies?.blockedBy?.map(id => id.toString()) || [];
@@ -377,13 +381,13 @@ const updateTask = async (req, res, next) => {
         const typeChanged = req.body.type && oldType !== req.body.type;
 
         if (statusChanged || priorityChanged || typeChanged) {
-            const isCompleted = req.body.status === 'Completed';
+            const isCompleted = req.body.status === TASK_STATUSES[2];
             const assignees = task.assignees?.map(a => a._id || a) || [];
 
             let managers = [];
             if ((isCompleted || priorityChanged) && project) {
                 managers = project.members
-                    .filter(m => m.role === 'Manager' && m.status === 'active')
+                    .filter(m => m.role === PROJECT_ROLES.MANAGER && m.status === MEMBERSHIP_STATUS.ACTIVE)
                     .map(m => (m.userId?._id || m.userId).toString());
             }
             const recipients = [...new Set([
@@ -400,7 +404,7 @@ const updateTask = async (req, res, next) => {
             }
             if (priorityChanged) {
                 changeLog.push(`priority to ${req.body.priority}`);
-                if (req.body.priority === 'Urgent') title = 'Urgent Priority Escalation';
+                if (req.body.priority === TASK_PRIORITIES[3]) title = 'Urgent Priority Escalation';
             }
             if (typeChanged) {
                 changeLog.push(`classification to ${req.body.type}`);
@@ -413,8 +417,8 @@ const updateTask = async (req, res, next) => {
                     await notificationService.notify({
                         recipientId,
                         senderId: req.user._id,
-                        type: isCompleted ? 'StatusUpdate' : 'MetadataUpdate',
-                        priority: (isCompleted || req.body.priority === 'Urgent' || task.priority === 'Urgent') ? 'Urgent' : 'Medium',
+                        type: isCompleted ? NOTIFICATION_TYPES.STATUS_UPDATE : NOTIFICATION_TYPES.METADATA_UPDATE,
+                        priority: (isCompleted || req.body.priority === TASK_PRIORITIES[3] || task.priority === TASK_PRIORITIES[3]) ? TASK_PRIORITIES[3] : TASK_PRIORITIES[1],
                         title,
                         message,
                         link: `/tasks?project=${task.project._id || task.project}`,
@@ -440,7 +444,7 @@ const updateTask = async (req, res, next) => {
         }
 
         // 2. Main Task status change XP
-        if (oldStatus !== 'Completed' && req.body.status === 'Completed') {
+        if (oldStatus !== TASK_STATUSES[2] && req.body.status === TASK_STATUSES[2]) {
             console.log(`[GAMIFICATION] Task ${task._id} marked COMPLETED. Starting award flow.`);
 
             const wasBlocked = task.dependencies?.blockedBy?.length > 0;
@@ -500,10 +504,10 @@ const deleteTask = async (req, res, next) => {
 
         const project = await Project.findById(task.project).lean();
         const isManager = project.members.some(
-            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager' && m.status === 'active'
+            (m) => m.userId.toString() === req.user._id.toString() && m.role === PROJECT_ROLES.MANAGER && m.status === MEMBERSHIP_STATUS.ACTIVE
         );
 
-        if (!isManager && req.user.role !== 'Admin') {
+        if (!isManager && req.user.role !== PROJECT_ROLES.ADMIN) {
             res.status(401);
             throw new Error('User not authorized to delete this task');
         }
@@ -587,10 +591,10 @@ const bulkUpdateTasks = async (req, res, next) => {
                 (task.assignee && task.assignee.toString() === req.user._id.toString());
 
             const isManagerOrEditor = project.members.some(
-                (m) => m.userId.toString() === req.user._id.toString() && (m.role === 'Manager' || m.role === 'Editor') && m.status === 'active'
+                (m) => m.userId.toString() === req.user._id.toString() && (m.role === PROJECT_ROLES.MANAGER || m.role === PROJECT_ROLES.EDITOR) && m.status === MEMBERSHIP_STATUS.ACTIVE
             );
 
-            if (!isAssignee && !isManagerOrEditor && req.user.role !== 'Admin') {
+            if (!isAssignee && !isManagerOrEditor && req.user.role !== PROJECT_ROLES.ADMIN) {
                 res.status(401);
                 throw new Error(`User not authorized to update task ${task._id}`);
             }
@@ -638,15 +642,15 @@ const bulkUpdateTasks = async (req, res, next) => {
             getIO().to(task.project.toString()).emit('taskUpdated', task);
 
             const originalTask = tasks.find(t => t._id.toString() === task._id.toString());
-            const isNowCompleted = originalTask && originalTask.status !== 'Completed' && task.status === 'Completed';
-            const isNowUncompleted = originalTask && originalTask.status === 'Completed' && task.status !== 'Completed';
+            const isNowCompleted = originalTask && originalTask.status !== TASK_STATUSES[2] && task.status === TASK_STATUSES[2];
+            const isNowUncompleted = originalTask && originalTask.status === TASK_STATUSES[2] && task.status !== TASK_STATUSES[2];
 
             // --- Notification Hook for Bulk Completion ---
             if (isNowCompleted) {
                 const project = projectMap[task.project.toString()];
                 const assignees = task.assignees?.map(a => a._id || a) || [];
                 const managers = project.members
-                    .filter(m => m.role === 'Manager' && m.status === 'active')
+                    .filter(m => m.role === PROJECT_ROLES.MANAGER && m.status === MEMBERSHIP_STATUS.ACTIVE)
                     .map(m => m.userId?._id || m.userId);
 
                 const recipients = [...new Set([...assignees, ...managers])];
@@ -657,8 +661,8 @@ const bulkUpdateTasks = async (req, res, next) => {
                     await notificationService.notify({
                         recipientId,
                         senderId: req.user._id,
-                        type: 'StatusUpdate',
-                        priority: 'Urgent',
+                        type: NOTIFICATION_TYPES.STATUS_UPDATE,
+                        priority: TASK_PRIORITIES[3],
                         title: 'Task Completed (Bulk)',
                         message: `Task "${task.title}" was marked as completed during a bulk update by ${req.user.name}.`,
                         link: `/tasks?project=${task.project}`,
@@ -667,7 +671,7 @@ const bulkUpdateTasks = async (req, res, next) => {
                             projectId: task.project,
                             taskName: task.title,
                             projectName: project.name || 'Project',
-                            priority: 'Urgent'
+                            priority: TASK_PRIORITIES[3]
                         }
                     }).catch(err => console.error("Bulk Notify Error:", err));
                 }
@@ -786,14 +790,14 @@ const getTask = async (req, res, next) => {
             .populate('assignee', 'name email avatar')
             .populate('project', 'name color members')
             .populate({ path: 'dependencies.blockedBy', select: 'title status' })
-            .populate({ path: 'dependencies.blocks', select: 'title status' })
+            .populate({ path: 'dependencies.blocking', select: 'title status' })
             .lean();
 
         if (!task) { res.status(404); throw new Error('Task not found'); }
 
         const project = task.project;
-        const isMember = project?.members?.some(m => m.userId?.toString() === req.user._id.toString() && m.status === 'active');
-        if (!isMember && req.user.role !== 'Admin') {
+        const isMember = project?.members?.some(m => m.userId?.toString() === req.user._id.toString() && m.status === MEMBERSHIP_STATUS.ACTIVE);
+        if (!isMember && req.user.role !== PROJECT_ROLES.ADMIN) {
             res.status(403);
             throw new Error('User not authorized to access this task');
         }

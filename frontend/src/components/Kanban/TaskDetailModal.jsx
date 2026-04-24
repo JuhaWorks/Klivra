@@ -80,7 +80,29 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
     const fetchContext = useCallback(async () => {
         if (!task._id) return;
         try {
-            const cRes = await api.get(`/tasks/${task._id}/comments`);
+            const [cRes, tRes] = await Promise.all([
+                api.get(`/tasks/${task._id}/comments`),
+                api.get(`/tasks/${task._id}`)
+            ]);
+            
+            const fullTask = tRes.data.data;
+            if (fullTask) {
+                setTitle(fullTask.title || '');
+                setDescription(fullTask.description || '');
+                setStatus(fullTask.status || 'Pending');
+                setPriority(fullTask.priority || 'Medium');
+                setType(fullTask.type || 'Task');
+                setSubtasks(fullTask.subtasks || []);
+                setBlockedBy(fullTask.dependencies?.blockedBy || []);
+                setBlocking(fullTask.dependencies?.blocking || []);
+                
+                if (fullTask.assignees?.length > 0) {
+                    setAssigneeIds(fullTask.assignees.map(a => a._id || a));
+                } else if (fullTask.assignee) {
+                    setAssigneeIds([fullTask.assignee._id || fullTask.assignee]);
+                }
+            }
+
             setComments(cRes.data.data || []);
         } catch (err) {
             console.error("Failed to fetch modal context", err);

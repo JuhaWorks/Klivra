@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo, useCallback, useId, memo } from '
 import { motion } from 'framer-motion';
 import { useTheme, MODES } from '../../store/useTheme';
 import { cn } from '../../utils/cn';
+import { THEME_COLORS } from '../../constants';
 import './ui.css';
 
 // ─── BORDER GLOW ─────────────────────────────────────────────────────────────
@@ -12,20 +13,32 @@ export const BorderGlow = memo(({
   borderRadius = 28,
 }) => {
   const cardRef = useRef(null);
+  const rectRef = useRef(null);
+
+  const handlePointerEnter = useCallback(() => {
+    rectRef.current = cardRef.current?.getBoundingClientRect();
+  }, []);
 
   const handlePointerMove = useCallback((e) => {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
+    if (!rectRef.current) {
+      rectRef.current = cardRef.current?.getBoundingClientRect();
+    }
+    const rect = rectRef.current;
+    if (!rect || !cardRef.current) return;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    card.style.setProperty('--mouse-x', `${x}px`);
-    card.style.setProperty('--mouse-y', `${y}px`);
+    
+    // Performance: Throttle CSS variable updates to display refresh rate
+    requestAnimationFrame(() => {
+      cardRef.current?.style.setProperty('--mouse-x', `${x}px`);
+      cardRef.current?.style.setProperty('--mouse-y', `${y}px`);
+    });
   }, []);
 
   return (
     <div
       ref={cardRef}
+      onPointerEnter={handlePointerEnter}
       onPointerMove={handlePointerMove}
       className={cn('magic-glow-card', className)}
       style={{
@@ -338,6 +351,7 @@ export const InteractiveGridBackground = memo(({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const mouseRef = useRef({ x: -1000, y: -1000 });
   const lerpRef = useRef({ x: -1000, y: -1000 });
+  const rectCache = useRef(null);
   const lastMouseTime = useRef(Date.now());
   const rafRef = useRef(null);
   const trailX = useRef(new Int16Array(trailLength));
@@ -359,15 +373,27 @@ export const InteractiveGridBackground = memo(({
   }, []);
 
   useEffect(() => {
+    const onEnter = () => {
+      rectCache.current = containerRef.current?.getBoundingClientRect();
+    };
+
     const onMove = (e) => {
-      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rectCache.current) {
+        rectCache.current = containerRef.current?.getBoundingClientRect();
+      }
+      const rect = rectCache.current;
       if (!rect) return;
       mouseRef.current.x = e.clientX - rect.left;
       mouseRef.current.y = e.clientY - rect.top;
       lastMouseTime.current = Date.now();
     };
+
+    window.addEventListener("mouseenter", onEnter, { passive: true });
     window.addEventListener("mousemove", onMove, { passive: true });
-    return () => window.removeEventListener("mousemove", onMove);
+    return () => {
+      window.removeEventListener("mouseenter", onEnter);
+      window.removeEventListener("mousemove", onMove);
+    };
   }, []);
 
   useEffect(() => {
@@ -378,8 +404,8 @@ export const InteractiveGridBackground = memo(({
 
     const gCtx = gridCanvas.getContext("2d");
     const tCtx = trailCanvas.getContext("2d");
-    const EMERALD = "#10b981";
-    const EMERALD_RGB = "16,185,129";
+    const EMERALD = THEME_COLORS.EMERALD;
+    const EMERALD_RGB = THEME_COLORS.EMERALD_RGB;
 
     const build = () => {
       const dpr = 1; // Force 1x DPR to save ~60MB of video memory

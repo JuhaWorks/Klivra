@@ -6,6 +6,7 @@ const { logger } = require('../utils/system.utils');
 
 const notificationService = require('../services/notification.service');
 const { catchAsync } = require('../utils/core.utils');
+const { PROJECT_ROLES, NOTIFICATION_TYPES, TASK_PRIORITIES, SYSTEM_MESSAGES, CHAT_MESSAGES } = require('../constants');
 const getUserChats = async (req, res, next) => {
     try {
         const chats = await Chat.find({ participants: req.user._id })
@@ -51,7 +52,7 @@ const getChatMessageHistory = async (req, res, next) => {
         if (!chat) return res.status(404).json({ status: 'error', message: 'Chat not found' });
         
         const isParticipant = chat.participants.some(p => p.toString() === req.user._id.toString());
-        if (!isParticipant && req.user.role !== 'Admin') {
+        if (!isParticipant && req.user.role !== PROJECT_ROLES.ADMIN) {
             return res.status(403).json({ status: 'error', message: 'Access denied. You are not a participant in this chat.' });
         }
 
@@ -123,11 +124,11 @@ const sendMessage = async (req, res, next) => {
 
         // 3. Update Chat state
         const chat = await Chat.findById(targetChatId);
-        if (!chat) return res.status(404).json({ status: 'error', message: 'Chat not found' });
+        if (!chat) return res.status(404).json({ status: 'error', message: SYSTEM_MESSAGES.CHAT_NOT_FOUND });
 
         // IDOR FIX: Verify membership BEFORE allowing message injection
         const isParticipant = chat.participants.some(p => p.toString() === req.user._id.toString());
-        if (!isParticipant && req.user.role !== 'Admin') {
+        if (!isParticipant && req.user.role !== PROJECT_ROLES.ADMIN) {
             return res.status(403).json({ status: 'error', message: 'Access denied. You are not a participant in this chat.' });
         }
 
@@ -197,8 +198,8 @@ const sendMessage = async (req, res, next) => {
                 await notificationService.notify({
                     recipientId: pId,
                     senderId: req.user._id,
-                    type: isMentioned ? 'Mention' : 'Chat',
-                    priority: isMentioned ? 'High' : 'Medium',
+                    type: isMentioned ? NOTIFICATION_TYPES.MENTION : NOTIFICATION_TYPES.CHAT,
+                    priority: isMentioned ? TASK_PRIORITIES[2] : TASK_PRIORITIES[1],
                     title: isMentioned ? `Mentioned by ${req.user.name}` : `New message from ${req.user.name}`,
                     message: content ? (content.length > 50 ? content.substring(0, 47) + '...' : content) : (type === 'image' ? 'Sent a photo' : 'Sent an attachment'),
                     link: '/chat',
@@ -227,7 +228,7 @@ const unsendMessage = async (req, res, next) => {
         }
 
         message.deleted = true;
-        message.content = 'This message was removed';
+        message.content = CHAT_MESSAGES.MESSAGE_REMOVED;
         await message.save();
 
         // Broadcast deletion to all participants in the chat
@@ -357,7 +358,7 @@ const deleteUserChat = async (req, res, next) => {
         chat.clearedAt.set(userId, now); // Also clear history for this user
         
         await chat.save();
-        res.status(200).json({ status: 'success', message: 'Chat removed for you' });
+        res.status(200).json({ status: 'success', message: CHAT_MESSAGES.REMOVED_FOR_YOU });
     } catch (error) { next(error); }
 };
 // @desc    Clear chat history for current user
@@ -379,7 +380,7 @@ const clearChatHistory = async (req, res, next) => {
         chat.clearedAt.set(userId, new Date());
         await chat.save();
 
-        res.status(200).json({ status: 'success', message: 'History cleared for you' });
+        res.status(200).json({ status: 'success', message: CHAT_MESSAGES.HISTORY_CLEARED });
     } catch (error) { next(error); }
 };
 

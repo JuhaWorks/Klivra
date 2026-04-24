@@ -41,8 +41,13 @@ const TopBar = () => {
     const { data: countData } = useQuery({
         queryKey: ['unread-notifications-count'],
         queryFn: async () => {
-            const { data } = await api.get('/notifications/unread/count');
-            return data.count;
+            try {
+                const response = await api.get('/notifications/unread/count');
+                return response.data?.data ?? 0;
+            } catch (err) {
+                console.warn('[NOTIF] Failed to fetch unread count:', err.message);
+                return 0;
+            }
         },
         refetchInterval: 60000, // Poll every minute as backup
     });
@@ -100,11 +105,13 @@ const TopBar = () => {
                                 duration: 3, 
                                 ease: "easeInOut" 
                             }}
-                            className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.2)] border border-white/10 bg-transparent flex items-center justify-center"
+                            className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_166px_rgba(0,0,0,0.2)] border border-white/10 bg-transparent flex items-center justify-center"
                         >
                             <img 
                                 src="/logo.png" alt="Klivra logo" 
                                 fetchPriority="high" 
+                                width={64}
+                                height={44}
                                 className={twMerge(clsx(
                                     "w-full h-full object-contain transition-all duration-300",
                                     isDark ? "invert" : ""
@@ -169,7 +176,7 @@ const TopBar = () => {
                         >
                             <div className="relative">
                                 <img
-                                    src={getOptimizedAvatar(user?.avatar)}
+                                    src={getOptimizedAvatar(user?.avatar, 'xs')}
                                     alt=""
                                     width={36}
                                     height={36}

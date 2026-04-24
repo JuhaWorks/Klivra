@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, memo, lazy, Suspense } from 'react';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -9,17 +9,21 @@ import {
     Zap, Briefcase, ChevronRight, MoreHorizontal,
     Circle, Minus
 } from 'lucide-react';
+
 import ApodWidget from '../components/tools/Widgets/ApodWidget';
-import WeatherWidget from '../components/tools/Widgets/WeatherWidget';
-import GlobalClockWidget from '../components/tools/Widgets/GlobalClockWidget';
-import QuoteWidget from '../components/tools/Widgets/QuoteWidget';
-import IntelligenceWidget from '../components/tools/Widgets/IntelligenceWidget';
+const WeatherWidget = lazy(() => import('../components/tools/Widgets/WeatherWidget'));
+const GlobalClockWidget = lazy(() => import('../components/tools/Widgets/GlobalClockWidget'));
+const QuoteWidget = lazy(() => import('../components/tools/Widgets/QuoteWidget'));
+const IntelligenceWidget = lazy(() => import('../components/tools/Widgets/IntelligenceWidget'));
+const TaskDetailModal = lazy(() => import('../components/Kanban/TaskDetailModal'));
+
 import { useSocketStore } from '../store/useSocketStore';
 import { Button, Card, Counter } from '../components/ui/BaseUI';
 import { DeadlinePopup } from '../components/projects/ProjectShared';
 import { cn } from '../utils/cn';
-import TaskDetailModal from '../components/Kanban/TaskDetailModal';
 import { toast } from 'react-hot-toast';
+import { TASK_STATUSES, TASK_PRIORITIES } from '../constants';
+
 
 // c:\Users\asus\CSE 471 Project\frontend\src\pages\Home.jsx
 
@@ -79,9 +83,9 @@ const priorityConfig = {
 };
 
 const statusConfig = {
-    'In Progress': { color: 'var(--v-blue)', dot: true, bg: 'rgba(59,130,246,0.1)' },
-    'Pending': { color: 'var(--ent-text-3)', dot: false, bg: 'transparent' },
-    'Completed': { color: 'var(--v-emerald)', dot: false, bg: 'rgba(34,197,94,0.1)' },
+    [TASK_STATUSES[1]]: { color: 'var(--v-blue)', dot: true, bg: 'rgba(59,130,246,0.1)' },
+    [TASK_STATUSES[0]]: { color: 'var(--ent-text-3)', dot: false, bg: 'transparent' },
+    [TASK_STATUSES[2]]: { color: 'var(--v-emerald)', dot: false, bg: 'rgba(34,197,94,0.1)' },
 };
 
 const Tag = ({ label, config }) => (
@@ -122,6 +126,14 @@ const SectionHeader = ({ label, right }) => (
         {right}
     </div>
 );
+
+const WidgetSkeleton = ({ height = 140 }) => (
+    <div 
+        style={{ height, width: '100%' }} 
+        className="rounded-3xl bg-white/5 animate-pulse border border-white/5" 
+    />
+);
+
 
 /* ─── MAIN COMPONENT ──────────────────────────────────────────────────────── */
 const Home = () => {
@@ -177,17 +189,17 @@ const Home = () => {
     const taskStats = useMemo(() => {
         return {
             total: allTasks.length,
-            pending: allTasks.filter(t => t.status === 'Pending').length,
-            active: allTasks.filter(t => t.status === 'In Progress').length,
-            urgent: allTasks.filter(t => (t.priority === 'Urgent' || (t.endDate && new Date(t.endDate) < new Date())) && t.status !== 'Completed').length,
+            pending: allTasks.filter(t => t.status === TASK_STATUSES[0]).length,
+            active: allTasks.filter(t => t.status === TASK_STATUSES[1]).length,
+            urgent: allTasks.filter(t => (t.priority === TASK_PRIORITIES[3] || (t.endDate && new Date(t.endDate) < new Date())) && t.status !== TASK_STATUSES[2]).length,
         };
     }, [allTasks]);
 
     const myFocusTasks = useMemo(() => {
         return allTasks
-            .filter(t => t.status !== 'Completed' && t.status !== 'Canceled')
+            .filter(t => t.status !== TASK_STATUSES[2] && t.status !== TASK_STATUSES[3])
             .sort((a, b) => {
-                const p = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+                const p = { [TASK_PRIORITIES[3]]: 4, [TASK_PRIORITIES[2]]: 3, [TASK_PRIORITIES[1]]: 2, [TASK_PRIORITIES[0]]: 1 };
                 if (p[b.priority] !== p[a.priority]) return p[b.priority] - p[a.priority];
                 return (a.dueDate && b.dueDate) ? new Date(a.dueDate) - new Date(b.dueDate) : 0;
             })
@@ -315,10 +327,13 @@ const Home = () => {
                     <div className="ent-admin-pulse">
                         <SectionHeader label="System Pulse" />
                         <div style={{ background: 'transparent' }}>
-                            <IntelligenceWidget fixed />
+                            <Suspense fallback={<WidgetSkeleton height={400} />}>
+                                <IntelligenceWidget fixed />
+                            </Suspense>
                         </div>
                     </div>
                 )}
+
 
                 {/* TASKS ───────────────────────────────────────────────────── */}
                 <div className="ent-task-col" style={{ minWidth: 0 }}>
@@ -458,10 +473,13 @@ const Home = () => {
                         <div style={{ marginTop: 32 }}>
                             <SectionHeader label="Visual Intelligence" />
                             <div style={{ background: 'transparent' }}>
-                                <ApodWidget />
+                                <Suspense fallback={<WidgetSkeleton height={450} />}>
+                                    <ApodWidget />
+                                </Suspense>
                             </div>
                         </div>
                     )}
+
                 </div>
 
                 {/* RIGHT SIDEBAR ───────────────────────────────────────────── */}
@@ -510,7 +528,9 @@ const Home = () => {
                     {user?.interfacePrefs?.showQuote !== false && (
                         <div>
                             <SectionHeader label="Daily Narrative" />
-                            <QuoteWidget />
+                            <Suspense fallback={<WidgetSkeleton height={140} />}>
+                                <QuoteWidget />
+                            </Suspense>
                         </div>
                     )}
 
@@ -518,7 +538,9 @@ const Home = () => {
                     {user?.role !== 'Admin' && user?.interfacePrefs?.showIntelligence !== false && (
                         <div>
                             <SectionHeader label="Workspace Activity" />
-                            <IntelligenceWidget />
+                            <Suspense fallback={<WidgetSkeleton height={200} />}>
+                                <IntelligenceWidget />
+                            </Suspense>
                         </div>
                     )}
 
@@ -526,7 +548,9 @@ const Home = () => {
                     {user?.role !== 'Admin' && user?.interfacePrefs?.showTeamClock !== false && (
                         <div>
                             <SectionHeader label="Operational Sync" />
-                            <GlobalClockWidget />
+                            <Suspense fallback={<WidgetSkeleton height={180} />}>
+                                <GlobalClockWidget />
+                            </Suspense>
                         </div>
                     )}
 
@@ -543,15 +567,18 @@ const Home = () => {
             {/* ── TASK MODAL ───────────────────────────────────────────────── */}
             <AnimatePresence>
                 {selectedTask && (
-                    <TaskDetailModal
-                        task={selectedTask}
-                        projectId={selectedTask.project?._id || selectedTask.project}
-                        onClose={() => setSelectedTask(null)}
-                        onUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
-                        onDelete={() => deleteTaskMutation.mutate(selectedTask._id)}
-                    />
+                    <Suspense fallback={null}>
+                        <TaskDetailModal
+                            task={selectedTask}
+                            projectId={selectedTask.project?._id || selectedTask.project}
+                            onClose={() => setSelectedTask(null)}
+                            onUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
+                            onDelete={() => deleteTaskMutation.mutate(selectedTask._id)}
+                        />
+                    </Suspense>
                 )}
             </AnimatePresence>
+
         </div>
     );
 };

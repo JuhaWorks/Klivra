@@ -35,6 +35,7 @@ endorsementRouter.get('/user/:userId', socialCtrl.getUserEndorsements);
 const notificationRouter = express.Router();
 notificationRouter.use(protect);
 
+notificationRouter.get('/unread/count', userCtrl.getUnreadCount);
 notificationRouter.get('/', userCtrl.getNotifications);
 notificationRouter.patch('/read-all', userCtrl.markAllAsRead);
 notificationRouter.patch('/:id/read', userCtrl.markAsRead);

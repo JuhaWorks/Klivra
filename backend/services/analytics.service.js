@@ -3,6 +3,7 @@ const Task = require('../models/task.model');
 const Audit = require('../models/audit.model');
 const ProjectSnapshot = require('../models/projectSnapshot.model');
 const mongoose = require('mongoose');
+const { TASK_STATUSES } = require('../constants');
 
 /**
  * 🛰️ Analytics Service
@@ -34,8 +35,8 @@ const captureProjectSnapshots = async () => {
             if (tasks.length === 0) continue;
 
             // 3. Calculate Performance Metrics
-            const activeTasks = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled');
-            const completedTasks = tasks.filter(t => t.status === 'Completed');
+            const activeTasks = tasks.filter(t => t.status !== TASK_STATUSES[2] && t.status !== TASK_STATUSES[3]);
+            const completedTasks = tasks.filter(t => t.status === TASK_STATUSES[2]);
             
             // Progress (40%)
             const totalPoints = tasks.reduce((sum, t) => sum + (t.points || 1), 0);
@@ -47,12 +48,12 @@ const captureProjectSnapshots = async () => {
             const timelineScore = Math.max(0, (1 - (overdueCount / (activeTasks.length || 1))) * 30);
 
             // Chaos Index
-            const dailyCompletions = dayLogs.filter(l => l.action === 'StatusChange' && l.details?.newStatus === 'Completed').length;
+            const dailyCompletions = dayLogs.filter(l => l.action === 'StatusChange' && l.details?.newStatus === TASK_STATUSES[2]).length;
             const chaosIndex = Math.min(100, Math.round((overdueCount * 3) + (dailyCompletions === 0 ? 10 : 0)));
 
             // Member Activity
             const memberActivity = {};
-            dayLogs.filter(l => l.action === 'StatusChange' && l.details?.newStatus === 'Completed').forEach(l => {
+            dayLogs.filter(l => l.action === 'StatusChange' && l.details?.newStatus === TASK_STATUSES[2]).forEach(l => {
                 const uid = l.user?.toString() || 'System';
                 memberActivity[uid] = (memberActivity[uid] || 0) + 1;
             });

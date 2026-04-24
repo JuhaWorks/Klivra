@@ -20,58 +20,6 @@ import { isSameDay, format } from 'date-fns';
 import { getOptimizedAvatar } from '../../utils/avatar';
 import { toast } from 'react-hot-toast';
 
-// ─── Notification Utility ─────────────────────────────────────────────────────
-const requestNotificationPermission = async () => {
-    if ('Notification' in window && Notification.permission === 'default') {
-        await Notification.requestPermission();
-    }
-};
-
-const fireChatNotification = (message, chat, currentUser, onOpen) => {
-    const msgPrefs = currentUser?.notificationPrefs?.categories?.messages;
-    if (msgPrefs?.inApp === false) return; // Respect user setting
-
-    const sender = message.sender;
-    const chatName = chat?.type === 'group' 
-        ? chat.name
-        : sender?.name || 'Someone';
-    const preview = (message.content || '').slice(0, 50);
-
-    // In-app toast
-    toast.custom((t) => (
-        <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className={cn(
-                "flex items-center gap-3 bg-elevated border border-glass rounded-2xl shadow-modal px-4 py-3 cursor-pointer max-w-[320px] pointer-events-auto",
-                t.visible ? 'opacity-100' : 'opacity-0'
-            )}
-            onClick={() => { toast.dismiss(t.id); onOpen?.(); }}
-        >
-            <div className="relative shrink-0">
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-sunken">
-                    <img src={getOptimizedAvatar(sender?.avatar, 'sm', sender?.name)} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="" />
-                </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-theme border-2 border-elevated" />
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-black text-primary truncate">{chatName}</p>
-                <p className="text-[10px] text-tertiary truncate opacity-60">{preview}</p>
-            </div>
-            <Bell className="w-3 h-3 text-theme shrink-0 opacity-60" />
-        </motion.div>
-    ), { duration: 4000, position: 'top-right' });
-
-    // Browser notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(chatName, {
-            body: preview,
-            icon: sender?.avatar || '/icon.png',
-        });
-    }
-};
-
 // ─── Main ChatTray ────────────────────────────────────────────────────────────
 const ChatTray = ({ isPageMode = false }) => {
     const navigate = useNavigate();
@@ -87,7 +35,6 @@ const ChatTray = ({ isPageMode = false }) => {
     useEffect(() => {
         if (user) {
             fetchChats();
-            requestNotificationPermission();
         }
     }, [user, fetchChats]);
 

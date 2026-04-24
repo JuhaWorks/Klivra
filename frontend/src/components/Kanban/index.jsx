@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useCallback, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { api, useAuthStore } from '../../store/useAuthStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSocketSync } from '../../hooks/useSocketSync';
@@ -16,8 +16,11 @@ import { toast } from 'react-hot-toast';
 import TaskCard from './TaskCard';
 import TaskDetailModal from './TaskDetailModal';
 import { StatCard, KanbanColumn, SelectControl } from './KanbanLayout';
-import { CalendarView, TimelineView, DependencyMapView } from './KanbanSpecializedViews';
-import MatrixView from './MatrixView';
+
+const CalendarView = lazy(() => import('./KanbanSpecializedViews').then(module => ({ default: module.CalendarView })));
+const TimelineView = lazy(() => import('./KanbanSpecializedViews').then(module => ({ default: module.TimelineView })));
+const DependencyMapView = lazy(() => import('./KanbanSpecializedViews').then(module => ({ default: module.DependencyMapView })));
+const MatrixView = lazy(() => import('./MatrixView'));
 
 /* ─────────────────────────────────────────────
    Constants
@@ -450,10 +453,12 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                     </div>
                 )}
 
-            {viewMode === 'Calendar' && <CalendarView tasks={rawTasks} onOpenTask={setSelectedTask} />}
-            {viewMode === 'Timeline' && <TimelineView tasks={rawTasks} onOpenTask={setSelectedTask} />}
-            {viewMode === 'Matrix' && <MatrixView tasks={rawTasks} onOpenTask={setSelectedTask} project={project} />}
-            {viewMode === 'DependencyMap' && <DependencyMapView tasks={rawTasks} onOpenTask={setSelectedTask} />}
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center py-20 bg-sunken/10 rounded-[2rem] border border-dashed border-glass"><span className="text-[10px] font-black uppercase tracking-widest opacity-40">Loading Strategic View...</span></div>}>
+                {viewMode === 'Calendar' && <CalendarView tasks={rawTasks} onOpenTask={setSelectedTask} />}
+                {viewMode === 'Timeline' && <TimelineView tasks={rawTasks} onOpenTask={setSelectedTask} />}
+                {viewMode === 'Matrix' && <MatrixView tasks={rawTasks} onOpenTask={setSelectedTask} project={project} />}
+                {viewMode === 'DependencyMap' && <DependencyMapView tasks={rawTasks} onOpenTask={setSelectedTask} />}
+            </Suspense>
 
             <AnimatePresence>
                 {selectedTask && (

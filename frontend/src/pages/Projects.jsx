@@ -30,6 +30,7 @@ import {  Skeleton  } from '../components/ui/Loaders';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getOptimizedAvatar } from '../utils/avatar';
+import { PROJECT_STATUSES, PROJECT_ROLES } from '../constants';
 
 
 // ── MEMOIZED PROJECT CARD ──
@@ -237,10 +238,10 @@ const Projects = () => {
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'Active': return 'text-accent bg-accent/10 border-accent';
+            case PROJECT_STATUSES.ACTIVE: return 'text-accent bg-accent/10 border-accent';
             case 'Paused': return 'text-warning bg-warning/10 border-warning/20';
             case 'Completed': return 'text-success bg-success/10 border-success/20';
-            case 'Archived': return 'text-tertiary bg-glass-heavy border-glass';
+            case PROJECT_STATUSES.ARCHIVED: return 'text-tertiary bg-glass-heavy border-glass';
             default: return 'text-tertiary bg-glass-heavy border-glass';
         }
     };
@@ -291,7 +292,7 @@ const Projects = () => {
                             ))}
                         </div>
 
-                        {user?.role !== 'Admin' && (
+                        {user?.role !== PROJECT_ROLES.ADMIN && (
                             <Button
                                 size="md"
                                 onClick={() => setIsCreateModalOpen(true)}

@@ -116,6 +116,9 @@ taskSchema.index({ status: 1, priority: 1 });
 taskSchema.index({ project: 1, status: 1 });
 taskSchema.index({ project: 1, priority: 1 });
 taskSchema.index({ createdAt: -1 });
+taskSchema.index({ assignees: 1 });
+taskSchema.index({ assignee: 1 });
+taskSchema.index({ isArchived: 1 });
 
 // Add $text index for Global Search weighting
 taskSchema.index(

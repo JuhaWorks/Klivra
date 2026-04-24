@@ -243,22 +243,24 @@
   --grid-line: oklch(0 0 0 / 0.04);
   color-scheme: light;
 
-  /* Universal transition for theme variables */
-  transition: 
-    --bg-base 0.4s ease,
-    --bg-surface 0.4s ease,
-    --bg-elevated 0.4s ease,
-    --bg-sunken 0.4s ease,
-    --text-primary 0.4s ease,
-    --text-secondary 0.4s ease,
-    --text-tertiary 0.4s ease,
-    --border-default 0.4s ease,
-    --border-strong 0.4s ease,
-    --border-subtle 0.4s ease,
-    --accent-500 0.4s ease,
-    --accent-bg 0.4s ease,
-    --accent-border 0.4s ease,
-    --accent-glow 0.4s ease;
+  /* Universal transition for theme variables - Only active during switches to save main-thread work */
+  &.theme-transitioning {
+    transition: 
+      --bg-base 0.4s ease,
+      --bg-surface 0.4s ease,
+      --bg-elevated 0.4s ease,
+      --bg-sunken 0.4s ease,
+      --text-primary 0.4s ease,
+      --text-secondary 0.4s ease,
+      --text-tertiary 0.4s ease,
+      --border-default 0.4s ease,
+      --border-strong 0.4s ease,
+      --border-subtle 0.4s ease,
+      --accent-500 0.4s ease,
+      --accent-bg 0.4s ease,
+      --accent-border 0.4s ease,
+      --accent-glow 0.4s ease;
+  }
 }
 
 /* Dark mode overrides */

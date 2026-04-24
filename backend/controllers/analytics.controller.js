@@ -3,6 +3,7 @@ const Audit = require('../models/audit.model');
 const ProjectSnapshot = require('../models/projectSnapshot.model');
 const mongoose = require('mongoose');
 const { catchAsync } = require('../utils/core.utils');
+const { TASK_STATUSES, TASK_PRIORITIES, PROJECT_ROLES, MEMBERSHIP_STATUS, TASK_TYPES } = require('../constants');
 
 // High-fidelity local cache for analytics (30s TTL as per mission requirements)
 const analyticsCache = {
@@ -46,7 +47,7 @@ const getProjectAnalytics = catchAsync(async (req, res) => {
     }
 
     // 2. Project Progress
-    const completedTasks = tasks.filter(t => t.status === 'Completed');
+    const completedTasks = tasks.filter(t => t.status === TASK_STATUSES[2]);
     const projectProgress = { finished: completedTasks.length, total: tasks.length };
 
     // 3. Member Metrics (The Precision Engine)
@@ -70,7 +71,7 @@ const getProjectAnalytics = catchAsync(async (req, res) => {
                 };
             }
 
-            if (t.status === 'Completed') {
+            if (t.status === TASK_STATUSES[2]) {
                 statsByMember[memberId].completed += 1;
                 
                 // Priority 1: High-precision timer data (actualTime) - stored in hours
@@ -89,7 +90,7 @@ const getProjectAnalytics = catchAsync(async (req, res) => {
 
                 statsByMember[memberId].totalDuration += workDuration;
                 statsByMember[memberId].completedCount += 1;
-            } else if (t.status !== 'Canceled') {
+            } else if (t.status !== TASK_STATUSES[3]) {
                 statsByMember[memberId].active += 1;
                 if (t.dueDate && new Date(t.dueDate) < now) {
                     statsByMember[memberId].overdue += 1;
@@ -128,11 +129,11 @@ const getProjectAnalytics = catchAsync(async (req, res) => {
         .reverse();
 
     // 5. Task Distribution Breakdown (Live Active State)
-    const priorityBreakdown = { Urgent: 0, High: 0, Medium: 0, Low: 0 };
-    const typeBreakdown = { Task: 0, Feature: 0, Bug: 0, Improvement: 0 };
+    const priorityBreakdown = { [TASK_PRIORITIES[3]]: 0, [TASK_PRIORITIES[2]]: 0, [TASK_PRIORITIES[1]]: 0, [TASK_PRIORITIES[0]]: 0 };
+    const typeBreakdown = { [TASK_TYPES.TASK]: 0, [TASK_TYPES.FEATURE]: 0, [TASK_TYPES.BUG]: 0, [TASK_TYPES.IMPROVEMENT]: 0 };
     
     // Only includes non-completed, non-canceled tasks to reflect real-time project risk
-    tasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled').forEach(t => {
+    tasks.filter(t => t.status !== TASK_STATUSES[2] && t.status !== TASK_STATUSES[3]).forEach(t => {
         if (priorityBreakdown[t.priority] !== undefined) priorityBreakdown[t.priority]++;
         if (typeBreakdown[t.type] !== undefined) typeBreakdown[t.type]++;
     });
@@ -159,7 +160,7 @@ const getProjectAnalytics = catchAsync(async (req, res) => {
 
     // 7. Strategic Bottlenecks
     const bottlenecks = tasks
-        .filter(t => t.status !== 'Completed' && t.status !== 'Canceled' && t.priority === 'Urgent')
+        .filter(t => t.status !== TASK_STATUSES[2] && t.status !== TASK_STATUSES[3] && t.priority === TASK_PRIORITIES[3])
         .slice(0, 5);
 
     const responseData = {
@@ -202,85 +203,141 @@ const getWorkspaceAnalytics = catchAsync(async (req, res) => {
 
     // 1. Fetch relevant projects
     let projectQuery = { deletedAt: null };
-    
-    // Non-admins only see projects they are members of
-    if (userRole !== 'Admin') {
+    if (userRole !== PROJECT_ROLES.ADMIN) {
         projectQuery['members.userId'] = userId;
-        projectQuery['members.status'] = 'active';
+        projectQuery['members.status'] = MEMBERSHIP_STATUS.ACTIVE;
     }
 
     const projects = await Project.find(projectQuery).select('_id name').lean();
     const projectIds = projects.map(p => p._id);
 
-    // 2. Fetch Aggregated Metrics
-    // Logic: Tasks in the user's projects OR tasks directly assigned to the user
-    const [tasks, snapshots] = await Promise.all([
-        Task.find({ 
-            $or: [
-                { project: { $in: projectIds } },
-                { assignee: userId },
-                { assignees: userId }
-            ],
-            isArchived: false 
-        }).populate('project', 'name').lean(),
+    // 2. High-Performance Aggregation for KPIs
+    const matchQuery = {
+        $or: [
+            { project: { $in: projectIds } },
+            { assignee: userId },
+            { assignees: userId }
+        ],
+        isArchived: false
+    };
+
+    const [kpiStats, snapshots, bottlenecks] = await Promise.all([
+        Task.aggregate([
+            { $match: matchQuery },
+            {
+                $group: {
+                    _id: null,
+                    totalTasks: { $sum: 1 },
+                    completedTasks: {
+                        $sum: { $cond: [{ $eq: ["$status", TASK_STATUSES[2]] }, 1, 0] }
+                    },
+                    activeTasks: {
+                        $sum: { $cond: [{ $and: [{ $ne: ["$status", TASK_STATUSES[2]] }, { $ne: ["$status", TASK_STATUSES[3]] }] }, 1, 0] }
+                    }
+                }
+            }
+        ]),
         ProjectSnapshot.find({ 
             project: { $in: projectIds }, 
             date: { $gte: thirtyDaysAgo } 
-        }).lean()
+        }).select('phi chaosIndex').lean(),
+        Task.aggregate([
+            { 
+                $match: { 
+                    ...matchQuery, 
+                    status: { $nin: [TASK_STATUSES[2], TASK_STATUSES[3]] } 
+                } 
+            },
+            {
+                $addFields: {
+                    priorityWeight: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$priority", TASK_PRIORITIES[3]] }, then: 50 },
+                                { case: { $eq: ["$priority", TASK_PRIORITIES[2]] }, then: 30 }
+                            ],
+                            default: 10
+                        }
+                    },
+                    hoursToDue: {
+                        $divide: [
+                            { $subtract: ["$dueDate", now] },
+                            1000 * 60 * 60
+                        ]
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    urgencyScore: {
+                        $cond: [
+                            { $lt: ["$hoursToDue", 0] },
+                            100,
+                            { $cond: [{ $lt: ["$hoursToDue", 48] }, 60, 0] }
+                        ]
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    riskScore: { $add: ["$priorityWeight", "$urgencyScore", { $ifNull: ["$points", 1] }] }
+                }
+            },
+            { $sort: { riskScore: -1 } },
+            { $limit: 5 },
+            { 
+                $lookup: { 
+                    from: 'projects', 
+                    localField: 'project', 
+                    foreignField: '_id', 
+                    as: 'projectInfo' 
+                } 
+            },
+            { $unwind: { path: "$projectInfo", preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    title: 1,
+                    status: 1,
+                    priority: 1,
+                    dueDate: 1,
+                    riskScore: 1,
+                    project: {
+                        _id: "$projectInfo._id",
+                        name: "$projectInfo.name"
+                    }
+                }
+            }
+        ])
     ]);
 
-    // 3. Calculate Global KPIs
-    const activeTasksCount = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled').length;
-    const completedTasksCount = tasks.filter(t => t.status === 'Completed').length;
-    const validTasksCount = activeTasksCount + completedTasksCount;
+    const kpis = kpiStats[0] || { totalTasks: 0, completedTasks: 0, activeTasks: 0 };
     
-    // Average PHI from snapshots
+    // 3. Calculate global derived metrics
     const avgPhi = snapshots.length > 0 
         ? snapshots.reduce((sum, s) => sum + (s.phi || 0), 0) / snapshots.length 
         : 100;
 
-    // Highest Chaos Index (Worst project)
     const maxChaos = snapshots.length > 0 
         ? Math.max(...snapshots.map(s => s.chaosIndex || 0)) 
         : 0;
 
-    // 4. Identify Strategic Threats (Cross-Project Bottlenecks)
-    const activeTasks = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled');
-    const bottlenecks = activeTasks
-        .map(t => {
-            const priorityWeight = (t.priority === 'Urgent' ? 50 : (t.priority === 'High' ? 30 : 10));
-            const hoursToDue = t.dueDate ? (new Date(t.dueDate) - now) / (1000 * 60 * 60) : 1000;
-            const urgencyScore = hoursToDue < 0 ? 100 : (hoursToDue < 48 ? 60 : 0);
-            const riskScore = priorityWeight + urgencyScore + (t.points || 1);
-            return { ...t, riskScore };
-        })
-        .sort((a, b) => b.riskScore - a.riskScore)
-        .slice(0, 5);
-
     const responseData = {
         phi: Math.round(avgPhi),
         chaosIndex: Math.round(maxChaos),
-        totalTasks: validTasksCount,
-        completedTasks: completedTasksCount,
-        completionPct: validTasksCount > 0 ? Math.round((completedTasksCount / validTasksCount) * 100) : 0,
+        totalTasks: kpis.totalTasks,
+        completedTasks: kpis.completedTasks,
+        completionPct: kpis.totalTasks > 0 ? Math.round((kpis.completedTasks / kpis.totalTasks) * 100) : 0,
         activeProjects: projects.length,
         bottlenecks,
-        forecast: {
-            predictedFinishDate: null
-        }
+        forecast: { predictedFinishDate: null }
     };
 
-    // Populate User-Specific Cache
-    cacheKey = `${userId}_workspace`;
     analyticsCache.workspace[cacheKey] = {
         data: responseData,
         timestamp: Date.now()
     };
 
-    res.status(200).json({
-        status: 'success',
-        data: responseData
-    });
+    res.status(200).json({ status: 'success', data: responseData });
 });
 
 const getProjectLeaderboard = catchAsync(async (req, res) => {

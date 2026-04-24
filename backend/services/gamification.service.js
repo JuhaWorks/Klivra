@@ -2,7 +2,7 @@ const User = require('../models/user.model');
 const Audit = require('../models/audit.model');
 const { sendEmail, getIO } = require('../utils/service.utils');
 const { logger } = require('../utils/system.utils');
-const { DOMAIN_MAPPING } = require('../utils/core.utils');
+const { DOMAIN_MAPPING, TASK_PRIORITIES, TASK_TYPES } = require('../constants');
 
 const LEVEL_THRESHOLDS = {
     1: 0,
@@ -38,17 +38,17 @@ const calculateTaskXP = (task, context = {}) => {
     // 1. Quality Calculation (Priority & Complexity)
     let priorityBonus = 0;
     switch (task.priority) {
-        case 'Medium': priorityBonus = 15; break;
-        case 'High': priorityBonus = 40; break;
-        case 'Urgent': priorityBonus = 85; break;
+        case TASK_PRIORITIES[1]: priorityBonus = 15; break;
+        case TASK_PRIORITIES[2]: priorityBonus = 40; break;
+        case TASK_PRIORITIES[3]: priorityBonus = 85; break;
     }
     
     // Professional Multipliers: Higher stakes for Strategic and Architecture
     const typeMultipliers = { 
-        'Epic': 1.8, 'Feature': 1.5, 'Discovery': 1.4, 'Research': 1.35, 'Story': 1.2,
-        'Refactor': 1.6, 'DevOps': 1.5, 'QA': 1.2, 'Performance': 1.4, 'Technical Debt': 1.1,
-        'Security': 1.7, 'Compliance': 1.4, 'Bug': 1.3, 'Maintenance': 1.1, 'Hygiene': 1.0,
-        'Review': 1.3, 'Meeting': 1.0, 'Support': 1.1, 'Admin': 0.8, 'Task': 1.0
+        [TASK_TYPES.EPIC]: 1.8, [TASK_TYPES.FEATURE]: 1.5, [TASK_TYPES.DISCOVERY]: 1.4, [TASK_TYPES.RESEARCH]: 1.35, [TASK_TYPES.STORY]: 1.2,
+        [TASK_TYPES.REFACTOR]: 1.6, [TASK_TYPES.DEVOPS]: 1.5, [TASK_TYPES.QA]: 1.2, [TASK_TYPES.PERFORMANCE]: 1.4, [TASK_TYPES.TECHNICAL_DEBT]: 1.1,
+        [TASK_TYPES.SECURITY]: 1.7, [TASK_TYPES.COMPLIANCE]: 1.4, [TASK_TYPES.BUG]: 1.3, [TASK_TYPES.MAINTENANCE]: 1.1, [TASK_TYPES.HYGIENE]: 1.0,
+        [TASK_TYPES.REVIEW]: 1.3, [TASK_TYPES.MEETING]: 1.0, [TASK_TYPES.SUPPORT]: 1.1, [TASK_TYPES.ADMIN]: 0.8, [TASK_TYPES.TASK]: 1.0
     };
 
     qualityXP = Math.round((baseXP + priorityBonus) * (typeMultipliers[task.type] || 1.0));

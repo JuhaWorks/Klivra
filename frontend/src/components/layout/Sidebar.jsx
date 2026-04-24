@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useTransition, useCallback } from 'react';
+import React, { memo, useEffect, useTransition, useCallback, useMemo } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -211,9 +211,12 @@ const SidebarComponent = () => {
         logout().catch(() => {});
     }, [logout, navigate]);
 
-    const visibleNavItems = (user?.role === 'Admin' || isAdminSection)
-        ? navItems.filter(item => item.path === '/')
-        : navItems;
+    const visibleNavItems = useMemo(() => {
+        if (user?.role === 'Admin' || isAdminSection) {
+            return navItems.filter(item => item.path === '/');
+        }
+        return navItems;
+    }, [user?.role, isAdminSection]);
 
     const isHome = location.pathname === '/';
     const effectiveCollapsed = isMobile ? false : !isSidebarExpanded; // Hamburger expands the drawer
@@ -367,7 +370,7 @@ const SidebarComponent = () => {
                                 onClose={() => setSidebarExpanded(false)} 
                                 onPrefetch={handlePrefetch} 
                                 isCollapsed={effectiveCollapsed}
-                                unreadTotal={unreadTotal}
+                                unreadTotal={item.path === '/messaging' ? unreadTotal : 0}
                             />
                         ))}
 

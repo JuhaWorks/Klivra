@@ -4,6 +4,7 @@ const Task = require('../models/task.model');
 const SystemConfig = require('../models/systemConfig.model');
 const { logSecurityEvent, logActivity } = require('../utils/system.utils');
 const { checkMaintenanceStatus } = require('../utils/core.utils');
+const { PROJECT_ROLES, MEMBERSHIP_STATUS, PROJECT_STATUSES, TASK_STATUSES, AUDIT_LOG_TYPES, SYSTEM_MESSAGES } = require('../constants');
 
 // @desc    Get all users with pagination and search
 // @route   GET /api/admin/users
@@ -54,7 +55,7 @@ const updateUserRole = async (req, res, next) => {
         const { id } = req.params;
         const { role } = req.body;
 
-        const validRoles = ['Admin', 'Manager', 'Developer'];
+        const validRoles = Object.values(PROJECT_ROLES);
         if (!validRoles.includes(role)) {
             res.status(400);
             return next(new Error('Invalid role specified.'));
@@ -68,7 +69,7 @@ const updateUserRole = async (req, res, next) => {
         }
 
         // Prevent admin from stripping their own role
-        if (user._id.toString() === req.user._id.toString() && role !== 'Admin') {
+        if (user._id.toString() === req.user._id.toString() && role !== PROJECT_ROLES.ADMIN) {
             res.status(400);
             return next(new Error('You cannot remove your own Admin privileges.'));
         }
@@ -76,7 +77,7 @@ const updateUserRole = async (req, res, next) => {
         user.role = role;
         await user.save({ validateBeforeSave: false }); // Bypass password hook
 
-        await logSecurityEvent(req.user._id, 'ROLE_UPDATED', {
+        await logSecurityEvent(req.user._id, AUDIT_LOG_TYPES.ROLE_UPDATED, {
             targetUserId: user._id,
             targetUserName: user.name,
             targetUserEmail: user.email,
@@ -120,8 +121,8 @@ const toggleBanUser = async (req, res, next) => {
         if (user.isBanned) {
             // Automatically reject all pending invites for banned users
             await Project.updateMany(
-                { 'members': { $elemMatch: { userId: user._id, status: 'pending' } } },
-                { $set: { 'members.$.status': 'rejected' } }
+                { 'members': { $elemMatch: { userId: user._id, status: MEMBERSHIP_STATUS.PENDING } } },
+                { $set: { 'members.$.status': MEMBERSHIP_STATUS.REJECTED } }
             );
         }
 
@@ -129,7 +130,7 @@ const toggleBanUser = async (req, res, next) => {
         // if it was deactivated, but we'll stick strictly to isBanned flag here.
         await user.save({ validateBeforeSave: false });
 
-        await logSecurityEvent(req.user._id, user.isBanned ? 'USER_BANNED' : 'USER_UNBANNED', {
+        await logSecurityEvent(req.user._id, user.isBanned ? AUDIT_LOG_TYPES.USER_BANNED : AUDIT_LOG_TYPES.USER_UNBANNED, {
             targetUserId: user._id,
             targetUserName: user.name,
             targetUserEmail: user.email,
@@ -161,11 +162,12 @@ const getPlatformStats = async (req, res, next) => {
         const deactivatedUsers = await User.countDocuments({ isBanned: false, isActive: false });
 
         const totalProjects = await Project.countDocuments({ deletedAt: null });
-        const activeProjects = await Project.countDocuments({ status: 'Active', deletedAt: null });
-        const archivedProjects = await Project.countDocuments({ status: 'Archived', deletedAt: null });
+        const activeProjects = await Project.countDocuments({ status: PROJECT_STATUSES.ACTIVE, deletedAt: null });
+        const archivedProjects = await Project.countDocuments({ status: PROJECT_STATUSES.ARCHIVED, deletedAt: null });
         const totalTasks = await Task.countDocuments();
-        const completedTasks = await Task.countDocuments({ status: 'Completed' });
-        const pendingTasks = await Task.countDocuments({ status: { $ne: 'Completed' } });
+        const completedTasks = await Task.countDocuments({ status: TASK_STATUSES[2] });
+        const canceledTasks = await Task.countDocuments({ status: TASK_STATUSES[3] });
+        const pendingTasks = await Task.countDocuments({ status: { $nin: [TASK_STATUSES[2], TASK_STATUSES[3]] } });
 
         const maintenanceConfig = await SystemConfig.findOne({ key: 'maintenance_mode' }).lean();
         const { isMaintenance, endTime, autoRepairNeeded } = checkMaintenanceStatus(maintenanceConfig?.value);
@@ -201,7 +203,7 @@ const getPlatformStats = async (req, res, next) => {
                     completionPct: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
                 },
                 system: {
-                    status: isMaintenance ? 'Maintenance' : 'Operational',
+                    status: isMaintenance ? SYSTEM_MESSAGES.MAINTENANCE_ACTIVE : SYSTEM_MESSAGES.MAINTENANCE_INACTIVE,
                     isUnderMaintenance: isMaintenance,
                     endTime: endTime,
                     lastBackup: new Date().toISOString()
@@ -232,7 +234,7 @@ const toggleMaintenance = async (req, res, next) => {
             { upsert: true, returnDocument: 'after' }
         );
 
-        await logActivity(null, req.user._id, !!enabled ? 'MAINTENANCE_ENABLED' : 'MAINTENANCE_DISABLED', {
+        await logActivity(null, req.user._id, !!enabled ? AUDIT_LOG_TYPES.MAINTENANCE_ENABLED : AUDIT_LOG_TYPES.MAINTENANCE_DISABLED, {
             endTime: enabled ? endTime : null,
             ipAddress: req.ip
         }, 'System');
@@ -286,7 +288,7 @@ const updateBlockedIps = async (req, res, next) => {
             { upsert: true, returnDocument: 'after' }
         );
 
-        await logActivity(null, req.user._id, 'IP_BLOCKED', {
+        await logActivity(null, req.user._id, AUDIT_LOG_TYPES.IP_BLOCKED, {
             count: ips.length,
             ipAddress: req.ip
         }, 'System');
@@ -363,10 +365,10 @@ const getLogs = async (req, res, next) => {
         let query = {};
 
         // Security: If not Admin/Manager, restrict to projects the user belongs to
-        if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
+        if (req.user.role !== PROJECT_ROLES.ADMIN && req.user.role !== PROJECT_ROLES.MANAGER) {
             const userProjects = await Project.find({ 
                 'members.userId': req.user._id, 
-                'members.status': 'active' 
+                'members.status': MEMBERSHIP_STATUS.ACTIVE 
             }).select('_id').lean();
             
             const projectIds = userProjects.map(p => p._id);

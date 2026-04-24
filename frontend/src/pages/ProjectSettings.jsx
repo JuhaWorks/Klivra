@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { PROJECT_ROLES } from '../constants';
 
 const projectSchema = z.object({
     name: z.string().min(3, 'Project name must be at least 3 characters').max(100),
@@ -129,12 +130,12 @@ const ProjectSettings = () => {
     });
 
     const isAuthorizedToEdit = project?.members.some(
-        m => m.userId?._id === currentUser?._id && (m.role === 'Manager' || m.role === 'Editor')
-    ) || currentUser?.role === 'Admin';
+        m => m.userId?._id === currentUser?._id && (m.role === PROJECT_ROLES.MANAGER || m.role === PROJECT_ROLES.EDITOR)
+    ) || currentUser?.role === PROJECT_ROLES.ADMIN;
 
     const isManager = project?.members.some(
-        m => m.userId?._id === currentUser?._id && m.role === 'Manager'
-    ) || currentUser?.role === 'Admin';
+        m => m.userId?._id === currentUser?._id && m.role === PROJECT_ROLES.MANAGER
+    ) || currentUser?.role === PROJECT_ROLES.ADMIN;
 
     if (projectLoading) return (
         <div className="flex items-center justify-center min-h-[400px]">

@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const Project = require('../models/project.model');
 const Task = require('../models/task.model');
+const { PROJECT_ROLES, MEMBERSHIP_STATUS, SYSTEM_MESSAGES, COOKIE_CONFIG } = require('../constants');
 
 /**
  * Ensures user is authenticated via JWT.
@@ -11,8 +12,8 @@ const protect = async (req, res, next) => {
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies && (req.cookies.token || req.cookies.refreshToken)) {
-        token = req.cookies.token || req.cookies.refreshToken;
+    } else if (req.cookies && (req.cookies.token || req.cookies[COOKIE_CONFIG.REFRESH_TOKEN_NAME])) {
+        token = req.cookies.token || req.cookies[COOKIE_CONFIG.REFRESH_TOKEN_NAME];
     }
 
     if (!token) {
@@ -85,7 +86,7 @@ const authorizeRoles = (...roles) => (req, res, next) => {
  * Explicitly verify Administrator status.
  */
 const verifyAdmin = (req, res, next) => {
-    if (req.user && req.user.role === 'Admin') {
+    if (req.user && req.user.role === PROJECT_ROLES.ADMIN) {
         next();
     } else {
         res.status(403);
@@ -143,15 +144,15 @@ const authorizeProjectAccess = (roles = []) => async (req, res, next) => {
         }
 
         const member = project.members.find(m => m.userId.toString() === req.user._id.toString());
-        const isMember = member && member.status === 'active';
-        const hasAccess = isMember || req.user.role === 'Admin';
+        const isMember = member && member.status === MEMBERSHIP_STATUS.ACTIVE;
+        const hasAccess = isMember || req.user.role === PROJECT_ROLES.ADMIN;
 
         if (!hasAccess) {
             res.status(403);
             return next(new Error('You do not have the required permissions for this action.'));
         }
 
-        if (isMember && req.user.role !== 'Admin' && roles.length > 0 && !roles.includes(member.role)) {
+        if (isMember && req.user.role !== PROJECT_ROLES.ADMIN && roles.length > 0 && !roles.includes(member.role)) {
             res.status(403);
             return next(new Error(`Access denied. Requires one of the following roles: ${roles.join(', ')}`));
         }

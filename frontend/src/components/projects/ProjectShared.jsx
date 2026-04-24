@@ -440,7 +440,11 @@ export const DeadlinePopup = ({ projects, user }) => {
     for (const p of projects) {
         if (p.status === 'Completed' || p.status === 'Archived') continue;
         
-        const isManager = p.members.some(m => typeof m.userId === 'object' ? m.userId._id === user._id && m.role === 'Manager' : m.userId === user._id && m.role === 'Manager');
+        const isManager = p.members.some(m => {
+            if (!m.userId) return false;
+            const memberId = typeof m.userId === 'object' ? m.userId._id : m.userId;
+            return memberId === user._id && m.role === 'Manager';
+        });
         if (!isManager) continue;
 
         const notif = p.deadlineNotified || {};

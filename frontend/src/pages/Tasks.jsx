@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Counter } from '../components/ui/BaseUI';
 import { KlivraLogo } from '../components/ui/Loaders';
 import { cn } from '../utils/cn';
+import { TASK_STATUSES, TASK_PRIORITIES } from '../constants';
 
 // ── Task Physics Configuration ──
 const LIQUID_SPRING = { type: "spring", stiffness: 260, damping: 20, mass: 0.5 };
@@ -130,13 +131,14 @@ export default function Tasks() {
     };
 
     // Fetch projects for filter
-    const { data: projects = [] } = useQuery({
-        queryKey: ['projects'],
+    const { data: projectsRes, isLoading: loadingProjects } = useQuery({
+        queryKey: ['projects', 'active'],
         queryFn: async ({ signal }) => {
             const res = await api.get('/projects', { signal });
-            return res.data.data;
+            return res.data;
         }
     });
+    const projects = projectsRes?.data || [];
 
     const activeProject = useMemo(() => {
         if (!projectId || !Array.isArray(projects)) return null;
@@ -176,13 +178,13 @@ export default function Tasks() {
 
     // Compute Metrics: Use project-specific rawTasks if projectId exists, otherwise use workspaceStats
     const activeTasksCount = projectId
-        ? rawTasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled').length
+        ? rawTasks.filter(t => t.status !== TASK_STATUSES[2] && t.status !== TASK_STATUSES[3]).length
         : (workspaceStats?.activeTasks || 0);
 
     const riskTasksCount = projectId
         ? rawTasks.filter(t =>
-            (t.status !== 'Completed' && t.status !== 'Canceled') &&
-            (t.priority === 'Urgent' || t.priority === 'High' || (t.dueDate && new Date(t.dueDate) < new Date()))
+            (t.status !== TASK_STATUSES[2] && t.status !== TASK_STATUSES[3]) &&
+            (t.priority === TASK_PRIORITIES[3] || t.priority === TASK_PRIORITIES[2] || (t.dueDate && new Date(t.dueDate) < new Date()))
         ).length
         : (workspaceStats?.atRiskTasks || 0);
 
@@ -261,18 +263,18 @@ export default function Tasks() {
                 <div className="relative shrink-0 w-full md:w-auto">
                     <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        className="w-full h-10 sm:h-12 flex items-center justify-between md:justify-start gap-4 px-5 bg-sunken rounded-xl sm:rounded-2xl border border-subtle hover:border-theme/50 transition-all group active:scale-95 shadow-inner"
+                        className="w-full h-10 sm:h-12 flex items-center justify-between md:justify-start gap-4 px-5 bg-sunken rounded-xl sm:rounded-2xl border border-subtle hover:border-theme/50 transition-all group active:scale-95 shadow-lg shadow-black/5"
                         aria-haspopup="listbox"
                     >
                         <div className="flex items-center gap-3">
                             <Filter className="w-4 h-4 text-tertiary group-hover:text-theme transition-colors" />
-                            <span className="text-[9px] sm:text-[11px] font-black text-secondary uppercase tracking-[0.2em] whitespace-nowrap">
+                            <span className="text-[9px] sm:text-[11px] font-black text-secondary uppercase tracking-[0.2em] whitespace-nowrap max-w-[120px] md:max-w-[200px] truncate">
                                 {activeProject ? activeProject.name : 'ALL PROJECTS'}
                             </span>
                         </div>
                         <ChevronDown className={cn("w-4 h-4 text-tertiary transition-transform", isFilterOpen && "rotate-180")} />
                     </button>
-
+                    
                     <AnimatePresence>
                         {isFilterOpen && (
                             <>
@@ -281,7 +283,7 @@ export default function Tasks() {
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute top-full left-0 right-0 mt-3 p-2 bg-surface/95 backdrop-blur-3xl border border-subtle rounded-3xl shadow-2xl z-40 min-w-[240px]"
+                                    className="absolute top-full left-0 right-0 md:right-auto mt-3 p-2 bg-elevated/95 backdrop-blur-3xl border border-strong rounded-3xl shadow-modal z-40 min-w-[280px]"
                                 >
                                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1">
                                         <button
@@ -291,23 +293,41 @@ export default function Tasks() {
                                                 !projectId ? "bg-theme/10 text-theme" : "text-tertiary hover:bg-white/5 hover:text-primary"
                                             )}
                                         >
-                                            <LayoutGrid className="w-3.5 h-3.5" />
+                                            <div className="w-8 h-8 rounded-xl bg-theme/5 flex items-center justify-center border border-theme/10">
+                                                <LayoutGrid className="w-3.5 h-3.5" />
+                                            </div>
                                             All Projects
                                         </button>
-                                        <div className="h-px bg-subtle/50 my-2 mx-2" />
-                                        {Array.isArray(projects) && projects.map(p => (
-                                            <button
-                                                key={p._id}
-                                                onClick={() => selectProject(p._id)}
-                                                className={cn(
-                                                    "w-full px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-left flex items-center gap-3 transition-all",
-                                                    projectId === p._id ? "bg-theme/10 text-theme" : "text-tertiary hover:bg-white/5 hover:text-primary"
-                                                )}
-                                            >
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || 'var(--theme)' }} />
-                                                <span className="truncate">{p.name}</span>
-                                            </button>
-                                        ))}
+                                        
+                                        <div className="h-px bg-default/50 my-2 mx-2" />
+                                        
+                                        {loadingProjects ? (
+                                            <div className="px-4 py-8 flex flex-col items-center justify-center gap-3">
+                                                <div className="w-5 h-5 border-2 border-theme/30 border-t-theme rounded-full animate-spin" />
+                                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Searching Pulse...</span>
+                                            </div>
+                                        ) : projects.length === 0 ? (
+                                            <div className="px-4 py-8 flex flex-col items-center justify-center gap-3 opacity-50">
+                                                <div className="p-3 bg-white/5 rounded-full">
+                                                    <Target className="w-4 h-4 text-gray-600" />
+                                                </div>
+                                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest text-center">No Workspaces Found</span>
+                                            </div>
+                                        ) : (
+                                            projects.map(p => (
+                                                <button
+                                                    key={p._id}
+                                                    onClick={() => selectProject(p._id)}
+                                                    className={cn(
+                                                        "w-full px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-left flex items-center gap-3 transition-all",
+                                                        projectId === p._id ? "bg-theme/10 text-theme" : "text-tertiary hover:bg-white/5 hover:text-primary"
+                                                    )}
+                                                >
+                                                    <div className="w-2 h-2 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]" style={{ backgroundColor: p.color || 'var(--theme)' }} />
+                                                    <span className="truncate">{p.name}</span>
+                                                </button>
+                                            ))
+                                        )}
                                     </div>
                                 </motion.div>
                             </>

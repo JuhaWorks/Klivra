@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
-import { useAuthStore } from './store/useAuthStore';
+import { useAuthStore, api } from './store/useAuthStore';
 import { useTheme } from './store/useTheme';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSocketStore } from './store/useSocketStore';
@@ -29,7 +29,7 @@ const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
-const Home = lazy(() => import('./pages/Home'));
+import Home from './pages/Home';
 const Networking = lazy(() => import('./pages/Networking'));
 const Messaging = lazy(() => import('./pages/Messaging'));
 
@@ -40,8 +40,8 @@ import { registerServiceWorker, subscribeToNotifications } from './utils/push';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isCheckingAuth } = useAuthStore();
 
-  // During auth check, we don't redirect, just let the parent handle the skeleton
-  if (isCheckingAuth) return <PageLoader />;
+  // Allow the layout to render during auth check (Zero-LCP)
+  if (isCheckingAuth) return children;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -60,7 +60,27 @@ function App() {
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    
+    // Performance: Prefetch high-priority assets early to reduce LCP sequential delay
+    queryClient.prefetchQuery({
+      queryKey: ['apod'],
+      queryFn: async () => (await api.get('/tools/apod')).data.data,
+      staleTime: 1000 * 60 * 60 * 6,
+    });
+
+    // Prefetch core dashboard data to parallelize with bundle loading
+    queryClient.prefetchQuery({
+      queryKey: ['myTasks'],
+      queryFn: async () => (await api.get('/tasks')).data.data,
+      staleTime: 1000 * 60 * 2,
+    });
+
+    queryClient.prefetchQuery({
+      queryKey: ['workspaceAnalytics'],
+      queryFn: async () => (await api.get('/analytics/workspace')).data.data,
+      staleTime: 1000 * 60 * 10,
+    });
+  }, [checkAuth, queryClient]);
 
   // Initialize background push notifications
   useEffect(() => {

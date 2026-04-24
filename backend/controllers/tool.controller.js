@@ -4,6 +4,7 @@ const StickyNote = require('../models/stickyNote.model');
 const Project = require('../models/project.model');
 const { logActivity, logger } = require('../utils/system.utils');
 const { catchAsync } = require('../utils/core.utils');
+const { MEMBERSHIP_STATUS, USER_STATUSES, SYSTEM_MESSAGES, SYSTEM_FALLBACKS, AUDIT_LOG_TYPES } = require('../constants');
 
 // Simple in-memory cache for APOD data
 let apodCache = {
@@ -31,7 +32,7 @@ const getApod = async (req, res, next) => {
             const age = now - apodCache.lastFetched;
             
             // If data is within duration, or it's a fallback and we're within cooldown, serve it
-            const isFallback = apodCache.data.title === 'System Insight';
+            const isFallback = apodCache.data.title === SYSTEM_FALLBACKS.NASA_TITLE;
             if (age < (isFallback ? RETRY_COOLDOWN : CACHE_DURATION)) {
                 return res.status(200).json({ status: 'success', data: apodCache.data });
             }
@@ -81,10 +82,10 @@ const getApod = async (req, res, next) => {
         if (!apodData) {
             // High-fidelity fallback if NASA is completely down or rate-limited
             apodData = {
-                title: 'System Insight',
-                explanation: 'A panoramic view of orbital intelligence. NASA telemetry is currently under maintenance or rate-limited. Serving local archive.',
-                author: 'Klivra Intelligence',
-                url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop', 
+                title: SYSTEM_FALLBACKS.NASA_TITLE,
+                explanation: SYSTEM_FALLBACKS.NASA_EXPLANATION,
+                author: SYSTEM_FALLBACKS.NASA_AUTHOR,
+                url: SYSTEM_FALLBACKS.NASA_URL, 
                 date: new Date().toISOString().split('T')[0],
                 mediaType: 'image'
             };
@@ -173,7 +174,7 @@ const getWeather = async (req, res, next) => {
         res.status(200).json({ status: 'success', data: weatherData });
     } catch (error) {
         if (error.response?.status === 404) {
-            return res.status(404).json({ status: 'error', message: 'Location not found' });
+            return res.status(404).json({ status: 'error', message: SYSTEM_MESSAGES.LOCATION_NOT_FOUND });
         }
         next(error);
     }
@@ -206,11 +207,11 @@ const getTeamIntelligence = async (req, res, next) => {
             }).select('members.userId members.status');
 
             if (!project) {
-                return res.status(404).json({ status: 'error', message: 'Project not found or access denied' });
+                return res.status(404).json({ status: 'error', message: SYSTEM_MESSAGES.PROJECT_NOT_FOUND });
             }
 
             project.members.forEach(m => {
-                if (m.userId && (m.status === 'active' || m.status === 'pending')) {
+                if (m.userId && (m.status === MEMBERSHIP_STATUS.ACTIVE || m.status === MEMBERSHIP_STATUS.PENDING)) {
                     teammateIdStrings.add(m.userId.toString());
                 }
             });
@@ -225,9 +226,9 @@ const getTeamIntelligence = async (req, res, next) => {
             projects.forEach(p => {
                 const userInProject = p.members.find(m => m.userId.toString() === userId.toString());
                 // Only pull teammates from projects where user is active or pending
-                if (userInProject && (userInProject.status === 'active' || userInProject.status === 'pending')) {
+                if (userInProject && (userInProject.status === MEMBERSHIP_STATUS.ACTIVE || userInProject.status === MEMBERSHIP_STATUS.PENDING)) {
                     p.members.forEach(m => {
-                        if (m.userId && (m.status === 'active' || m.status === 'pending')) {
+                        if (m.userId && (m.status === MEMBERSHIP_STATUS.ACTIVE || m.status === MEMBERSHIP_STATUS.PENDING)) {
                             teammateIdStrings.add(m.userId.toString());
                         }
                     });
@@ -270,7 +271,7 @@ const getTeamIntelligence = async (req, res, next) => {
                 _id: t._id,
                 name: t.name,
                 avatar: t.avatar,
-                status: t.status || 'Offline'
+                status: t.status || USER_STATUSES.OFFLINE
             });
         });
 
@@ -321,7 +322,7 @@ const reverseGeocode = async (req, res, next) => {
         if (response.data && response.data.length > 0) {
             res.status(200).json({ status: 'success', data: response.data[0] });
         } else {
-            res.status(404).json({ status: 'error', message: 'No city found for these coordinates' });
+            res.status(404).json({ status: 'error', message: SYSTEM_MESSAGES.LOCATION_NOT_FOUND });
         }
     } catch (error) {
         next(error);
@@ -367,8 +368,8 @@ const getQuotes = async (req, res, next) => {
         res.status(200).json({ 
             status: 'success', 
             data: { 
-                body: "Success is not final, failure is not fatal: it is the courage to continue that counts.", 
-                author: "Winston Churchill" 
+                body: SYSTEM_FALLBACKS.QUOTE_BODY, 
+                author: SYSTEM_FALLBACKS.QUOTE_AUTHOR 
             } 
         });
     }
@@ -422,7 +423,7 @@ const createNote = catchAsync(async (req, res, next) => {
     // Populate for the response and socket emission
     await note.populate('userId', 'name avatar');
 
-    await logActivity(projectId, req.user._id, 'EntityUpdate', { 
+    await logActivity(projectId, req.user._id, AUDIT_LOG_TYPES.ENTITY_UPDATE, { 
         action: 'created a sticky note',
         noteId: note._id 
     });

@@ -74,56 +74,76 @@ export const PrecisionSpinner = memo(({ diameter = 64 }) => {
 export const KlivraLogo = memo(({ pulse = true }) => {
     return (
         <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center gap-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center gap-10"
         >
-            {/* Branded Logo Container with "Pop" Pulse */}
-            <motion.div 
-                animate={pulse ? { 
-                    scale: [1, 1.08, 1],
-                    filter: ["brightness(1)", "brightness(1.3) contrast(1.1)", "brightness(1)"],
-                    boxShadow: [
-                        "0 4px 32px rgba(0,0,0,0.4)",
-                        "0 12px 48px rgba(34,211,238,0.3)",
-                        "0 4px 32px rgba(0,0,0,0.4)"
-                    ]
-                } : {}} 
-                transition={{ 
-                    repeat: Infinity, 
-                    duration: 3, 
-                    ease: "easeInOut" 
-                }}
-                className="shrink-0 w-24 h-16 rounded-[2rem] overflow-hidden border border-white/10 bg-transparent flex items-center justify-center backdrop-blur-3xl relative group"
-            >
-                <div className="absolute inset-0 bg-theme/10 opacity-30 group-hover:opacity-50 transition-opacity" />
-                <img 
-                    src="/logo.png" 
-                    alt="Klivra logo" 
-                    className="w-full h-full object-contain invert opacity-95 relative z-10 p-3"
+            {/* Branded Logo Container with Premium Glass Effect */}
+            <div className="relative group">
+                {/* Dynamic Ambient Glow */}
+                <motion.div 
+                    animate={pulse ? { 
+                        opacity: [0.4, 0.7, 0.4],
+                        scale: [1, 1.2, 1],
+                    } : {}} 
+                    transition={{ 
+                        repeat: Infinity, 
+                        duration: 4, 
+                        ease: "easeInOut" 
+                    }}
+                    className="absolute inset-[-20px] bg-theme/20 blur-[40px] rounded-full pointer-events-none"
                 />
-            </motion.div>
+
+                <motion.div 
+                    animate={pulse ? { 
+                        scale: [1, 1.05, 1],
+                        borderColor: ["rgba(255,255,255,0.1)", "rgba(var(--theme-rgb),0.3)", "rgba(255,255,255,0.1)"]
+                    } : {}} 
+                    transition={{ 
+                        repeat: Infinity, 
+                        duration: 4, 
+                        ease: "easeInOut" 
+                    }}
+                    className="relative shrink-0 w-24 h-24 rounded-[2.5rem] overflow-hidden border border-white/10 bg-neutral-950/80 flex items-center justify-center backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                >
+                    {/* Interior Shimmer */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-50" />
+                    
+                    <img 
+                        src="/logo.png" 
+                        alt="Klivra logo" 
+                        width={56}
+                        height={56}
+                        className="w-14 h-14 object-contain relative z-10 invert brightness-200 contrast-125 transition-transform duration-700 group-hover:scale-110"
+                    />
+
+                </motion.div>
+            </div>
             
-            {/* Brand Wordmark with Fading Reveal */}
-            <motion.div 
-                animate={pulse ? {
-                    opacity: [0.3, 1, 0.3]
-                } : {}}
-                transition={{
-                    repeat: Infinity,
-                    duration: 3,
-                    ease: "easeInOut",
-                    delay: 0.5
-                }}
-                className="flex flex-col items-center"
-            >
-                <span className="text-4xl font-black tracking-[-0.08em] text-white leading-none uppercase">
-                    klivra
-                </span>
-                <span className="text-[10px] font-black tracking-[0.4em] text-theme/60 mt-2 uppercase">
-                    Core Intelligence
-                </span>
-            </motion.div>
+            {/* Brand Wordmark with Precision Typography */}
+            <div className="flex flex-col items-center gap-3">
+                <motion.div 
+                    animate={pulse ? {
+                        opacity: [0.7, 1, 0.7]
+                    } : {}}
+                    transition={{
+                        repeat: Infinity,
+                        duration: 4,
+                        ease: "easeInOut",
+                        delay: 0.5
+                    }}
+                    className="flex flex-col items-center"
+                >
+                    <h1 className="text-5xl font-black tracking-tighter text-white leading-none uppercase select-none">
+                        klivra
+                    </h1>
+                    <div className="h-px w-16 bg-gradient-to-r from-transparent via-theme/40 to-transparent mt-4 mb-2" />
+                    <span className="text-[11px] font-black tracking-[0.5em] text-theme/60 uppercase select-none">
+                        Core Intelligence
+                    </span>
+                </motion.div>
+            </div>
         </motion.div>
     );
 });
@@ -131,25 +151,56 @@ export const KlivraLogo = memo(({ pulse = true }) => {
 // ─── SCREENS ───────────────────────────────────────────────────────────────
 export const GlobalLoadingScreen = memo(({ statusText = 'INITIALIZING' }) => {
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}
-            style={{ minHeight: '100vh', background: tokens.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 40, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(${tokens.border} 1px, transparent 1px), linear-gradient(90deg, ${tokens.border} 1px, transparent 1px)`, backgroundSize: '48px 48px', maskImage: 'radial-gradient(ellipse 55% 55% at 50% 50%, black 0%, transparent 100%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32 }}>
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.6 }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-16 overflow-hidden bg-[#080809]"
+        >
+            {/* Architectural Grid Background */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,black_0%,transparent_100%)]" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-theme/5 via-transparent to-theme/5 opacity-50" />
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center gap-12">
                 <KlivraLogo />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <div className="mt-4">
                     <StatusLabel text={statusText} />
                 </div>
             </div>
+
+            {/* Corner Decorative Elements */}
+            <CrosshairCorners className="opacity-20 scale-95" size={40} />
         </motion.div>
     );
 });
 
 export const PageLoader = memo(() => {
     return (
-        <div className="w-full h-full min-h-[400px] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-8">
+        <div className="w-full h-full min-h-[500px] flex items-center justify-center relative overflow-hidden">
+            <div className="flex flex-col items-center gap-12 relative z-10">
                 <KlivraLogo />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-theme/40 animate-pulse">Initializing Interface</span>
+                <motion.div 
+                    animate={{ opacity: [0.4, 0.7, 0.4] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="flex flex-col items-center gap-3"
+                >
+                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-theme/40">
+                        Initializing Interface
+                    </span>
+                    <div className="flex gap-1">
+                        {[0, 1, 2].map((i) => (
+                            <motion.div
+                                key={i}
+                                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                                className="w-1 h-1 rounded-full bg-theme"
+                            />
+                        ))}
+                    </div>
+                </motion.div>
             </div>
         </div>
     );

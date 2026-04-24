@@ -151,6 +151,8 @@ const WeatherWidget = () => {
                     <img 
                         src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} 
                         alt="" 
+                        width={48}
+                        height={48}
                         className="w-12 h-12 object-contain drop-shadow-md"
                     />
                     <p className="text-[9px] font-black text-theme uppercase tracking-widest mt-[-8px]">{weather.description}</p>

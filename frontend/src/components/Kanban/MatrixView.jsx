@@ -173,8 +173,8 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
         const memberMap = {};
         if (project?.members) {
             project.members.forEach(m => {
-                const u = m.userId || m;
-                if (u?._id) {
+                const u = m.userId;
+                if (u && u._id) {
                     memberMap[u._id] = { 
                         name: u.name || 'Unknown', 
                         active: 0, 
@@ -189,8 +189,15 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
         tasks.forEach(t => {
             const isOverdue = t.dueDate && new Date(t.dueDate) < now && t.status !== 'Completed';
             const participantIds = new Set();
-            if (t.assignee?._id) participantIds.add(t.assignee._id);
-            if (t.assignees?.length) t.assignees.forEach(a => a?._id && participantIds.add(a._id));
+            const mainAssignee = t.assignee?._id || (typeof t.assignee === 'string' ? t.assignee : null);
+            if (mainAssignee) participantIds.add(mainAssignee.toString());
+            
+            if (t.assignees?.length) {
+                t.assignees.forEach(a => {
+                    const id = a?._id || (typeof a === 'string' ? a : null);
+                    if (id) participantIds.add(id.toString());
+                });
+            }
 
             participantIds.forEach(pid => {
                 if (memberMap[pid]) {
@@ -367,7 +374,16 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                         <div className="flex items-center justify-between md:justify-end gap-3 pr-2 w-full md:w-auto">
                              <select value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="bg-transparent border-none text-[9px] lg:text-[10px] font-black text-tertiary uppercase tracking-widest focus:ring-0 cursor-pointer min-w-[120px]">
                                 <option value="ALL">ALL MEMBERS</option>
-                                {project?.members?.map(m => <option key={m.userId?._id} value={m.userId._id}>{m.userId.name}</option>)}
+                                {project?.members?.filter(m => m && m.userId).map(m => {
+                                    const u = m.userId;
+                                    const uid = u?._id || (typeof u === 'string' ? u : null);
+                                    if (!uid) return null;
+                                    return (
+                                        <option key={uid.toString()} value={uid.toString()}>
+                                            {u?.name || 'Unknown Member'}
+                                        </option>
+                                    );
+                                }).filter(Boolean)}
                             </select>
                             <div className="h-6 w-px bg-glass md:mx-2" />
                             <button onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds([]); }} className={`px-4 lg:px-6 py-2.5 rounded-[1rem] lg:rounded-[1.25rem] border text-[9px] lg:text-[10px] font-black uppercase tracking-widest transition-all ${isBatchMode ? 'bg-theme border-theme text-white shadow-theme-slight' : 'bg-sunken border-glass text-tertiary hover:text-primary'}`}>

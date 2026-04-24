@@ -110,14 +110,20 @@ const MatrixTaskCard = ({ task, onOpen, isSelected, onSelect, isBatchMode }) => 
                     </div>
                 </div>
                 <div className="flex items-center -space-x-1 shrink-0">
-                    {(task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : [])).slice(0, 2).map((a, i) => (
-                        <div key={a?._id || i} className="w-5 h-5 rounded-lg overflow-hidden border border-black bg-theme/10">
-                            {a?.avatar
-                                ? <img src={getOptimizedAvatar(a.avatar, 'xs')} alt="" className="w-full h-full object-cover" />
-                                : <div className="w-full h-full flex items-center justify-center text-[7px] font-black text-theme">{a?.name?.charAt(0)}</div>
-                            }
-                        </div>
-                    ))}
+                    {(() => {
+                        const assignees = (task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []));
+                        return assignees.slice(0, 2).map((a, i) => {
+                            const id = a?._id || (typeof a === 'string' ? a : i);
+                            return (
+                                <div key={id} className="w-5 h-5 rounded-lg overflow-hidden border border-black bg-theme/10">
+                                    {a?.avatar
+                                        ? <img src={getOptimizedAvatar(a.avatar, 'xs')} alt="" className="w-full h-full object-cover" />
+                                        : <div className="w-full h-full flex items-center justify-center text-[7px] font-black text-theme">{a?.name?.charAt(0) || '?'}</div>
+                                    }
+                                </div>
+                            );
+                        });
+                    })()}
                 </div>
             </div>
         </motion.div>
@@ -302,7 +308,7 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
 
         const velocityTrend = last7Days.map(date => ({
             date,
-            completed: tasks.filter(t => t.status === 'Completed' && t.updatedAt?.split('T')[0] === date).length
+            completed: tasks.filter(t => t.status === 'Completed' && (t.updatedAt || t.createdAt)?.split('T')[0] === date).length
         }));
 
         // Health Score (Dynamic Heuristic)
@@ -319,7 +325,7 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
             const assignees = t.assignees?.length > 0 ? t.assignees : (t.assignee ? [t.assignee] : []);
             assignees.forEach(a => {
                 if (!a) return;
-                const name = a.name?.split(' ')[0] || 'Unknown';
+                const name = (typeof a === 'string' ? 'Member' : a.name?.split(' ')[0]) || 'Member';
                 memberStats[name] = (memberStats[name] || 0) + 1;
             });
         });
