@@ -2,19 +2,36 @@ import { API_BASE } from '../store/useAuthStore';
 
 /**
  * Standard utility to normalize and optimize avatar URLs.
- * Handles relative paths, placeholders, and Cloudinary-style optimization strings.
+ * Handles relative paths, placeholders, Google UserContent, and Cloudinary-style optimization strings.
  */
 export const getOptimizedAvatar = (url, size = 'md', name = 'User') => {
     if (!url) return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff&format=webp&size=${size === 'sm' ? 64 : 128}`;
     
     let processedUrl = url;
-    // If it's a relative path, prefix it with API_BASE
+
+    // 1. Handle Relative Paths (Local Storage)
     if (processedUrl.startsWith('/') && !processedUrl.startsWith('//')) {
         const base = API_BASE.replace(/\/api$/, '');
         processedUrl = `${base}${processedUrl}`;
     }
 
-    // Advanced Adaptive Cloudinary Resizing
+    // 2. Google UserContent Optimization
+    // Handles URLs like https://lh3.googleusercontent.com/a/ACg8ocIzs...=s96-c
+    if (processedUrl.includes('googleusercontent.com')) {
+        const googleSize = 
+            size === 'xxs' ? 's32-c' :
+            size === 'xs' ? 's48-c' : 
+            size === 'sm' ? 's64-c' : 
+            size === 'lg' ? 's400-c' : 's128-c';
+        
+        // Replace existing size parameter or append it
+        if (processedUrl.includes('=s')) {
+            return processedUrl.replace(/=s\d+(-c)?/, `=${googleSize}`);
+        }
+        return `${processedUrl}=${googleSize}`;
+    }
+
+    // 3. Advanced Adaptive Cloudinary Resizing
     if (processedUrl.includes('upload/')) {
         const dimensions = 
             size === 'xxs' ? 'w_32,h_32' :

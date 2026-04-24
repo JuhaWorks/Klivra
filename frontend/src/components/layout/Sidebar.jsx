@@ -37,7 +37,7 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed, un
             onClick={onClose}
             onMouseEnter={() => onPrefetch(item.path)}
             className={({ isActive: linkActive }) => cn(
-                "sidebar-nav-item group relative flex transition-all duration-200 select-none",
+                "sidebar-nav-item group relative flex transition-colors duration-200 select-none",
                 isCollapsed 
                     ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
                     : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
@@ -54,7 +54,7 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed, un
 
             {/* Icon container */}
             <span className={cn(
-                "relative z-10 flex flex-col items-center justify-center shrink-0 transition-all duration-200",
+                "relative z-10 flex flex-col items-center justify-center shrink-0 transition-opacity duration-200",
                 isCollapsed ? "w-6 h-6" : "w-5 h-5",
                 isActive ? "text-theme" : "group-hover:opacity-80"
             )}>
@@ -253,7 +253,7 @@ const SidebarComponent = () => {
                     "h-full transition-colors duration-300",
                     isMobile ? cn("fixed top-0 left-0 z-[90] rounded-r-[2rem] bg-base", isSidebarExpanded && "border-r border-default") : cn("relative", isSidebarExpanded && "border-r border-default"),
                     (!isMobile && isSidebarExpanded) ? "bg-base/95 backdrop-blur-3xl shadow-2xl absolute left-0 z-[60]" : (!isMobile ? "bg-transparent absolute left-0 z-[60]" : ""),
-                    "flex flex-col overflow-hidden",
+                    "flex flex-col overflow-hidden will-change-transform",
                     (isMobile || !isHome) && !isSidebarExpanded ? "pointer-events-none" : "pointer-events-auto"
                 )}
             >
@@ -262,7 +262,7 @@ const SidebarComponent = () => {
                     <div className={cn("h-[4.25rem] flex items-center justify-end px-5 relative z-10 shrink-0")}>
                         <button 
                             onClick={() => setSidebarExpanded(false)} 
-                            className="p-2 text-tertiary hover:text-primary hover:bg-sunken rounded-xl transition-all active:scale-95 lg:hidden"
+                            className="p-2 text-tertiary hover:text-primary hover:bg-sunken rounded-xl transition-colors duration-200 active:scale-95 lg:hidden"
                             aria-label="Close menu"
                         >
                             <X className="w-5 h-5" />
@@ -307,7 +307,7 @@ const SidebarComponent = () => {
                                             "absolute inset-0 transition-opacity duration-150 rounded-xl bg-sunken",
                                             isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
                                         )} />
-                                        <ShieldAlert strokeWidth={isActive ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className={cn("relative z-10 shrink-0 transition-all", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} />
+                                        <ShieldAlert strokeWidth={isActive ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className={cn("relative z-10 shrink-0 transition-colors", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} />
                                         
                                         {effectiveCollapsed ? (
                                             <span className={cn("relative z-10 text-[9px] leading-tight text-center truncate px-1 w-full", isActive ? "font-bold text-theme" : "font-medium opacity-70")}>System</span>
@@ -335,7 +335,7 @@ const SidebarComponent = () => {
                                             "absolute inset-0 transition-opacity duration-150 rounded-xl bg-sunken",
                                             isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
                                         )} />
-                                        <Activity strokeWidth={isActive ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className={cn("relative z-10 shrink-0 transition-all", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} />
+                                        <Activity strokeWidth={isActive ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className={cn("relative z-10 shrink-0 transition-colors", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} />
                                         
                                         {effectiveCollapsed ? (
                                             <span className={cn("relative z-10 text-[9px] leading-tight text-center truncate px-1 w-full", isActive ? "font-bold text-danger" : "font-medium opacity-70")}>Security</span>
@@ -396,7 +396,7 @@ const SidebarComponent = () => {
                                 to="/settings" 
                                 onClick={() => setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
-                                    "group relative flex items-center transition-all duration-200 select-none",
+                                    "group relative flex items-center transition-colors duration-200 select-none",
                                     effectiveCollapsed 
                                         ? "justify-center h-10 w-10 mx-auto rounded-xl" 
                                         : "gap-3 px-3 py-2.5 rounded-xl w-full",
@@ -436,7 +436,7 @@ const SidebarComponent = () => {
                         <button 
                             onClick={() => startTransition(() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK))}
                             className={cn(
-                                "group relative w-full flex transition-all duration-200 select-none text-tertiary hover:text-primary",
+                                "group relative w-full flex transition-colors duration-200 select-none text-tertiary hover:text-primary",
                                 effectiveCollapsed 
                                     ? "flex-col items-center justify-center py-3.5 w-14 mx-auto rounded-xl gap-1.5"
                                     : "items-center gap-3 px-3 py-2.5 rounded-xl"
@@ -459,7 +459,7 @@ const SidebarComponent = () => {
 
                     {/* User profile card */}
                     <div className={cn(
-                        "rounded-xl border border-white/8 bg-white/4 transition-all duration-200",
+                        "rounded-xl border border-white/8 bg-white/4 transition-colors duration-200",
                         "hover:bg-white/6 hover:border-white/12",
                         effectiveCollapsed 
                             ? "p-1.5 flex flex-col items-center gap-2" 
@@ -470,7 +470,7 @@ const SidebarComponent = () => {
                             to="/profile" 
                             onClick={() => setSidebarExpanded(false)} 
                             className={cn(
-                                "shrink-0 rounded-full overflow-hidden transition-all duration-150",
+                                "shrink-0 rounded-full overflow-hidden transition-opacity duration-150",
                                 "w-9 h-9 flex items-center justify-center",
                                 "bg-gradient-to-br from-accent-500/20 to-accent-600/20"
                             )}
@@ -506,7 +506,7 @@ const SidebarComponent = () => {
                                 </Link>
                                 <button 
                                     onClick={handleLogout} 
-                                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-tertiary hover:text-danger hover:bg-danger/10 transition-all duration-150"
+                                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-tertiary hover:text-danger hover:bg-danger/10 transition-colors duration-150"
                                     aria-label="Log out"
                                 >
                                     <LogOut className="w-3.5 h-3.5" />
@@ -517,7 +517,7 @@ const SidebarComponent = () => {
                         {effectiveCollapsed && (
                             <button 
                                 onClick={handleLogout} 
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-tertiary hover:text-danger hover:bg-danger/10 transition-all duration-150"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-tertiary hover:text-danger hover:bg-danger/10 transition-colors duration-150"
                                 aria-label="Log out"
                             >
                                 <LogOut className="w-3.5 h-3.5" />

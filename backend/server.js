@@ -122,8 +122,8 @@ app.use(express.static('public', {
   etag: true
 }));
 app.use('/uploads', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
 }, express.static('uploads'));
 
 
@@ -215,7 +215,7 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
       startMaintenanceHub();
       startDeadlineHub();
       startReportingHub();
-      
+
       // Trigger an immediate capture for real-time analytics parity
       captureGlobalSnapshots().catch(err => logger.error(`Initial Snapshot Error: ${err.message}`));
     }

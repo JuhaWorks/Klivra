@@ -84,7 +84,7 @@ const TopBar = () => {
                         <button
                             onClick={toggleSidebar}
                             className={twMerge(clsx(
-                                "p-2.5 text-tertiary hover:text-primary rounded-xl transition-all active:scale-95",
+                                "p-2.5 text-tertiary hover:text-primary rounded-xl transition-colors duration-200 active:scale-95",
                                 isMobile ? "bg-theme/10 text-theme" : "hover:bg-sunken",
                                 isMobile && isSidebarExpanded && "opacity-0 pointer-events-none"
                             ))}
@@ -110,6 +110,7 @@ const TopBar = () => {
                             <img 
                                 src="/logo.png" alt="Klivra logo" 
                                 fetchPriority="high" 
+                                decoding="async"
                                 width={64}
                                 height={44}
                                 className={twMerge(clsx(
@@ -137,7 +138,7 @@ const TopBar = () => {
                             placeholder="Search workspace..."
                             className={twMerge(clsx(
                                 "w-full pl-11 pr-4 py-2 bg-sunken border border-default rounded-2xl text-sm text-primary placeholder-tertiary outline-none font-medium",
-                                "focus:border-theme/30 focus:ring-4 focus:ring-theme/5 transition-all duration-200"
+                                "focus:border-theme/30 focus:ring-4 focus:ring-theme/5 transition-colors duration-200"
                             ))}
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-1 px-1.5 py-0.5 rounded-lg border border-default bg-surface text-[10px] font-black text-tertiary">
@@ -150,7 +151,7 @@ const TopBar = () => {
                 <div className="flex items-center gap-2 shrink-0">
                     <button 
                         onClick={() => setNotificationsOpen(true)}
-                        className="relative p-2.5 text-tertiary hover:text-primary hover:bg-sunken rounded-2xl transition-all group"
+                        className="relative p-2.5 text-tertiary hover:text-primary hover:bg-sunken rounded-2xl transition-colors duration-200 group"
                     >
                         <Bell className="w-5 h-5" />
                         {unreadCount > 0 && (
@@ -170,7 +171,7 @@ const TopBar = () => {
                         <button
                             onClick={() => setDropdownOpen(!dropdownOpen)}
                             className={twMerge(clsx(
-                                "flex items-center gap-3 p-1 rounded-2xl transition-all",
+                                "flex items-center gap-3 p-1 rounded-2xl transition-colors duration-200",
                                 dropdownOpen ? "bg-sunken" : "hover:bg-sunken"
                             ))}
                         >
@@ -181,6 +182,7 @@ const TopBar = () => {
                                     width={36}
                                     height={36}
                                     referrerPolicy="no-referrer"
+                                    decoding="async"
                                     className="w-9 h-9 rounded-xl border border-default object-cover"
                                 />
                                 <div className={twMerge(clsx(
@@ -223,7 +225,7 @@ const TopBar = () => {
                                             <Link
                                                 to="/profile"
                                                 onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all group"
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-colors duration-200 group"
                                             >
                                                 <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
                                                     <User className="w-4 h-4 group-hover:text-cyan-500 transition-colors" />
@@ -233,7 +235,7 @@ const TopBar = () => {
                                             <Link
                                                 to="/settings"
                                                 onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all group"
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-colors duration-200 group"
                                             >
                                                 <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-theme/20 transition-colors">
                                                     <Settings className="w-4 h-4 group-hover:text-theme transition-colors" />
@@ -245,7 +247,7 @@ const TopBar = () => {
 
                                             <button
                                                 onClick={() => { logout(); setDropdownOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-all group"
+                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors duration-200 group"
                                             >
                                                 <div className="w-8 h-8 rounded-xl bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
                                                     <LogOut className="w-4 h-4" />

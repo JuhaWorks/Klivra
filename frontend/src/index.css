@@ -788,6 +788,12 @@ video {
   mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent);
 }
 
+@utility transition-premium {
+  transition-property: transform, opacity, background-color, border-color, box-shadow, filter, backdrop-filter;
+  transition-timing-function: var(--ease-fluid);
+  transition-duration: var(--duration-base);
+}
+
 @utility content-auto {
   content-visibility: auto;
 }

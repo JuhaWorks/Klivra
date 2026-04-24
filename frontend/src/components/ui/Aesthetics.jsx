@@ -15,30 +15,34 @@ export const BorderGlow = memo(({
   const cardRef = useRef(null);
   const rectRef = useRef(null);
 
-  const handlePointerEnter = useCallback(() => {
-    rectRef.current = cardRef.current?.getBoundingClientRect();
+  // Performance: Cache rect on resize to avoid layout queries during mouse move
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        rectRef.current = entry.target.getBoundingClientRect();
+      }
+    });
+    observer.observe(cardRef.current);
+    // Initial rect
+    rectRef.current = cardRef.current.getBoundingClientRect();
+    return () => observer.disconnect();
   }, []);
 
   const handlePointerMove = useCallback((e) => {
-    if (!rectRef.current) {
-      rectRef.current = cardRef.current?.getBoundingClientRect();
-    }
     const rect = rectRef.current;
     if (!rect || !cardRef.current) return;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    // Performance: Throttle CSS variable updates to display refresh rate
-    requestAnimationFrame(() => {
-      cardRef.current?.style.setProperty('--mouse-x', `${x}px`);
-      cardRef.current?.style.setProperty('--mouse-y', `${y}px`);
-    });
+    // Performance: Direct property update is faster than React state for mouse followers
+    cardRef.current.style.setProperty('--mouse-x', `${x}px`);
+    cardRef.current.style.setProperty('--mouse-y', `${y}px`);
   }, []);
 
   return (
     <div
       ref={cardRef}
-      onPointerEnter={handlePointerEnter}
       onPointerMove={handlePointerMove}
       className={cn('magic-glow-card', className)}
       style={{
