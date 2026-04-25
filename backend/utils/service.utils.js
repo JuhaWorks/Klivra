@@ -201,12 +201,22 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || response.statusText);
+        if (!response.ok) {
+            // Specialized handling for Brevo IP Authorization Error
+            if (data.message?.includes('unrecognised IP address')) {
+                const ip = data.message.match(/\d+\.\d+\.\d+\.\d+/)?.[0] || 'Unknown';
+                logger.error(`🚨 ACTION REQUIRED: Your server IP (${ip}) is NOT authorized in Brevo. Please authorize it here: https://app.brevo.com/security/authorised_ips`);
+                throw new Error(`Brevo IP Authorization Error: ${ip} is blocked.`);
+            }
+            throw new Error(data.message || response.statusText);
+        }
         
         logger.info(`📧 Email sent to ${to}: ${data.messageId}`);
         return data;
     } catch (error) {
-        logger.error(`📧 Email Error: ${error.message}`);
+        if (!error.message.includes('Brevo IP Authorization')) {
+            logger.error(`📧 Email Error: ${error.message}`);
+        }
         throw error;
     }
 };

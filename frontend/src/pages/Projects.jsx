@@ -250,16 +250,14 @@ const Projects = () => {
                             ))}
                         </div>
 
-                        {(user?.role === PROJECT_ROLES.ADMIN || user?.role === PROJECT_ROLES.MANAGER) && (
-                            <Button
-                                size="md"
-                                onClick={() => setIsCreateModalOpen(true)}
-                                leftIcon={Plus}
-                                className="rounded-xl px-6 h-11"
-                            >
-                                New Project
-                            </Button>
-                        )}
+                        <Button
+                            size="md"
+                            onClick={() => setIsCreateModalOpen(true)}
+                            leftIcon={Plus}
+                            className="rounded-xl px-6 h-11"
+                        >
+                            New Project
+                        </Button>
                     </div>
                 </div>
             </header>

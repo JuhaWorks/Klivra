@@ -56,11 +56,11 @@ const getProject = async (req, res, next) => {
 
 const createProject = async (req, res, next) => {
     try {
-        const { name, description, category, startDate, endDate, coverImageUrl } = req.body;
+        const { name, description, category, startDate, endDate, coverImageUrl, isPinned } = req.body;
         const project = await Project.create({
             name, description, category, startDate, endDate, coverImageUrl,
             createdBy: req.user._id,
-            members: [{ userId: req.user._id, role: PROJECT_ROLES.MANAGER, status: MEMBERSHIP_STATUS.ACTIVE }]
+            members: [{ userId: req.user._id, role: PROJECT_ROLES.MANAGER, status: MEMBERSHIP_STATUS.ACTIVE, isPinned: !!isPinned }]
         });
         
         // Invalidate cache so user sees new project immediately

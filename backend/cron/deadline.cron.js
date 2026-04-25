@@ -45,6 +45,7 @@ const checkProjectDeadlines = async () => {
             else if (timeDiff > 0 && timeDiff <= threeDaysMs && !project.deadlineNotified?.approaching) {
                 const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
                 for (const manager of managers) {
+                    if (!manager) continue;
                     await notificationService.notify({
                         recipientId: manager._id || manager,
                         type: NOTIFICATION_TYPES.DEADLINE,
@@ -78,6 +79,10 @@ const checkTaskDeadlines = async () => {
         }).populate('project', 'name');
 
         for (const task of tasks) {
+            if (!task.project) {
+                logger.warn(`[DEADLINE] Skipping orphaned task ${task._id} (No project)`);
+                continue;
+            }
             const recipients = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
             for (const recipientId of recipients) {
                 if (!recipientId) continue;

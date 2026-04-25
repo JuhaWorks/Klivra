@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { X, Calendar, FolderPlus, ArrowRight, ArrowLeft, Loader2, Upload, Activity, Target } from 'lucide-react';
+import { X, Calendar, FolderPlus, ArrowRight, ArrowLeft, Loader2, Upload, Activity, Target, Pin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ const projectSchema = z.object({
     startDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid start date' }),
     endDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid end date' }),
     coverImageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+    isPinned: z.boolean().default(false),
 }).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
     message: "End date must be after start date",
     path: ["endDate"],
@@ -47,6 +48,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
         defaultValues: {
             startDate: new Date().toISOString().split('T')[0],
             category: '',
+            isPinned: false,
         }
     });
 
@@ -106,8 +108,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] animate-in fade-in duration-300" />
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 pointer-events-none">
-                    <Dialog.Content className="w-full max-w-xl max-h-[95vh] overflow-y-auto glass-2 border-white/10 bg-[#09090b]/98 rounded-[2.5rem] shadow-2xl focus:outline-none animate-in zoom-in-95 duration-200 scrollbar-thin pointer-events-auto">
+                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-xl max-h-[90vh] overflow-y-auto glass-2 border-white/10 bg-[#09090b]/98 rounded-[2.5rem] shadow-2xl focus:outline-none animate-in zoom-in-95 duration-200 scrollbar-thin z-[70]">
                     
                     {/* Header with Visual Indicator */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
@@ -269,6 +270,35 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                                 {...register('endDate')}
                                             />
                                         </div>
+
+                                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                            <div className="flex items-center gap-3">
+                                                <Pin className={twMerge("w-4 h-4", watch('isPinned') ? "text-theme fill-current" : "text-gray-500")} />
+                                                <span className="text-sm font-bold text-gray-300">Pin to dashboard?</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setValue('isPinned', true)}
+                                                    className={twMerge(
+                                                        "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
+                                                        watch('isPinned') ? "bg-theme text-black" : "bg-white/5 text-tertiary hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    Yes
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setValue('isPinned', false)}
+                                                    className={twMerge(
+                                                        "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
+                                                        !watch('isPinned') ? "bg-white/20 text-white" : "bg-white/5 text-tertiary hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    No
+                                                </button>
+                                            </div>
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -296,7 +326,6 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                         </form>
                     </div>
                     </Dialog.Content>
-                </div>
             </Dialog.Portal>
         </Dialog.Root >
     );
