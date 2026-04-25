@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useMotionValue, animate } from 'framer-motion';
-import { Trash2, CheckSquare, Heart } from 'lucide-react';
+import { Trash2, CheckSquare, Heart, Pin } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const COLORS = [
@@ -17,6 +17,7 @@ const StickyNote = ({
     onMove,
     onDelete,
     onVote,
+    onTogglePin,
     onConvertToTask,
     currentUserId,
     isGridActive,
@@ -130,6 +131,21 @@ const StickyNote = ({
                     ))}
                 </div>
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onTogglePin(note._id);
+                        }}
+                        title={note.isPinned ? "Unpin" : "Pin"}
+                        className={cn(
+                            "w-6 h-6 flex items-center justify-center rounded-md transition-all",
+                            note.isPinned 
+                                ? "text-rose-500 bg-rose-500/10 opacity-100" 
+                                : "text-black/30 hover:text-rose-500 hover:bg-rose-500/10"
+                        )}
+                    >
+                        <Pin className={cn("w-3.5 h-3.5", note.isPinned && "fill-current")} strokeWidth={2.2} />
+                    </button>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

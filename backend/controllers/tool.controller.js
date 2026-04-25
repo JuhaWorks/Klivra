@@ -390,10 +390,15 @@ const getNotes = catchAsync(async (req, res, next) => {
         .sort('zIndex')
         .lean();
 
+    const migratedNotes = notes.map(note => ({
+        ...note,
+        isPinned: note.pinnedBy?.some(id => id.toString() === req.user._id.toString()) || false
+    }));
+
     res.status(200).json({
         status: 'success',
-        results: notes.length,
-        data: notes
+        results: migratedNotes.length,
+        data: migratedNotes
     });
 });
 
@@ -523,6 +528,43 @@ const toggleVote = catchAsync(async (req, res, next) => {
     });
 });
 
+/**
+ * @desc    Toggle pin on a note
+ * @route   POST /api/projects/:projectId/whiteboard/:noteId/toggle-pin
+ * @access  Private
+ */
+const togglePinNote = catchAsync(async (req, res, next) => {
+    const { projectId, noteId } = req.params;
+    const userId = req.user._id;
+
+    const note = await StickyNote.findOne({ _id: noteId, projectId });
+    if (!note) {
+        res.status(404);
+        throw new Error('Sticky note not found');
+    }
+
+    const isPinned = note.pinnedBy.includes(userId);
+    if (isPinned) {
+        note.pinnedBy = note.pinnedBy.filter(id => id.toString() !== userId.toString());
+    } else {
+        note.pinnedBy.push(userId);
+    }
+
+    await note.save();
+    await note.populate('userId', 'name avatar');
+    
+    const responseNote = note.toObject();
+    responseNote.isPinned = !isPinned;
+
+    // Notify other members via socket
+    req.io.to(`project_${projectId}`).emit('whiteboard:noteUpdated', responseNote);
+
+    res.status(200).json({
+        status: 'success',
+        data: responseNote
+    });
+});
+
 module.exports = {
     getApod,
     getWeather,
@@ -533,5 +575,6 @@ module.exports = {
     createNote,
     updateNote,
     deleteNote,
-    toggleVote
+    toggleVote,
+    togglePinNote
 };

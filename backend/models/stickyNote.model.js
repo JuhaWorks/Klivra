@@ -43,7 +43,11 @@ const stickyNoteSchema = new mongoose.Schema({
     zIndex: {
         type: Number,
         default: 1
-    }
+    },
+    pinnedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 }, {
     timestamps: true
 });

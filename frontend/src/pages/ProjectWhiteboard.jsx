@@ -150,6 +150,21 @@ const ProjectWhiteboard = () => {
         }
     });
 
+    const togglePinMutation = useMutation({
+        mutationFn: async (id) => (await api.post(`/projects/${projectId}/whiteboard/${id}/toggle-pin`)).data,
+        onMutate: async (id) => {
+            await queryClient.cancelQueries({ queryKey: ['whiteboard-notes', projectId] });
+            const previousNotes = queryClient.getQueryData(['whiteboard-notes', projectId]);
+            queryClient.setQueryData(['whiteboard-notes', projectId], (old) =>
+                old?.map(n => n._id === id ? { ...n, isPinned: !n.isPinned } : n)
+            );
+            return { previousNotes };
+        },
+        onError: (err, id, context) => {
+            queryClient.setQueryData(['whiteboard-notes', projectId], context.previousNotes);
+        }
+    });
+
     // ── Handlers ──
     const handleAddNote = () => {
         if (!projectId) return toast.error("Select a project first");
@@ -480,6 +495,7 @@ const ProjectWhiteboard = () => {
                                 onFocus={() => handleBringToFront(note._id)}
                                 onDelete={(id) => deleteMutation.mutate(id)}
                                 onVote={(id) => voteMutation.mutate(id)}
+                                onTogglePin={(id) => togglePinMutation.mutate(id)}
                                 onConvertToTask={handleConvertToTask}
                             />
                         ))}

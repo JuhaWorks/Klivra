@@ -91,6 +91,7 @@ whiteboardRouter.route('/:noteId')
     .delete(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), toolCtrl.deleteNote);
 
 whiteboardRouter.post('/:noteId/vote', toolCtrl.toggleVote);
+whiteboardRouter.post('/:noteId/toggle-pin', toolCtrl.togglePinNote);
 
 // ─── 4. Sub-Route Mounting ────────────────────────────────────────────────
 projectRouter.use('/:projectId/tasks', taskRouter);
