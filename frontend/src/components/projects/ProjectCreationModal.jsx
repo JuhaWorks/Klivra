@@ -9,7 +9,6 @@ import { api } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Button, Input } from '../ui/BaseUI';
-;
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -325,9 +324,9 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                             </footer>
                         </form>
                     </div>
-                    </Dialog.Content>
+                </Dialog.Content>
             </Dialog.Portal>
-        </Dialog.Root >
+        </Dialog.Root>
     );
 };
 

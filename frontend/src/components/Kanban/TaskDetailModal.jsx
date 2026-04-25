@@ -59,6 +59,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
         const d = new Date(task.startDate);
         return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
     });
+    const [isPinned, setIsPinned] = useState(task.isPinned || false);
 
     const [subtasks, setSubtasks] = useState(task.subtasks || []);
     const [commentContent, setCommentContent] = useState('');
@@ -170,7 +171,8 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
             dueDate: dueDate || null,
             startDate: startDate || null,
             subtasks,
-            dependencies: { blockedBy, blocking }
+            dependencies: { blockedBy, blocking },
+            isPinned
         });
         onClose();
     };
@@ -248,18 +250,49 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                         <div className="lg:col-span-4 space-y-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={() => onTogglePin?.(task._id)}
-                                        className={twMerge(clsx(
-                                            "flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all",
-                                            task.isPinned 
-                                                ? "bg-theme/10 border-theme/30 text-theme" 
-                                                : "bg-white/5 border-white/10 text-tertiary hover:text-secondary"
-                                        ))}
-                                    >
-                                        <Pin className={twMerge(clsx("w-3.5 h-3.5", task.isPinned && "fill-current"))} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{task.isPinned ? 'Pinned' : 'Pin Task'}</span>
-                                    </button>
+                                    {isNew ? (
+                                        <div className="flex items-center justify-between w-full p-3 bg-white/5 rounded-2xl border border-white/5">
+                                            <div className="flex items-center gap-3">
+                                                <Pin className={twMerge("w-4 h-4", isPinned ? "text-theme fill-current" : "text-gray-500")} />
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Pin to dashboard?</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsPinned(true)}
+                                                    className={twMerge(
+                                                        "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all",
+                                                        isPinned ? "bg-theme text-black" : "bg-white/5 text-tertiary hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    Yes
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsPinned(false)}
+                                                    className={twMerge(
+                                                        "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all",
+                                                        !isPinned ? "bg-white/20 text-white" : "bg-white/5 text-tertiary hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    No
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={() => onTogglePin?.(task._id)}
+                                            className={twMerge(clsx(
+                                                "flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all",
+                                                task.isPinned 
+                                                    ? "bg-theme/10 border-theme/30 text-theme" 
+                                                    : "bg-white/5 border-white/10 text-tertiary hover:text-secondary"
+                                            ))}
+                                        >
+                                            <Pin className={twMerge(clsx("w-3.5 h-3.5", task.isPinned && "fill-current"))} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">{task.isPinned ? 'Pinned' : 'Pin Task'}</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             {/* Basic Info */}

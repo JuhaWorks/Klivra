@@ -109,7 +109,7 @@ const createTask = async (req, res, next) => {
         const {
             title, description, status, priority,
             assignee, assignees, type, points,
-            labels, dueDate, startDate, estimatedTime
+            labels, dueDate, startDate, estimatedTime, isPinned
         } = req.body;
 
         req.body.project = req.params.projectId;
@@ -164,7 +164,8 @@ const createTask = async (req, res, next) => {
             dueDate: dueDate || null,
             startDate: startDate || null,
             estimatedTime: estimatedTime || 0,
-            project: req.params.projectId
+            project: req.params.projectId,
+            pinnedBy: isPinned ? [req.user._id] : []
         });
 
         // Populate the new task for immediate UI usage

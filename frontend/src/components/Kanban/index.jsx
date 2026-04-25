@@ -78,7 +78,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     }, []);
 
     const handleInitCreate = useCallback(() => {
-        setSelectedTask({ _id: undefined, title: '', description: '', status: 'Pending', priority: 'Medium', type: 'Task', assignee: null, subtasks: [] });
+        setSelectedTask({ _id: undefined, title: '', description: '', status: 'Pending', priority: 'Medium', type: 'Task', assignee: null, subtasks: [], isPinned: false });
     }, []);
 
     useEffect(() => {
