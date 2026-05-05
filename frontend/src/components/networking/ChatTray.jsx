@@ -55,17 +55,17 @@ const ChatTray = ({ isPageMode = false }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={isPageMode ? { opacity: 0, y: 10 } : { opacity: 0, y: 20 }}
             className={cn(
-                "flex-1 flex flex-row overflow-hidden relative transition-all duration-500",
+                "flex-1 flex flex-row overflow-hidden relative transition-all duration-700",
                 isPageMode 
                     ? "rounded-none border-none bg-transparent shadow-none" 
-                    : "rounded-[3rem] border border-white/5 bg-black/20 shadow-huge h-full"
+                    : "rounded-[2.5rem] border border-white/5 bg-[#0a0a0c]/40 shadow-huge h-full backdrop-blur-3xl"
             )}
         >
             {/* Background depth for page mode */}
             {isPageMode && (
                 <div className="absolute inset-0 z-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent" />
-                    <div className="absolute top-0 left-0 w-[460px] h-full bg-white/[0.01] border-r border-white/5" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-theme/5 to-transparent opacity-20" />
+                    <div className="absolute top-0 left-0 w-[460px] h-full bg-white/[0.02] border-r border-white/5" />
                 </div>
             )}
             {/* Panel 1: Chat List */}
@@ -418,14 +418,14 @@ const ChatList = ({ chats, activeChat, onSelectChat, onClose, setConfirmConfig }
                         className="p-8 pb-4 flex items-start justify-between shrink-0"
                     >
                         <div>
-                            <h2 className="text-2xl font-black text-primary tracking-[-0.04em] flex items-center gap-3">
+                            <h2 className="text-3xl font-black text-primary tracking-[-0.05em] flex items-center gap-4">
                                 Messages
-                                <div className="flex items-center gap-1.5 bg-theme/10 px-2.5 py-1 rounded-full border border-theme/20 shadow-sm">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse" />
-                                    <span className="text-theme text-[9px] font-black uppercase tracking-[0.15em]">Sync</span>
+                                <div className="flex items-center gap-2 bg-theme/5 px-3 py-1 rounded-full border border-theme/20 shadow-glow-sm">
+                                    <span className="w-2 h-2 rounded-full bg-theme animate-pulse" />
+                                    <span className="text-theme text-[10px] font-black uppercase tracking-[0.2em]">Live</span>
                                 </div>
                             </h2>
-                            <p className="text-[10px] font-black text-tertiary mt-1 opacity-40 uppercase tracking-[0.25em]">Network Infrastructure</p>
+                            <p className="text-[10px] font-black text-tertiary mt-2 opacity-50 uppercase tracking-[0.3em]">Communication Core</p>
                         </div>
                         <div className="flex items-center gap-1.5">
                             {isSelectMode ? (
@@ -717,9 +717,9 @@ const OnlinePulse = ({ users, currentUser, onSelectUser }) => {
     if (displayUsers.length === 0) return null;
 
     return (
-        <div className="px-8 mb-8 shrink-0 transition-all animate-in fade-in slide-in-from-top-3 duration-700">
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[8px] font-black text-tertiary uppercase tracking-[0.3em] opacity-40">Active Now</h3>
+        <div className="px-8 mb-10 shrink-0 transition-all animate-in fade-in slide-in-from-top-4 duration-1000">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[9px] font-black text-tertiary uppercase tracking-[0.4em] opacity-30">Active Now</h3>
                 <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                     <span className="text-[8px] font-black text-success uppercase tracking-widest">{displayUsers.length}</span>
@@ -733,7 +733,7 @@ const OnlinePulse = ({ users, currentUser, onSelectUser }) => {
                             className="flex flex-col items-center gap-2 group"
                         >
                             <div className="relative">
-                                <div className="w-12 h-12 rounded-[1.25rem] overflow-hidden border-[1.5px] border-glass bg-sunken group-hover:border-theme transition-all duration-500 group-active:scale-90 shadow-lg group-hover:shadow-theme/20">
+                                <div className="w-14 h-14 rounded-2xl overflow-hidden border-[1.5px] border-white/5 bg-white/5 group-hover:border-theme group-hover:shadow-glow-sm transition-all duration-500 group-active:scale-95 shadow-xl">
                                     <img 
                                         src={getOptimizedAvatar(u.avatar, 'md', u.name)} 
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
@@ -741,7 +741,7 @@ const OnlinePulse = ({ users, currentUser, onSelectUser }) => {
                                         alt="" 
                                     />
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-[2.5px] border-surface shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-status-pulse" />
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success rounded-full border-[3px] border-surface shadow-lg animate-status-pulse" />
                             </div>
                             <span className="text-[9px] font-black text-primary truncate w-12 text-center opacity-40 group-hover:opacity-100 transition-all uppercase tracking-tighter">
                                 {u.name.split(' ')[0]}
@@ -943,16 +943,21 @@ const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
     };
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-[#0a0a0c] relative">
+        <div className="flex-1 flex flex-col min-h-0 bg-[#070709] relative overflow-hidden">
+            {/* Background Depth */}
+            <div className="absolute inset-0 pointer-events-none opacity-40">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-theme/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-theme/3 blur-[100px] rounded-full" />
+            </div>
             {/* Header */}
-            <div className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-black/20">
-                <div className="flex items-center gap-2">
-                    <button onClick={onBack} className="p-2 hover:bg-glass rounded-xl transition-all text-tertiary hover:text-primary active:scale-90">
-                        <ArrowLeft className="w-4 h-4" />
+            <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-white/[0.02] backdrop-blur-3xl relative z-10">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2.5 hover:bg-white/5 rounded-2xl transition-all text-tertiary hover:text-primary active:scale-90 border border-transparent hover:border-white/10">
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                          <div className="relative">
-                            <div className="w-9 h-9 rounded-[1.25rem] overflow-hidden border border-glass shadow-md bg-sunken group-hover:scale-105 transition-transform duration-500">
+                            <div className="w-11 h-11 rounded-2xl overflow-hidden border border-white/10 shadow-huge bg-sunken group-hover:scale-105 transition-transform duration-500">
                                 <img 
                                     src={getOptimizedAvatar(chat.type === 'group' ? chat.avatar : otherUser?.avatar, 'md', chat.type === 'group' ? chat.name : otherUser?.name)} 
                                     className="w-full h-full object-cover" 
@@ -962,18 +967,18 @@ const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
                             </div>
                             {chat.type === 'private' && (
                                 <div className={cn(
-                                    "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-[3px] border-surface shadow-sm",
+                                    "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-[3.5px] border-[#070709] shadow-lg",
                                     isOnline ? "bg-success" : "bg-neutral-400"
                                 )} />
                             )}
                          </div>
                          <div className="leading-tight">
-                            <p className="text-[13px] font-black text-primary tracking-[-0.03em] uppercase">
+                            <p className="text-[15px] font-black text-primary tracking-[-0.04em] uppercase">
                                 {chat.type === 'group' ? chat.name : otherUser?.name}
                             </p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className={cn("w-1.5 h-1.5 rounded-full", isOnline ? "bg-success animate-pulse" : "bg-neutral-400")} />
-                                <span className="text-[8px] font-black text-tertiary uppercase tracking-[0.2em] opacity-50">
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className={cn("w-2 h-2 rounded-full", isOnline ? "bg-success animate-pulse" : "bg-neutral-400")} />
+                                <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.25em] opacity-40">
                                     {isOnline ? 'Active Now' : 'Offline'}
                                 </span>
                             </div>

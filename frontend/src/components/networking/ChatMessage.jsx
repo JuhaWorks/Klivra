@@ -197,8 +197,8 @@ const ChatMessageComponent = ({
 
     // Bubble corner radius — seamless grouping
     const bubbleRadius = useMemo(() => {
-        const full = 'rounded-[1.75rem]';
-        const tight = 'rounded-[0.65rem]';
+        const full = 'rounded-[1.25rem]'; // Slightly tighter for a modern look
+        const tight = 'rounded-[0.4rem]';
         if (isMe) {
             return cn(
                 full,
@@ -276,16 +276,22 @@ const ChatMessageComponent = ({
                         {/* Reply quote */}
                         {message.replyTo && !isDeleted && (
                             <div className={cn(
-                                'px-3 py-2 rounded-2xl mb-1.5 border-l-[3px] max-w-[240px] backdrop-blur-sm',
+                                'px-3 py-2 rounded-xl mb-1 border-l-2 max-w-[240px] backdrop-blur-md transition-all group-hover/bubble:opacity-100 opacity-60',
                                 isMe
-                                    ? 'self-end border-theme/40 bg-theme/5'
-                                    : 'self-start border-theme/20 bg-theme/5'
+                                    ? 'self-end border-white/20 bg-white/5'
+                                    : 'self-start border-theme/30 bg-theme/5'
                             )}>
-                                <p className="text-[10px] font-black text-theme uppercase tracking-[0.15em] mb-1 flex items-center gap-1.5">
-                                    <CornerUpLeft className="w-3 h-3" />
+                                <p className={cn(
+                                    "text-[9px] font-black uppercase tracking-[0.15em] mb-0.5 flex items-center gap-1.5",
+                                    isMe ? "text-white/70" : "text-theme"
+                                )}>
+                                    <CornerUpLeft className="w-2.5 h-2.5" />
                                     {message.replyTo.sender?.name || 'Reply'}
                                 </p>
-                                <p className="text-[12px] truncate opacity-50 font-medium tracking-tight">
+                                <p className={cn(
+                                    "text-[11px] truncate font-medium tracking-tight",
+                                    isMe ? "text-white/50" : "text-tertiary"
+                                )}>
                                     {message.replyTo.deleted ? 'Message removed' : message.replyTo.content}
                                 </p>
                             </div>
@@ -347,31 +353,31 @@ const ChatMessageComponent = ({
                                 className="cursor-grab active:cursor-grabbing touch-none"
                             >
                                 {isDeleted ? (
-                                    <div className="px-5 py-3 rounded-[1.75rem] border border-glass/20 bg-sunken/30 backdrop-blur-sm">
+                                    <div className="px-5 py-3 rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-sm">
                                         <p className="text-[13px] italic text-tertiary opacity-30 font-medium">Message removed</p>
                                     </div>
                                 ) : isMedia ? (
                                     <div className={cn(
-                                        'overflow-hidden shadow-panel border border-glass/40 transition-all',
+                                        'overflow-hidden shadow-huge border border-white/5 transition-all group-hover/bubble:scale-[1.02] duration-300',
                                         bubbleRadius,
                                         isMe
-                                            ? cn('bg-theme text-white', isSending && 'opacity-60', isError && 'ring-1 ring-danger/50')
-                                            : cn('bg-surface text-primary', isError && 'ring-1 ring-danger/50')
+                                            ? cn('bg-theme text-white shadow-theme/20', isSending && 'opacity-60', isError && 'ring-1 ring-danger/50')
+                                            : cn('bg-white/[0.04] backdrop-blur-2xl text-primary border-white/10', isError && 'ring-1 ring-danger/50')
                                     )}>
                                         <MediaContent message={message} isMe={isMe} />
                                     </div>
                                 ) : (
                                     <div className={cn(
-                                        'px-5 py-3 text-[15px] sm:text-[15.5px] leading-relaxed transition-all shadow-panel border border-white/5',
+                                        'px-4 py-2.5 text-[14px] sm:text-[14.5px] leading-relaxed transition-all shadow-panel border border-white/5 group-hover/bubble:shadow-huge duration-300',
                                         bubbleRadius,
                                         isMe
                                             ? cn(
-                                                'bg-theme !text-white font-bold tracking-tight',
+                                                'bg-gradient-to-br from-theme to-theme-dark !text-white font-semibold tracking-tight shadow-glow-sm',
                                                 isSending && 'opacity-60',
                                                 isError && 'ring-1 ring-danger/50'
                                             )
                                             : cn(
-                                                'bg-elevated/90 backdrop-blur-xl text-primary font-bold tracking-tight',
+                                                'bg-white/[0.05] backdrop-blur-3xl text-primary font-semibold tracking-tight border-white/10',
                                                 isError && 'ring-1 ring-danger/50'
                                             )
                                     )}>

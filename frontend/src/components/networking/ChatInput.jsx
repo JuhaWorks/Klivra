@@ -190,20 +190,20 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                         className="overflow-hidden"
                     >
-                        <div className="flex items-center gap-3 px-5 py-3 bg-theme/5 border-b border-theme/10 backdrop-blur-md">
+                        <div className="flex items-center gap-3 px-6 py-2.5 bg-white/[0.03] border-b border-white/5 backdrop-blur-3xl">
                             <Reply className="w-3.5 h-3.5 text-theme shrink-0" />
                             <div className="flex-1 min-w-0">
-                                <p className="text-[10px] font-black text-theme uppercase tracking-[0.15em]">
+                                <p className="text-[9px] font-black text-theme uppercase tracking-[0.2em] mb-0.5">
                                     Replying to {replyTo.sender?.name || 'message'}
                                 </p>
-                                <p className="text-[12px] text-tertiary truncate opacity-40 leading-tight font-medium mt-0.5">
+                                <p className="text-[11px] text-tertiary truncate opacity-40 leading-tight font-medium">
                                     {replyTo.deleted ? 'Message removed' : replyTo.content}
                                 </p>
                             </div>
-                            <button onClick={onCancelReply} className="p-1.5 rounded-xl text-tertiary hover:text-primary hover:bg-glass transition-all shrink-0 active:scale-90">
+                            <button onClick={onCancelReply} className="p-1.5 rounded-lg text-tertiary hover:text-primary hover:bg-white/5 transition-all shrink-0 active:scale-90">
                                 <X className="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -218,34 +218,34 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="overflow-hidden border-b border-glass"
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden border-b border-white/5 bg-black/10"
                     >
-                        <div className="flex gap-2 px-3 py-2 overflow-x-auto custom-scrollbar">
+                        <div className="flex gap-3 px-4 py-3 overflow-x-auto no-scrollbar">
                             {attachments.map(att => (
                                 <div key={att.id} className="relative shrink-0 group/att">
                                     {att.preview ? (
-                                        <div className="w-16 h-16 rounded-2xl overflow-hidden border border-glass shadow-md bg-sunken group-hover:scale-105 transition-transform duration-500">
+                                        <div className="w-20 h-20 rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-sunken group-hover:scale-105 transition-transform duration-500">
                                             <img src={att.preview} className="w-full h-full object-cover" alt="" />
                                         </div>
                                     ) : (
-                                        <div className="w-16 h-16 rounded-2xl border border-glass bg-sunken flex flex-col items-center justify-center gap-1.5 px-2 group-hover:scale-105 transition-transform duration-500 shadow-sm">
-                                            <span className="text-theme opacity-60">{fileIcon(att.type)}</span>
-                                            <p className="text-[9px] font-black text-tertiary truncate w-full text-center leading-none uppercase tracking-tighter">
+                                        <div className="w-20 h-20 rounded-2xl border border-white/10 bg-white/[0.03] flex flex-col items-center justify-center gap-2 px-3 group-hover:scale-105 transition-transform duration-500 shadow-md">
+                                            <span className="text-theme/70">{fileIcon(att.type)}</span>
+                                            <p className="text-[10px] font-black text-tertiary truncate w-full text-center leading-none uppercase tracking-widest">
                                                 {att.name.split('.').pop().toUpperCase()}
                                             </p>
                                         </div>
                                     )}
                                     {/* Size badge */}
-                                    <span className="absolute bottom-1 left-1 right-1 text-center text-[8px] font-black bg-black/60 backdrop-blur-md text-white rounded-lg px-1 py-0.5 leading-none shadow-sm">
+                                    <span className="absolute bottom-1.5 left-1.5 right-1.5 text-center text-[8px] font-black bg-black/80 backdrop-blur-md text-white rounded-lg px-1 py-1 leading-none shadow-sm opacity-0 group-hover/att:opacity-100 transition-opacity">
                                         {formatBytes(att.size)}
                                     </span>
                                     {/* Remove button */}
                                     <button
                                         onClick={() => removeAttachment(att.id)}
-                                        className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-danger text-white flex items-center justify-center shadow-md opacity-0 group-hover/att:opacity-100 transition-opacity"
+                                        className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-danger text-white flex items-center justify-center shadow-lg opacity-0 group-hover/att:opacity-100 transition-opacity border-2 border-surface"
                                     >
-                                        <X className="w-2.5 h-2.5" />
+                                        <X className="w-3 h-3" />
                                     </button>
                                 </div>
                             ))}
@@ -266,7 +266,7 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                 </button>
 
                 {/* Input capsule */}
-                <div className="flex-1 flex items-end bg-white/[0.03] hover:bg-white/[0.05] border border-white/5 rounded-[1.5rem] py-2 px-5 transition-all focus-within:bg-white/[0.06] focus-within:border-white/10" ref={emojiRef}>
+                <div className="flex-1 flex items-end bg-white/[0.04] hover:bg-white/[0.06] border border-white/5 rounded-[1.5rem] py-2 px-5 transition-all focus-within:bg-white/[0.08] focus-within:border-white/10 shadow-inner-sm" ref={emojiRef}>
                     <MentionInput
                         ref={textareaRef}
                         value={input}
@@ -276,7 +276,7 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                         placeholder={replyTo ? `Reply...` : placeholder}
                         members={activeChat?.participants || []}
                         disabled={disabled || uploading}
-                        className="flex-1 bg-transparent border-none !border-none outline-none !outline-none ring-0 !ring-0 focus:ring-0 focus:outline-none text-[15px] py-1.5 px-0.5 resize-none font-bold text-primary placeholder:text-white/30 custom-scrollbar max-h-[160px] tracking-tight leading-relaxed"
+                        className="flex-1 bg-transparent border-none !border-none outline-none !outline-none ring-0 !ring-0 focus:ring-0 focus:outline-none text-[14px] py-2 px-0.5 resize-none font-semibold text-primary placeholder:text-white/20 custom-scrollbar max-h-[160px] tracking-tight leading-relaxed"
                     />
                     {/* Emoji */}
                     <div className="relative">
@@ -308,11 +308,12 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
                     <button
                         onClick={handleSubmit}
                         disabled={uploading}
-                        className="p-3 bg-theme text-white rounded-2xl shadow-glow-sm hover:scale-105 active:scale-95 transition-all disabled:opacity-60 shrink-0"
+                        className="p-3 bg-theme text-white rounded-2xl shadow-glow hover:scale-105 active:scale-95 transition-all disabled:opacity-60 shrink-0 relative overflow-hidden group/send"
                     >
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover/send:opacity-100 transition-opacity" />
                         {uploading
                             ? <Loader2 className="w-5 h-5 animate-spin" />
-                            : <Send className="w-5 h-5 fill-current" />
+                            : <Send className="w-5 h-5 fill-current relative z-10" />
                         }
                     </button>
                 ) : (
