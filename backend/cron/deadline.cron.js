@@ -106,11 +106,19 @@ const checkTaskDeadlines = async () => {
 
 // ─── Scheduler ─────────────────────────────────────────────────────────────
 const startDeadlineHub = () => {
-    // Project deadlines (Daily 00:00)
-    cron.schedule('0 0 * * *', checkProjectDeadlines);
-    
-    // Task deadlines (Hourly)
-    cron.schedule('0 * * * *', checkTaskDeadlines);
+    // Project & Task deadlines: Check every hour (Safe because of notification flags in the DB)
+    cron.schedule('0 * * * *', () => {
+        checkProjectDeadlines();
+        checkTaskDeadlines();
+    });
+
+    // Catch-up scan: Run once on startup (Delayed by 10s to ensure DB is ready)
+    // This is crucial for free-tier servers (like Render) that go to sleep and miss their scheduled crons.
+    setTimeout(() => {
+        logger.info('⏰ Deadline Hub - Catch-up scan running on startup...');
+        checkProjectDeadlines();
+        checkTaskDeadlines();
+    }, 10000);
 
     if (process.env.NODE_ENV !== 'production') {
         logger.info('⏰ Deadline Hub (Dev Mode) - Frequent scans active');
@@ -118,7 +126,6 @@ const startDeadlineHub = () => {
             checkProjectDeadlines();
             checkTaskDeadlines();
         });
-        setTimeout(() => { checkProjectDeadlines(); checkTaskDeadlines(); }, 5000);
     }
 };
 
