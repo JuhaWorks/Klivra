@@ -203,15 +203,12 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
     serverSelectionTimeoutMS: 5000,
     connectTimeoutMS: 10000,
     socketTimeoutMS: 45000,
-    maxPoolSize: 10, // Reduced from 100 to save RAM on low-tier cloud hosting
+    maxPoolSize: 10,
     family: 4,
-    // Removed zlib compressor to save CPU/RAM overhead at this scale
   }).then(async () => {
     logger.info(`✅ MongoDB Connected in Worker ${process.pid}!`);
 
     if (!enableCluster || cluster.worker.id === 1) {
-      // Initialize Consolidated Cron Hubs (Consolidating GC, Deadlines, Social, FS, Snapshots, and Digests)
-      // These 3 Hubs replace the 7 legacy cron files for better maintainability and observability.
       startMaintenanceHub();
       startDeadlineHub();
       startReportingHub();
